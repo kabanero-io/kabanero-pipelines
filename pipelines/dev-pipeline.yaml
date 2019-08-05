@@ -1,0 +1,24 @@
+apiVersion: 0.1
+kind: Pipeline
+metadata:
+  name: build-pipeline
+spec:
+  resources:
+    - name: appsody-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: appsody-build
+      taskRef:
+        name: appsody-build-task
+      resources:
+        inputs:
+        - name: appsody-source
+          resource: appsody-source
+        outputs:
+        - name: docker-image
+          resource: docker-image
+      params:
+      - name: appsody-deploy-file-name
+        value: appsody-service.yaml
