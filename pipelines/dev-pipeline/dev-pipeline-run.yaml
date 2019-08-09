@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: dev-manual-pipeline-run
+spec:
+  serviceAccount: kabanero-sa
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: dev-pipeline
+  trigger:
+    type: manual
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source
+    - name: docker-image
+      resourceRef:
+        name: docker-image
+
