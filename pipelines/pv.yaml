@@ -1,0 +1,13 @@
+ipiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: appsody-manual-pipeline-run-pvc
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  hostPath:
+    path: /var/lib/appsody-manual-pipeline-run-pvc
+
