@@ -1,4 +1,4 @@
-piVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: dev-pipeline

@@ -12,7 +12,7 @@ items:
 - apiVersion: tekton.dev/v1alpha1
   kind: PipelineResource
   metadata:
-    name: appsody-source
+    name: git-source
   spec:
     params:
     - name: revision
