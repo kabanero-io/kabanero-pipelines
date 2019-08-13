@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/kabanero-io/kabanero-website/master/src/main/content/img/Kabanero_Logo_Hero.png?sanitize=true)
+![](https://raw.githubusercontent.com/kabanero-io/kabanero-website/master/src/main/content/img/Kabanero_Logo_Hero.png)
 
 # kabanero-pipelines
 The kabanero-pipelines repository contains a collection of build, test & deploy pipelines, intended to work out of the box with the featured Kabanero collections
