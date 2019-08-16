@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: nodejs-express-deploy-pipeline
+spec:
+  resources:
+    - name: docker-image
+      type: image
+  tasks:
+    - name: deploy-task
+      taskRef:
+        name: nodejs-express-deploy-task
+      resources:
+        inputs:
+        - name: docker-image
+          resource: docker-image
