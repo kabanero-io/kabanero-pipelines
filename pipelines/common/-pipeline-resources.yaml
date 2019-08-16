@@ -1,4 +1,4 @@
-aiVersion: v1
+apiVersion: v1
 items:
 - apiVersion: tekton.dev/v1alpha1
   kind: PipelineResource
