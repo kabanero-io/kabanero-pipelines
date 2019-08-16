@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: java-microprofile-deploy-pipeline
+spec:
+  resources:
+    - name: docker-image
+      type: image
+  tasks:
+    - name: deploy-task
+      taskRef:
+        name: java-microprofile-deploy-task
+      resources:
+        inputs:
+        - name: docker-image
+          resource: docker-image

@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: nodejs-deploy-task 
+spec:
+  inputs:
+    resources:
+      - name: docker-image
+        type: image
+  steps:
+    - name: docker-run-step
+      securityContext:
+        privileged: true
+      image: appsody/appsody-docker
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+      command: ['docker', 'pull']
+      args:
+        - ${inputs.resources.docker-image.url}
+      command: ['docker', 'run']
+      args:
+        - ${inputs.resources.docker-image.url}
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+        type: Socket
