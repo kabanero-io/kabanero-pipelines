@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: appsody-build-task
+  name: java-spring-boot2-appsody-build-task
 spec:
   inputs:
     resources:
