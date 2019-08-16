@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: nodejs-express-build-task
+  name: nodejs-express-appsody-build-task
 spec:
   inputs:
     resources:
