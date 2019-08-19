@@ -6,7 +6,7 @@ spec:
   serviceAccount: kabanero-sa
   timeout: "1h0m0s"
   pipelineRef:
-    name: <pipeline_name>
+    name: <collection-name>-build-deploy-pipeline
   trigger:
     type: manual
   resources:
