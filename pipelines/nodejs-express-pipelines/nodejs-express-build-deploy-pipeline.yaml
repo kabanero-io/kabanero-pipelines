@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: nodejs-express-build-pipeline
+  name: nodejs-express-build-deploy-pipeline
 spec:
   resources:
     - name: git-source
@@ -9,9 +9,9 @@ spec:
     - name: docker-image
       type: image
   tasks:
-    - name: appsody-build
+    - name: appsody-build-deploy
       taskRef:
-        name: nodejs-express-appsody-build-task
+        name: nodejs-express-appsody-build-deploy-task
       resources:
         inputs:
         - name: git-source
@@ -21,4 +21,4 @@ spec:
           resource: docker-image
       params:
       - name: appsody-deploy-file-name
-        value: appsody-service.yaml
+        value: appsody-deploy.yaml

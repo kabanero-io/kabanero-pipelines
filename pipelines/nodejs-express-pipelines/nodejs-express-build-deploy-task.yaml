@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: nodejs-express-build-task
+  name: nodejs-express-build-deploy-task
 spec:
   inputs:
     resources:
@@ -47,7 +47,7 @@ spec:
     - name: modify-yaml
       image: ubuntu
       command: ['/bin/bash']
-      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f -exec sed -i -e s!"image: .*$"!"image: ${IMG}"!g {} \;']
+      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f -exec sed -i -e s!"applicationImage: .*$"!"applicationImage: ${IMG}"!g {} \;']
       env:
         - name: IMG
           value: ${outputs.resources.docker-image.url}
