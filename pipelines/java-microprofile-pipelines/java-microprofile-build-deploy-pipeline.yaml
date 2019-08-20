@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: java-microprofile-build-pipeline
+  name: java-microprofile-build-deploy-pipeline
 spec:
   resources:
     - name: git-source
@@ -9,9 +9,9 @@ spec:
     - name: docker-image
       type: image
   tasks:
-    - name: appsody-build
+    - name: build-deploy
       taskRef:
-        name: java-microprofile-appsody-build-task
+        name: java-microprofile-build-deploy-task
       resources:
         inputs:
         - name: git-source
@@ -21,4 +21,4 @@ spec:
           resource: docker-image
       params:
       - name: appsody-deploy-file-name
-        value: appsody-service.yaml
+        value: appsody-deploy.yaml
