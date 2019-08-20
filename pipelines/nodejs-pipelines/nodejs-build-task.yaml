@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: nodejs-appsody-build-task
+  name: nodejs-build-task
 spec:
   inputs:
     resources:
@@ -44,20 +44,13 @@ spec:
         - --destination=${outputs.resources.docker-image.url}
         - --context=${inputs.params.pathToContext}
         - --skip-tls-verify
-    - name: modify-yaml
+    - name: modify-app-deploy-yaml-step
       image: ubuntu
       command: ['/bin/bash']
-      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f -exec sed -i -e s!"image: .*$"!"image: ${IMG}"!g {} \;']
+      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f -exec sed -i -e s!"applicationImage: .*$"!"applicationImage: ${IMG}"!g {} \;']
       env:
         - name: IMG
           value: ${outputs.resources.docker-image.url}
-        - name: YAMLFILE
-          value: ${inputs.params.appsody-deploy-file-name}
-    - name: install-knative
-      image: lachlanevenson/k8s-kubectl
-      command: ['/bin/sh']
-      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f|xargs kubectl apply -f']
-      env:
         - name: YAMLFILE
           value: ${inputs.params.appsody-deploy-file-name}
   volumes:

@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: nodejs-deploy-task
+spec:
+  inputs:
+    params:
+      - name: appsody-deploy-file-name
+  steps:
+    - name: deploy-image-step
+      image: lachlanevenson/k8s-kubectl
+      command: ['/bin/sh']
+      args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f|xargs kubectl apply -f']
+      env:
+        - name: YAMLFILE
+          value: ${inputs.params.appsody-deploy-file-name}
