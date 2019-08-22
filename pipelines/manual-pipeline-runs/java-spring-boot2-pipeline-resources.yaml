@@ -1,0 +1,23 @@
+apiVersion: v1
+items:
+- apiVersion: tekton.dev/v1alpha1
+  kind: PipelineResource
+  metadata:
+    name: docker-image
+  spec:
+    params:
+    - name: url
+      value: <docker repo & image location>
+    type: image
+- apiVersion: tekton.dev/v1alpha1
+  kind: PipelineResource
+  metadata:
+    name: git-source
+  spec:
+    params:
+    - name: revision
+      value: master
+    - name: url
+      value: https://github.com/kvijai82/appsody-java-spring-boot2
+    type: git
+kind: List

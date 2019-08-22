@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: java-mp-manual-pipeline-run
+spec:
+  serviceAccount: kabanero-sa
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: java-microprofile-build-deploy-pipeline 
+  trigger:
+    type: manual
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source
+    - name: docker-image
+      resourceRef:
+        name: docker-image
