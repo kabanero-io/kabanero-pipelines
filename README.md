@@ -23,12 +23,15 @@ cd kabanero-pipelines
 oc project kabanero
 ```
 
-## Setup the appropriate permissions to run the pipelines on OKD clusters
+## Setup the appropriate resources & permissions to run the pipelines on OKD clusters
+
+Update path in pv.yaml if you want to specify a different location.
 
 ```
 cd ./pipelines/common
-kubectl apply -f appsody-service-account.yaml
-kubectl apply -f appsody-cluster-role-binding.yaml
+kubectl apply -f pv.yaml
+kubectl apply -f service-account.yaml
+kubectl apply -f cluster-role-binding.yaml
 ```
 
 ## Create a secret with your docker credentials to publish the image to the docker repo and update the appropriate service account
