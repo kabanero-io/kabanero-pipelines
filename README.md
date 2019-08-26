@@ -34,7 +34,7 @@ kubectl apply -f service-account.yaml
 kubectl apply -f cluster-role-binding.yaml
 ```
 
-## Create a secret with your docker credentials to publish the image to the docker repo and update the appropriate service account
+## Create a secret with your docker credentials to publish the image to your docker registry and update the appropriate service account
 
 ```
 apiVersion: v1
@@ -65,6 +65,7 @@ Sample pipeline-resources.yaml files are provided for each featured collection u
 After updating the file, apply it
 
 ```
+cd ../manual-pipeline-runs
 kubectl apply -f <collection-name>-pipeline-resources.yaml
 ```
 
