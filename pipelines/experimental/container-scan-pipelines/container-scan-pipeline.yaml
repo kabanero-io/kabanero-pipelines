@@ -1,0 +1,27 @@
+# Sample scanning pipeline that uses the scan-task and specifies the scanner command with arguments to use.
+# The task will issue the command as <command-with-flags> <docker image url> <scanner-arguments>.
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: scan-pipeline
+spec:
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: appsody-scan
+      taskRef:
+        name: scan-task
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image
+      params:
+      - name: command-with-flags
+        value: oscap-docker image-cve
+      - name: scanner-arguments
+        value: --report report.html
