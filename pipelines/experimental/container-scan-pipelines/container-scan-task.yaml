@@ -1,0 +1,36 @@
+# This task scans the docker image using the specified command and arguments.
+# The full command will be issued as: <command-with-flags> <docker image url> <scanner-arguments>.
+# It requires an image that contains the scanner to be used to scan the docker-image image input.
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: scan-task
+spec:
+  inputs:
+    resources:
+      - name: git-source
+        type: git
+      - name: docker-image
+        type: image
+    params:
+      - name: command-with-flags
+        description: The scanner command with flags
+        default: oscap-docker image-cve
+      - name: scanner-arguments
+        description: The scanner command arguments
+        default: --report report.html
+  steps:
+    - name: scan-image
+      securityContext:
+        privileged: true
+      image: <image_containing_scanner>
+      command: ['/bin/bash']
+      args: ['-c', '${inputs.params.command-with-flags} ${inputs.resources.docker-image.url} ${inputs.params.scanner-arguments}']
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+        type: Socket
