@@ -1,9 +1,16 @@
 ![](https://raw.githubusercontent.com/kabanero-io/kabanero-website/master/src/main/content/img/Kabanero_Logo_Hero.png)
 
-# kabanero-pipelines
-The kabanero-pipelines repository contains a collection of tasks and pipelines that are intended to work out of the box with the featured Kabanero collections.
+# Kabanero Pipelines
+The kabanero-pipelines repository contains a collection of Tekton tasks and pipelines that are intended to work out of the box with the featured Kabanero collections to illustrate a CI/CD work flow.  The pipelines and tasks can be executed manually or via a webhook.  The steps below walk through how to drive a pipeline manually (using a script or CLI), which is useful for pipeline development, or driving it via a webhook, which is perfect for CI/CD workflows once there is a functional pipeline.
 
-# Manual pipeline execution
+# Prereqs
+
+You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
+
+Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard.
+
+### Create a persistent volume
+The persistent volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
 
 Login to your cluster.  For example for OKD,
 
@@ -11,86 +18,101 @@ Login to your cluster.  For example for OKD,
 oc login <master node IP>:8443
 ```
 
-## Clone the kabanero pipelines repo
+Clone the pv.yaml in this repo and apply it.
+
+```
+cd ./pipelines/common
+oc apply -f pv.yaml -n kabanero
+```
+
+### Create secrets to pull from git repo and push to docker registry
+
+This has to be created in the *kabanero* namespace and associated with the *kabanero-operator* service account.  The secrets can be created in a few different ways.  Simplest option is to go configure this is the Tekton Dashboard under the secrets section.  You can configure this in the OKD console or you can setup the secret using the OKD CLI. 
+
+
+# Execute pipelines using Tekton Dashboard Webhook Extension
+
+You can leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
+
+Visit https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md for instructions on configuring a webhook.
+
+# Manual pipeline execution using a script
+
+Login to your cluster.  For example for OKD,
+
+```
+oc login <master node IP>:8443
+```
+
+### Clone the kabanero pipelines repo
+
+```
+git clone https://github.com/kabanero-io/kabanero-pipelines
+```
+
+### Run the script with the appropriate parameters
+```
+./pipeline-manual-run.sh -r [git_repo of the Appsody project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+```
+
+For example:
+```
+./pipeline-manual-run.sh -r https://github.com/mygitid/appsody-test-project -i index.docker.io/mydockeid/my-java-microprofile-image -c java-microprofile"
+```
+
+# Manual pipeline execution via CLI
+
+Login to your cluster.  For example for OKD,
+
+```
+oc login <master node IP>:8443
+```
+
+### Clone the kabanero pipelines repo
 
 ```
 git clone https://github.com/kabanero-io/kabanero-pipelines
 cd kabanero-pipelines
 ```
 
-## Switch to working in the kabanero namespace
-```
-oc project kabanero
-```
+### Create PipelineResources
 
-## Setup the appropriate resources & permissions to run the pipelines on OKD clusters
-
-Update path in pv.yaml if you want to specify a different location.
-
-```
-cd ./pipelines/common
-kubectl apply -f pv.yaml
-kubectl apply -f service-account.yaml
-kubectl apply -f cluster-role-binding.yaml
-```
-
-## Create a secret with your docker credentials to publish the image to the docker repo and update the appropriate service account
-
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: my-docker-secret
-  annotations:
-    tekton.dev/docker-0: https://index.docker.io/v1/ 
-type: kubernetes.io/basic-auth
-stringData:
-  username: <your docker userid>
-  password: <your docker password>
-```
-```
-kubectl apply -f my-docker-secret.yaml
-kubectl edit serviceaccount kabanero-sa
-```
-Add the following:
-```
-secrets:
-- name: my-docker-secret
-```
-
-## Update the pipeline-resources.yaml with github & docker repo info to create the PipelineResources
-
-Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
+Update the pipeline-resources.yaml with github & docker repo info to create the PipelineResources.  Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
 
 After updating the file, apply it
 
 ```
-kubectl apply -f <collection-name>-pipeline-resources.yaml
+oc apply -f <collection-name>-pipeline-resources.yaml
 ```
 
-## The featured collections should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually
+### Activate the tasks & pipelines
+The installations will activate the featured collections should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually
 
 ```
-kubectl apply -f <task.yaml>
-kubectl apply -f <pipeline.yaml>
+oc apply -f <task.yaml>
+oc apply -f <pipeline.yaml>
 ```
 
-## Run the pipeline
+### Run the pipeline
 
 Sample PipelineRun files are provided under ./pipelines/manual-pipeline-runs.  Locate the appropriate pipeline-run file and execute it.
 ```
-kubectl apply -f <collection-name>-pipeline-run.yaml
+oc apply -f <collection-name>-pipeline-run.yaml
 ```
 
-## Check the status of the pipeline run
+# Checking the status of the pipeline run
 
+You can check the status of the pipeline run from the OKD console, command line, or Tekton dashboard.
+
+### Command line:
 ```
-kubectl get pipelineruns
-kubectl -n kabanero describe pipelinerun.tekton.dev/<pipeline-run-name> 
+oc get pipelineruns
+oc -n kabanero describe pipelinerun.tekton.dev/<pipeline-run-name> 
 ```
+You should also see pods for the pipeline runs that you can ```oc describe``` and ```oc logs``` to get more details of your run.
 
-# Execute pipelines using Tekton Dashboard Webhook Extension
+If the pipeline run was successful, you should see a docker image in your docker registry and you should see a pod that's running your application.
 
-You can also leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits in a github repo can be setup to automatically trigger pipeline runs.
+### Tekton dashboard
 
-Visit https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md for instructions on configuring a webhook.
+Login to the Tekton Dashboard and navigate to the Pipeline runs section in the menu on the left hand menu.  Find your pipeline run and click on it to check the status and find logs.
