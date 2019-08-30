@@ -7,9 +7,9 @@ set +v
 display_help() {
  echo "Usage"
  echo "******************************************************"
- echo "./pipeline-manual-run.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+ echo "./manual-pipeline-run-script.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
  echo "example: "
- echo "./pipeline-manual-run.sh -r https://github.com/aadeshpa/appsody-test-project -i index.docker.io/aadeshpa/my-java-microprofile-image -c java-microprofile"
+ echo "./manual-pipeline-run-script.sh -r https://github.com/<my-github-id>/appsody-test-project -i index.docker.io/<my-dockerhub-id>/my-java-microprofile-image -c java-microprofile"
  echo "******************************************************"
  exit 1
 }
