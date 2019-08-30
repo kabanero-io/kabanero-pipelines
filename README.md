@@ -5,12 +5,12 @@ The kabanero-pipelines repository contains a collection of Tekton tasks and pipe
 
 # Prereqs
 
-You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components fully deployed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
+You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
 
-Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard
+Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard.
 
-### Create a peristant volume
-The persistant volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
+### Create a persistent volume
+The persistent volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
 
 Login to your cluster.  For example for OKD,
 
@@ -32,7 +32,7 @@ This has to be created in the *kabanero* namespace and associated with the *kaba
 
 # Execute pipelines using Tekton Dashboard Webhook Extension
 
-You can also leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
+You can leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
 
 Visit https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md for instructions on configuring a webhook.
 
@@ -97,7 +97,7 @@ oc apply -f <pipeline.yaml>
 
 Sample PipelineRun files are provided under ./pipelines/manual-pipeline-runs.  Locate the appropriate pipeline-run file and execute it.
 ```
-kubectl apply -f <collection-name>-pipeline-run.yaml
+oc apply -f <collection-name>-pipeline-run.yaml
 ```
 
 # Checking the status of the pipeline run
@@ -106,13 +106,12 @@ You can check the status of the pipeline run from the OKD console, command line,
 
 ### Command line:
 ```
-kubectl get pipelineruns
-kubectl -n kabanero describe pipelinerun.tekton.dev/<pipeline-run-name> 
+oc get pipelineruns
+oc -n kabanero describe pipelinerun.tekton.dev/<pipeline-run-name> 
 ```
-
 You should also see pods for the pipeline runs that you can ```oc describe``` and ```oc logs``` to get more details of your run.
 
-If the pipeline run was successful, you should see a docker image in your docker repo and you should see a pod that's running your application.
+If the pipeline run was successful, you should see a docker image in your docker registry and you should see a pod that's running your application.
 
 ### Tekton dashboard
 
