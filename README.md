@@ -9,6 +9,8 @@ You have the Kabanero foundation installed on an OKD cluster.  It has the necess
 
 Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard.
 
+NOTE: Everything is assumed to be running in `kabanero` namespace.
+
 ### Create a persistent volume
 The persistent volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
 
@@ -27,7 +29,7 @@ oc apply -f pv.yaml -n kabanero
 
 ### Create secrets to pull from git repo and push to docker registry
 
-This has to be created in the *kabanero* namespace and associated with the *kabanero-operator* service account.  The secrets can be created in a few different ways.  Simplest option is to go configure this is the Tekton Dashboard under the secrets section.  You can configure this in the OKD console or you can setup the secret using the OKD CLI. 
+This has to be created in the `kabanero` namespace and associated with the `kabanero-operator` service account.  The secrets can be created in a few different ways.  Simplest option is to go configure this is the Tekton Dashboard under the secrets section as given [here](https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md#create-credentials-git).  You can configure this in the OKD console or you can setup the secret using the OKD CLI. 
 
 
 # Execute pipelines using Tekton Dashboard Webhook Extension
@@ -52,12 +54,12 @@ git clone https://github.com/kabanero-io/kabanero-pipelines
 
 ### Run the script with the appropriate parameters
 ```
-./pipeline-manual-run.sh -r [git_repo of the Appsody project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+./manual-pipeline-run-script.sh -r [git_repo of the Appsody project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
 ```
 
 For example:
 ```
-./pipeline-manual-run.sh -r https://github.com/mygitid/appsody-test-project -i index.docker.io/mydockeid/my-java-microprofile-image -c java-microprofile"
+./manual-pipeline-run-script.sh -r https://github.com/mygitid/appsody-test-project -i index.docker.io/mydockeid/my-java-microprofile-image -c java-microprofile"
 ```
 
 # Manual pipeline execution via CLI
