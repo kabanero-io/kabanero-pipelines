@@ -1,9 +1,13 @@
 ![](https://raw.githubusercontent.com/kabanero-io/kabanero-website/master/src/main/content/img/Kabanero_Logo_Hero.png)
 
-# kabanero-pipelines
-The kabanero-pipelines repository contains a collection of Tekton tasks and pipelines that are intended to work out of the box with the featured Kabanero collections to illustrate a CI/CD work flow.  The pipelines and tasks can be executed manually or via a webhook.  The steps below walk through how to drive a pipeline manually, which is useful for pipeline development, and driving it via a webhook, which is perfect for CI/CD workflows once there is a functional pipeline.
+# Kabanero Pipelines
+The kabanero-pipelines repository contains a collection of Tekton tasks and pipelines that are intended to work out of the box with the featured Kabanero collections to illustrate a CI/CD work flow.  The pipelines and tasks can be executed manually or via a webhook.  The steps below walk through how to drive a pipeline manually (using a script or CLI), which is useful for pipeline development, or driving it via a webhook, which is perfect for CI/CD workflows once there is a functional pipeline.
 
 # Prereqs
+
+You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components fully deployed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
+
+Identify the tekton-dashboard URL after your have completed the installation.  This is useful for a few of the steps documented below.
 
 ### Create a peristant volume
 The persistant volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
@@ -20,13 +24,37 @@ This has to be created in the *kabanero* namespace and associated with the *kaba
 
 # Execute pipelines using Tekton Dashboard Webhook Extension
 
+The pipelines can 
+
 You can also leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
 
 Visit https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md for instructions on configuring a webhook.
 
 # Manual pipeline execution using a script
 
-# Manual pipeline execution
+Login to your cluster.  For example for OKD,
+
+```
+oc login <master node IP>:8443
+```
+
+### Clone the kabanero pipelines repo
+
+```
+git clone https://github.com/kabanero-io/kabanero-pipelines
+```
+
+### Run the script with the appropriate parameters
+```
+./pipeline-manual-run.sh -r [git_repo of the Appsody project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+```
+
+For example:
+```
+./pipeline-manual-run.sh -r https://github.com/mygitid/appsody-test-project -i index.docker.io/mydockeid/my-java-microprofile-image -c java-microprofile"
+```
+
+# Manual pipeline execution via CLI
 
 Login to your cluster.  For example for OKD,
 
@@ -69,12 +97,16 @@ kubectl apply -f <collection-name>-pipeline-run.yaml
 
 You can check the status of the pipeline run from the OKD console, command line, or Tekton dashboard.
 
-Command line:
+### Command line:
 ```
 kubectl get pipelineruns
 kubectl -n kabanero describe pipelinerun.tekton.dev/<pipeline-run-name> 
 ```
 
-Tekton dashboard
+You should also see pods for the pipeline runs that you can ```oc describe``` and ```oc logs``` to get more details of your run.
+
+If the pipeline run was successful, you should see a docker image in your docker repo and you should see a pod that's running your application.
+
+### Tekton dashboard
 
 Login to the Tekton Dashboard and navigate to the Pipeline runs section in the menu on the left hand menu.  Find your pipeline run and click on it to check the status and find logs.
