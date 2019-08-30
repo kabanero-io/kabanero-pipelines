@@ -7,10 +7,18 @@ The kabanero-pipelines repository contains a collection of Tekton tasks and pipe
 
 You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components fully deployed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
 
-Identify the tekton-dashboard URL after your have completed the installation.  This is useful for a few of the steps documented below.
+Identify the Tekton Dashboard URL after your have completed the installation.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard
 
 ### Create a peristant volume
 The persistant volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
+
+Login to your cluster.  For example for OKD,
+
+```
+oc login <master node IP>:8443
+```
+
+Clone the pv.yaml in this repo and apply it.
 
 ```
 cd ./pipelines/common
@@ -23,8 +31,6 @@ This has to be created in the *kabanero* namespace and associated with the *kaba
 
 
 # Execute pipelines using Tekton Dashboard Webhook Extension
-
-The pipelines can 
 
 You can also leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
 
