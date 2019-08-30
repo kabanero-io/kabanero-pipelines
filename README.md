@@ -22,7 +22,7 @@ Clone the pv.yaml in this repo and apply it.
 
 ```
 cd ./pipelines/common
-kubectl apply -f pv.yaml -n kabanero
+oc apply -f pv.yaml -n kabanero
 ```
 
 ### Create secrets to pull from git repo and push to docker registry
@@ -75,21 +75,22 @@ git clone https://github.com/kabanero-io/kabanero-pipelines
 cd kabanero-pipelines
 ```
 
-### Update the pipeline-resources.yaml with github & docker repo info to create the PipelineResources
+### Create PipelineResources
 
-Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
+Update the pipeline-resources.yaml with github & docker repo info to create the PipelineResources.  Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
 
 After updating the file, apply it
 
 ```
-kubectl apply -f <collection-name>-pipeline-resources.yaml
+oc apply -f <collection-name>-pipeline-resources.yaml
 ```
 
-### The featured collections should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually
+### Activate the tasks & pipelines
+The installations will activate the featured collections should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually
 
 ```
-kubectl apply -f <task.yaml>
-kubectl apply -f <pipeline.yaml>
+oc apply -f <task.yaml>
+oc apply -f <pipeline.yaml>
 ```
 
 ### Run the pipeline
