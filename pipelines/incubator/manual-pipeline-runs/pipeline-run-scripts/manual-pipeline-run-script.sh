@@ -7,9 +7,9 @@ set +v
 display_help() {
  echo "Usage"
  echo "******************************************************"
- echo "./pipeline-manual-run.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+ echo "./manual-pipeline-run-script.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
  echo "example: "
- echo "./pipeline-manual-run.sh -r https://github.com/aadeshpa/appsody-test-project -i index.docker.io/aadeshpa/my-java-microprofile-image -c java-microprofile"
+ echo "./manual-pipeline-run-script.sh -r https://github.com/<my-github-id>/appsody-test-project -i index.docker.io/<my-dockerhub-id>/my-java-microprofile-image -c java-microprofile"
  echo "******************************************************"
  exit 1
 }
@@ -61,11 +61,11 @@ DOCKER_IMAGE=$dockerImage
 # Appsody project GitHub repository given as input to the script#
 APP_REPO=$appGitRepo
 
-PIPELINE_RESOURCE_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/pipeline-resources/manual-pipeline-runs/pipeline-resources-template.yaml
+PIPELINE_RESOURCE_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/manual-pipeline-runs/pipeline-resources/pipeline-resources-template.yaml
 pipeline_resource_dockerimage_template_text="index.docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
-PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/pipeline-runs/manual-pipeline-runs/manual-pipeline-run-template.yaml
+PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/manual-pipeline-runs/pipeline-runs/manual-pipeline-run-template.yaml
 pipeline_run_collections_name_template_text="<collection-name>"
 
 echo "Printing all the inputs"
