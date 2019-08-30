@@ -3,7 +3,7 @@ kind: PipelineRun
 metadata:
   name: nodejs-loopback-manual-pipeline-run
 spec:
-  serviceAccount: kabanero-sa
+  serviceAccount: kabanero-operator
   timeout: "1h0m0s"
   pipelineRef:
     name: nodejs-loopback-build-deploy-pipeline 
