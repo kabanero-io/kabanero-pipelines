@@ -3,7 +3,7 @@ kind: PipelineRun
 metadata:
   name: java-mp-manual-pipeline-run
 spec:
-  serviceAccount: kabanero-sa
+  serviceAccount: kabanero-operator
   timeout: "1h0m0s"
   pipelineRef:
     name: java-microprofile-build-deploy-pipeline 
