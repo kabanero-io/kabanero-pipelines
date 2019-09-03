@@ -29,7 +29,7 @@ spec:
           fi
           # Replace the image name
           echo "Replacing image name in app-deploy.yaml ${IMG}"
-          sed -i -e 's/applicationImage: .*$/applicationImage: ${IMG}/g' ${APP_DEPLOY_YAML}
+          sed -i -e 's#applicationImage: .*$#applicationImage: '"$IMG"'#g' ${APP_DEPLOY_YAML}
       env:
         - name: REPO
           value: ${inputs.params.repository-name}
