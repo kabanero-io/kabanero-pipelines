@@ -11,7 +11,7 @@ spec:
         type: image
     params:
       - name: repository-name
-        default: java-microprofile
+        default: ${collection-name}
       - name: app-deploy-file-name
         default: app-deploy.yaml
   steps:
