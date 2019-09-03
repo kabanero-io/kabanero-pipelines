@@ -16,7 +16,7 @@ spec:
         default: app-deploy.yaml
   steps:
     - name: modify-app-deploy-yaml-step
-      image: appsody/appsody-docker
+      image: registry.access.redhat.com/ubi8/ubi:latest
       command: ['/bin/bash']
       args:
         - -cex
