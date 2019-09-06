@@ -1,7 +1,8 @@
+#Kabanero! on activate substitute CollectionId for text 'CollectionId'
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: java-microprofile-deploy-task
+  name: CollectionId-deploy-task
 spec:
   inputs:
     resources:
@@ -11,7 +12,7 @@ spec:
         type: image
     params:
       - name: repository-name
-        default: java-microprofile
+        default: CollectionId
       - name: app-deploy-file-name
         default: app-deploy.yaml
   steps:
