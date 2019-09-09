@@ -55,7 +55,7 @@ git clone https://github.com/kabanero-io/kabanero-pipelines
 
 ### Run the script with the appropriate parameters
 ```
-cd ./pipelines/incubator/manual-pipeline-runs/pipeline-run-scripts
+cd ./pipelines/incubator/manual-pipeline-runs/
 
 ./manual-pipeline-run-script.sh -r [git_repo of the Appsody project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
 ```
