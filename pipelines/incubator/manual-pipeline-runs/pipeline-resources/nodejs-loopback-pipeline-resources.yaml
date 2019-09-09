@@ -18,6 +18,6 @@ items:
     - name: revision
       value: master
     - name: url
-      value: https://github.com/kvijai82/nodejs-loopback
+      value: https://github.com/kvijai82/kabanero-nodejs-loopback
     type: git
 kind: List
