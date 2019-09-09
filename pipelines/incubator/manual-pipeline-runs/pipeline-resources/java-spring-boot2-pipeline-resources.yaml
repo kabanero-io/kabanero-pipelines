@@ -18,6 +18,6 @@ items:
     - name: revision
       value: master
     - name: url
-      value: https://github.com/kvijai82/appsody-java-spring-boot2
+      value: https://github.com/kvijai82/kabanero-java-spring-boot2
     type: git
 kind: List
