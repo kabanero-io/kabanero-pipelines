@@ -18,6 +18,6 @@ items:
     - name: revision
       value: master
     - name: url
-      value: https://github.com/kvijai82/nodejs-express
+      value: https://github.com/kvijai82/kabanero-nodejs-express
     type: git
 kind: List
