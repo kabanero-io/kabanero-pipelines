@@ -18,6 +18,6 @@ items:
     - name: revision
       value: master
     - name: url
-      value: https://github.com/kvijai82/java-microprofile
+      value: https://github.com/kvijai82/kabanero-java-microprofile
     type: git
 kind: List
