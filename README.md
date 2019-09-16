@@ -5,7 +5,7 @@ The kabanero-pipelines repository contains a collection of Tekton tasks and pipe
 
 # Prereqs
 
-You have the Kabanero foundation installed on an OKD cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
+You have the Kabanero foundation installed on Red Hat Origin Community Distribution of Kubernetes (OKD) or OpenShift Container Platform (OCP) cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
 
 Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard.
 
