@@ -24,9 +24,8 @@ if [ -z "$stack" ]; then
 else
    
    # declare $( kubectl describe collections | awk '{if ($1 ~ "stack:"){printf "image="$2}}')
-
    # Simple grep of the entire metadata stack for all the active collection image,
-   # might to refine or extend 
+   # might want to refine or extend 
    kubectl describe collections | grep -q $stack 
    if [ $? -eq 0 ]; then
       # The Kabanero collection was found as active
