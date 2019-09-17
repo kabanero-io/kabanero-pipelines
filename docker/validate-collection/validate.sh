@@ -19,7 +19,7 @@ fi
 declare $( awk '{if ($1 ~ "stack:"){printf "stack="$2}}'  $appsody_config )
 
 if [ -z "$stack" ]; then
-   echo "$appsody_config does not contain a stack: definition. Unable to validate of the collection is active."
+   echo "$appsody_config does not contain a stack: definition. Unable to validate if the collection is active."
    exit 1
 else
    
