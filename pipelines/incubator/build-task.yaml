@@ -42,7 +42,7 @@ spec:
         - "/validate.sh"
       env:
         - name: gitsource
-          value: git-sourcea
+          value: git-source
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
