@@ -98,7 +98,7 @@ git clone https://github.com/kabanero-io/kabanero-pipelines.git
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
 for COLLECTION in "${ACTIVE_COLLECTIONS[@]}"
 do
-   echo "Starting pipeline run for collection: "$COLLECTION
+   echo "Starting pipeline run for collectin: "$COLLECTION
    command="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r https://github.com/smcclem/$COLLECTION  -i index.docker.io/smcclem/$COLLECTION -c $COLLECTION"
    echo $command
    eval $command 
