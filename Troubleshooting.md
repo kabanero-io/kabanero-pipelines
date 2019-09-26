@@ -48,6 +48,6 @@
      ```
    
      NOTE: You should see two persistent volumes as shown above, `registry-volume` is by default present for you and `manual-pipeline-run-pvc` 
-     is supposed to be applied as manual pre-requisite step before running any pipelinerun.
+     is supposed to be applied as manual pre-requisite step before running any pipelinerun. Follow steps [here](https://github.com/kabanero-io/kabanero-pipelines/blob/master/README.md#create-a-persistent-volume)
     
    
