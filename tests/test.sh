@@ -36,7 +36,7 @@ function wait_for_ready_pod() {
   POD=$1
   timeout_period=$2
   echo "pod: "$POD
-  retry 10 "oc get pod $POD && [[ \$(oc get pod -n $POD --no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
+  retry 10 "oc get pod $POD && [[ \$(oc get pipeline $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
   return $?
 }
 
@@ -80,10 +80,10 @@ function retry() {
             sleep $(( attempt_num++ ))
         fi
     done
+    
+    echo "Found! "$cmd
+    return 0
 }
-
-
-
 
 
 # process oc get collections  output to get an array of active collections
@@ -98,27 +98,48 @@ git clone https://github.com/kabanero-io/kabanero-pipelines.git
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
 for COLLECTION in "${ACTIVE_COLLECTIONS[@]}"
 do
-   echo "Starting pipeline run for collectin: "$COLLECTION
+   echo "Starting pipeline run for collection: "$COLLECTION
    command="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r https://github.com/smcclem/$COLLECTION  -i index.docker.io/smcclem/$COLLECTION -c $COLLECTION"
    echo $command
    eval $command 
    sleep 30
    # Get the pipeline pod id   
-   POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
-   declare $( echo $POD_ID| awk '{printf "POD="$1}')
+   #POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
+   #declare $( echo $POD_ID| awk '{printf "POD="$1}')
+   
+   # retry 10 "oc get pod $POD && [[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run"--no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
+
+   # Wait for the pipeline run to start  
+   retry 10 "oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1"
+   # handle error
+   
+   # Wait for pipeline run to finish
+   retry 100 "[[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
+   SUCCEEDED=$( oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
+     
+   
    # Wait for the pod to start
-   wait_for_ready_pod $POD 100 10
-   # Wait for the build to complete successfully
-   wait_for_log_message $POD "\[INFO\] BUILD SUCCESS" 0
-   # If the build didn't finish in time, collect the logs
-   if [ $? -ne 0]; then
+   #echo "Wait for: "$POD
+   #wait_for_ready_pod $POD 100 10
+   #echo "Wait for: "$POD
+   #wait_for_log_message $POD "\[INFO\] BUILD SUCCESS" 0
+   
+     
+   if [ "$SUCCEEDED" != "True" ]; then
+      POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
+      declare $( echo $POD_ID| awk '{printf "POD="$1}')
       LOG_DIR=$COLLECTION/$(date +%Y-%m-%d-%H-%M-%S)
       mkdir -p $LOG_DIR
-      echo "Build for collection: "$COLLECTION" failed."
-      echo "Storing logs: " $LOG_DIR
       oc logs $POD --all-containers > $LOG_DIR/$POD.log          
-   fi 
-   # Remove the pipeline runs and application
+   fi  
+
+  
+
    oc delete pipelineruns --all
-   oc delete appsodyapplications  --all   
+   oc delete appsodyapplications  --all
+
+   
+   # oc delete pipelineruns --all
+   # oc delete  appsodyapplications  --all
+   
 done
