@@ -2,6 +2,7 @@
 
 # Parameters
 # [github url] [docker url]
+# ./test.sh https://github.com/smcclem index.docker.io/smcclem
 
 
 # Prerequisites
@@ -23,10 +24,10 @@
 # nodejs-express      4d
 # nodejs-loopback     4d
 
-# Retries a COMMAND on failure.
+# Retries a command on failure.
 # $1 - the max number of attempts
 # $2 - the amount of time to sleep between attempts
-# $2... - the COMMAND to run
+# $2... - the command to run
 function retry() {
     local -r -i max_attempts="$1"
     local -r -i sleep_time="$2"
@@ -39,7 +40,7 @@ function retry() {
         then
             return $rc
         else
-            echo "attempt: "$attempt_num
+            echo "attempt "$attempt_num" of "$max_attempts" for command: "$cmd
             sleep $sleep_time
             ((attempt_num++))
         fi
@@ -48,12 +49,12 @@ function retry() {
 }
 
 
-GIT_URL=$1
-DOCKER_URL=$2
+git_url=$1
+docker_url=$2
 
 # Process oc get collections  output to get an array of active collections
-declare -a ACTIVE_COLLECTIONS
-eval $( printf "ACTIVE_COLLECTIONS=("; oc get collections | awk '{if ($1 !~ "NAME"){printf " "$1" "}'}; printf ")"  )
+declare -a active_collections
+eval $( printf "active_collections=("; oc get collections | awk '{if ($1 !~ "NAME"){printf " "$1" "}'}; printf ")"  )
 
 # Remove any previously running applications and pipelines
 oc delete pipelineruns --all
@@ -67,41 +68,40 @@ git clone https://github.com/kabanero-io/kabanero-pipelines.git
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
 
 
-for COLLECTION in "${ACTIVE_COLLECTIONS[@]}"
+for collection in "${active_collections[@]}"
 do
    echo
-   echo "Starting pipeline run for collection: "$COLLECTION
+   echo "Starting pipeline run for collection: "$collection
    echo
-   COMMAND="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r $GIT_URL/$COLLECTION  -i $DOCKER_URL/$COLLECTION -c $COLLECTION"
-   echo $COMMAND
-   eval $COMMAND 
+   command="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/$collection -c $collection"
+   echo $command
+   eval $command 
    
-   # Sample COMMANDs used during test
-   # retry 10 "oc get pod $POD && [[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run"--no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
-   # retry 1000 "oc logs $POD --all-containers | grep -q '$MESSAGE'"
+   # Sample commands used during test
+   # retry 10 "oc get pod $pod && [[ \$(oc get pipelinerun $collection"-manual-pipeline-run"--no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
+   # retry 1000 "oc logs $pod --all-containers | grep -q '$MESSAGE'"
   
-
    # Wait for the pipeline run to start  
-   retry 10 6 "oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1"
+   retry 10 6 "oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1"
    # Handle error if the pod doesn't start
    
    # Wait for pipeline run to finish
-   retry 60 10  "[[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
-   SUCCEEDED=$( oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
+   retry 60 10  "[[ \$(oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
+   succeeded=$( oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
           
-   if [ "$SUCCEEDED" != "True" ]; then
+   if [ "$succeeded" != "True" ]; then
       # Piplerun failed, collect logs
-      POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
-      declare $( echo $POD_ID| awk '{printf "POD="$1}')
-      LOG_DIR=$COLLECTION/$(date +%Y-%m-%d-%H-%M-%S)
-      mkdir -p $LOG_DIR
+      pod_id=$( oc get pods | grep $collection.*build-task)
+      declare $( echo $pod_id| awk '{printf "pod="$1}')
+      log_dir=$collection/$(date +%Y-%m-%d-%H-%M-%S)
+      mkdir -p $log_dir
       echo
-      echo "Pipline run for collection "$COLLECTION" failed. Collecting logs to: "$LOG_DIR
+      echo "Pipline run for collection "$collection" failed. Collecting logs to: "$log_dir
       echo
-      oc logs $POD --all-containers > $LOG_DIR/$POD.log 
+      oc logs $pod --all-containers > $log_dir/$pod.log 
     else  
       echo
-      echo "Pipline run for collection "$COLLECTION" succeeded."    
+      echo "Pipline run for collection "$collection" succeeded."    
       echo         
    fi  
 
@@ -110,4 +110,3 @@ do
    oc delete appsodyapplications  --all
    
 done
-
