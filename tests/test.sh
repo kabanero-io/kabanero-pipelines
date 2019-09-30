@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Parameters
+# [github url] [docker url]
+
+
 # Prerequisites
 # -------------
 # 1. This script needs to be directly run on a OKD/OpenShift env that already had the Kabanero operator installed. 
@@ -9,9 +13,6 @@
 # 4. The manual pipeline instructions have been followed. That means a pv.yaml and secret.yaml have been applied
 #    to create a persistent volume and docker secret for my-docker-secret
 
-# Notes:
-# ------
-# 1. This script should possibly be pulled via curl from github (or github cloned) each time it is run. 
 
 # oc get collections formatting:
 
@@ -22,124 +23,91 @@
 # nodejs-express      4d
 # nodejs-loopback     4d
 
-
-# Wait until a pod is Running,Complete or Terminating
-# wait_for_ready [pod] [timeout] <sleepTime>
-# <sleepTime> is optional
-function wait_for_ready_pod() {
-  if [ -z "$1" ] || [ -z "$2" ]; then
-      echo "Usage ERROR for function: wait_for_ready_pods [namespace] [timeout] <sleepTime>"
-      [ -z "$1" ] && echo "Missing [namespace]"
-      [ -z "$2" ] && echo "Missing [timeout]"
-      exit 1
-  fi
-  POD=$1
-  timeout_period=$2
-  echo "pod: "$POD
-  retry 10 "oc get pod $POD && [[ \$(oc get pipeline $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
-  return $?
-}
-
-function wait_for_log_message() {
-  if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-      echo "Usage ERROR for function: wait_for_log_message [pod] [message] [timeout] <sleepTime>"
-      [ -z "$1" ] && echo "Missing [pod]"
-      [ -z "$2" ] && echo "Missing [message]"
-      [ -z "$3" ] && echo "Missing [timeout]"
-      exit 1
-  fi
-  MESSAGE=$2
-  POD=$1
-  echo "MESSAGE: "$MESSAGE
-  retry 1000 "oc logs $POD --all-containers | grep -q '$MESSAGE'"
-  return $?
- }
-
-
-
-
-# Retries a command on failure.
+# Retries a COMMAND on failure.
 # $1 - the max number of attempts
-# $2... - the command to run
+# $2 - the amount of time to sleep between attempts
+# $2... - the COMMAND to run
 function retry() {
-    local -r -i max_attempts="$1"; shift
-    local -r cmd="$@"
+    local -r -i max_attempts="$1"
+    local -r -i sleep_time="$2"
+    local -r cmd="$3"
     local -i attempt_num=1
-    
-    echo "command: "$cmd
-
     until eval $cmd
     do
         rc=$?
         if (( attempt_num == max_attempts ))
         then
-            echo "Attempt $attempt_num failed and there are no more attempts left!"
             return $rc
         else
-            echo "Attempt $attempt_num failed! Trying again in $attempt_num seconds..."
-            sleep $(( attempt_num++ ))
+            echo "attempt: "$attempt_num
+            sleep $sleep_time
+            ((attempt_num++))
         fi
     done
-    
-    echo "Found! "$cmd
     return 0
 }
 
 
-# process oc get collections  output to get an array of active collections
+GIT_URL=$1
+DOCKER_URL=$2
+
+# Process oc get collections  output to get an array of active collections
 declare -a ACTIVE_COLLECTIONS
 eval $( printf "ACTIVE_COLLECTIONS=("; oc get collections | awk '{if ($1 !~ "NAME"){printf " "$1" "}'}; printf ")"  )
 
-rm -rf kabanero-pipelines/
-git clone https://github.com/kabanero-io/kabanero-pipelines.git
+# Remove any previously running applications and pipelines
+oc delete pipelineruns --all
+oc delete appsodyapplications --all
 
+#  Clone scripts
+rm -rf ./kabanero-pipelines/
+git clone https://github.com/kabanero-io/kabanero-pipelines.git
 
 #./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
+
+
 for COLLECTION in "${ACTIVE_COLLECTIONS[@]}"
 do
+   echo
    echo "Starting pipeline run for collection: "$COLLECTION
-   command="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r https://github.com/smcclem/$COLLECTION  -i index.docker.io/smcclem/$COLLECTION -c $COLLECTION"
-   echo $command
-   eval $command 
-   sleep 30
-   # Get the pipeline pod id   
-   #POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
-   #declare $( echo $POD_ID| awk '{printf "POD="$1}')
+   echo
+   COMMAND="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r $GIT_URL/$COLLECTION  -i $DOCKER_URL/$COLLECTION -c $COLLECTION"
+   echo $COMMAND
+   eval $COMMAND 
    
+   # Sample COMMANDs used during test
    # retry 10 "oc get pod $POD && [[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run"--no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
+   # retry 1000 "oc logs $POD --all-containers | grep -q '$MESSAGE'"
+  
 
    # Wait for the pipeline run to start  
-   retry 10 "oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1"
-   # handle error
+   retry 10 6 "oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1"
+   # Handle error if the pod doesn't start
    
    # Wait for pipeline run to finish
-   retry 100 "[[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
+   retry 60 10  "[[ \$(oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
    SUCCEEDED=$( oc get pipelinerun $COLLECTION"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
-     
-   
-   # Wait for the pod to start
-   #echo "Wait for: "$POD
-   #wait_for_ready_pod $POD 100 10
-   #echo "Wait for: "$POD
-   #wait_for_log_message $POD "\[INFO\] BUILD SUCCESS" 0
-   
-     
+          
    if [ "$SUCCEEDED" != "True" ]; then
+      # Piplerun failed, collect logs
       POD_ID=$( oc get pods | grep $COLLECTION.*build-task)
       declare $( echo $POD_ID| awk '{printf "POD="$1}')
       LOG_DIR=$COLLECTION/$(date +%Y-%m-%d-%H-%M-%S)
       mkdir -p $LOG_DIR
-      oc logs $POD --all-containers > $LOG_DIR/$POD.log          
+      echo
+      echo "Pipline run for collection "$COLLECTION" failed. Collecting logs to: "$LOG_DIR
+      echo
+      oc logs $POD --all-containers > $LOG_DIR/$POD.log 
+    else  
+      echo
+      echo "Pipline run for collection "$COLLECTION" succeeded."    
+      echo         
    fi  
 
-  
-
+   # Delete the pipeline run and application
    oc delete pipelineruns --all
    oc delete appsodyapplications  --all
-
-   
-   # oc delete pipelineruns --all
-   # oc delete  appsodyapplications  --all
    
 done
+
