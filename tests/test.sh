@@ -48,7 +48,6 @@ function retry() {
     return 0
 }
 
-
 git_url=$1
 docker_url=$2
 
@@ -66,7 +65,6 @@ git clone https://github.com/kabanero-io/kabanero-pipelines.git
 
 #./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
-
 
 for collection in "${active_collections[@]}"
 do
@@ -96,12 +94,12 @@ do
       log_dir=$collection/$(date +%Y-%m-%d-%H-%M-%S)
       mkdir -p $log_dir
       echo
-      echo "Pipline run for collection "$collection" failed. Collecting logs to: "$log_dir
+      echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir
       echo
       oc logs $pod --all-containers > $log_dir/$pod.log 
     else  
       echo
-      echo "Pipline run for collection "$collection" succeeded."    
+      echo "Pipeline run for collection "$collection" succeeded."    
       echo         
    fi  
 
