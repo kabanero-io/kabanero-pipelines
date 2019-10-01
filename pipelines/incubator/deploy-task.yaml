@@ -33,15 +33,15 @@ spec:
           sed -i -e 's#applicationImage: .*$#applicationImage: '"$IMG"'#g' ${APP_DEPLOY_YAML}
       env:
         - name: REPO
-          value: ${inputs.params.repository-name}
+          value: $(inputs.params.repository-name)
         - name: IMG
-          value: ${inputs.resources.docker-image.url}
+          value: $(inputs.resources.docker-image.url)
         - name: YAMLFILE
-          value: ${inputs.params.app-deploy-file-name}
+          value: $(inputs.params.app-deploy-file-name)
     - name: deploy-image
       image: lachlanevenson/k8s-kubectl
       command: ['/bin/sh']
       args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f|xargs kubectl apply -f']
       env:
         - name: YAMLFILE
-          value: ${inputs.params.app-deploy-file-name}
+          value: $(inputs.params.app-deploy-file-name)
