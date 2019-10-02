@@ -37,7 +37,7 @@ const (
 // a future optimization is to replace this with a proper
 // flag that receives the name of the pipeline objects
 var (
-	nomenClature = strings.ReplaceAll(os.Args[1], ".", "_")
+	nomenClature = "test"
 	debug        = false
 )
 
@@ -118,6 +118,9 @@ func main() {
 	if count == 3 {
 		debug = true
 	}
+
+	nomenClature = strings.ReplaceAll(os.Args[1], ".", "_")
+
 	// Get the file data
 	filename := os.Args[1]
 	rawdata, err := ioutil.ReadFile(filename)
