@@ -65,4 +65,4 @@ Step failed
 
 ```
  - Throubleshooting steps
-  - Keep in mind that When running your Tekton Pipelines, if you see a `fatal: could not read Username for *GitHub  repository*: No such device or address` message in your failing Task logs, this indicates there is no `tekton.dev/git`  annotated GitHub secret in use by the ServiceAccount that launched this PipelineRun. It is advised to create one through the Tekton Dashboard. The annotation will be added and the specified ServiceAccount will be patched.
+  - When running your Tekton Pipelines, if you see a `fatal: could not read Username for *GitHub  repository*: No such device or address` message in your failing Task logs, this indicates there is no `tekton.dev/git`  annotated GitHub secret in use by the ServiceAccount that launched this PipelineRun. You need to create one via the Tekton Dashboard. The annotation will be added and the specified ServiceAccount will be patched.
