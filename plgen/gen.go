@@ -41,8 +41,8 @@ type PipelineResourceParams struct {
 }
 
 type PipelineResourceSpec struct {
-	Type   string                 `yaml:"type"`
-	Params PipelineResourceParams `yaml:"params"`
+	Type   string                   `yaml:"type"`
+	Params []PipelineResourceParams `yaml:"params"`
 }
 
 type Items struct {
@@ -103,11 +103,11 @@ type RoleRef struct {
 }
 
 type RoleBinding struct {
-	APIVersion string   `yaml:"apiVersion"`
-	Kind       string   `yaml:"kind"`
-	Metadata   Metadata `yaml:"metadata"`
-	Subjects   Subjects `yaml:"subjects"`
-	RoleRef    RoleRef  `yaml:"roleRef"`
+	APIVersion string     `yaml:"apiVersion"`
+	Kind       string     `yaml:"kind"`
+	Metadata   Metadata   `yaml:"metadata"`
+	Subjects   []Subjects `yaml:"subjects"`
+	RoleRef    RoleRef    `yaml:"roleRef"`
 }
 
 type Metadata struct {
@@ -190,7 +190,7 @@ type Mount struct {
 }
 
 type Cmd struct {
-	Command string   `yaml:"command"`
+	Command string   `yaml:"commandXXXX"`
 	Args    []string `yaml:"args,omitempty"`
 }
 
@@ -205,10 +205,12 @@ type Volumes struct {
 }
 
 type Steps struct {
-	Name  string  `yaml:"name"`
-	Image string  `yaml:"image"`
-	Env   []Env   `yaml:"env,omitempty"`
-	Cmd   []Cmd   `yaml:"command,omitempty"`
+	Name    string   `yaml:"name"`
+	Image   string   `yaml:"image"`
+	Env     []Env    `yaml:"env,omitempty"`
+	Command []string `yaml:"command`
+	Args    []string `yaml:"args,omitempty"`
+	//	Cmd   []Cmd   `yaml:"command,omitempty"`
 	Mount []Mount `yaml:"volumeMounts,omitempty"`
 	Arg   []Arg   `yaml:"arg,omitempty"`
 }
@@ -222,7 +224,7 @@ type PipelineTask struct {
 
 type PipelineSpec struct {
 	Resources []Resources `yaml:"resources,omitempty"`
-	Tasks     Tasks       `yaml:"tasks"`
+	Tasks     [1]Tasks    `yaml:"tasks,omitempty"`
 }
 
 type Pipeline struct {
@@ -262,8 +264,8 @@ func GenPipeline(plg PlGen) {
 	pl.APIVersion = apiVersion
 	pl.Kind = "Pipeline"
 	pl.Meta.Name = nomenClature + "-pipeline"
-	pl.Spec.Tasks.Name = nomenClature
-	pl.Spec.Tasks.Taskref.Name = nomenClature + "-task"
+	pl.Spec.Tasks[0].Name = nomenClature
+	pl.Spec.Tasks[0].Taskref.Name = nomenClature + "-task"
 	Marshal(&pl)
 }
 
@@ -283,7 +285,7 @@ func GenPipelineRun(plg PlGen) {
 func GenPipelineTask(plg PlGen) {
 	plt := plg.plt
 	plt.APIVersion = apiVersion
-	plt.Kind = "Pipeline"
+	plt.Kind = "Task"
 	plt.Meta.Name = nomenClature + "-task"
 	Marshal(&plt)
 }
@@ -310,8 +312,10 @@ func TransformRun(line string, step *Steps) {
 		}
 	}
 	value := strings.Join(v, " ")
-	step.Cmd = append(step.Cmd, Cmd{"[\"/bin/bash\"]", []string{"-c", value}})
-	debuglog("processing RUN", u, "as", step.Cmd)
+	step.Command = []string{"/bin/bash"}
+	step.Args = append(step.Args, "-c", value)
+	step.Arg = []Arg{}
+	debuglog("processing RUN", u, "as", step.Command)
 }
 
 // Transform a USER verb.
@@ -338,7 +342,7 @@ func TransformRole(line string, plg *PlGen) {
 	rolebinding.APIVersion = "rbac.authorization.k8s.io/v1"
 	rolebinding.Kind = "ClusterRoleBinding"
 	rolebinding.Metadata.Name = rolebindingname
-	rolebinding.Subjects = sub
+	rolebinding.Subjects = []Subjects{sub}
 	rolebinding.RoleRef = roleref
 
 	plg.plr.Spec.ServiceAccount = role.Metadata.Name
@@ -357,6 +361,21 @@ func TransformMount(step *Steps, name string, val string, plg *PlGen) {
 	volumes := Volumes{Name: mname, HostPath: HostPath{Path: name, Type: "unknown"}}
 	plg.pspecs.Volumes = append(plg.pspecs.Volumes, volumes)
 	debuglog("processing MOUNT", mname, "as", volumes, "and", step.Mount)
+}
+
+func guessItemType(item string) string {
+	if strings.Contains(item, "github.com") {
+		if strings.Contains(item, "/pull/") {
+			return "pullRequest"
+		}
+		return "git"
+	} else if strings.Contains(item, "docker.io") ||
+		strings.Contains(item, "gcr.io") ||
+		strings.Contains(item, "registry.access.redhat.com") {
+		return "image"
+	}
+	// TODO: detect storage, cloud event, cluster patterns.
+	return "unknown"
 }
 
 // Main translation loop. As we are not mandating any specific order
@@ -383,21 +402,17 @@ func transformSteps(plg *PlGen, stepstr string, index int) {
 				if strings.HasPrefix(key, "ARG") {
 					itemName := "resource" + strconv.Itoa(rindex)
 					rindex++
-					itemType := "image"
-					if strings.HasPrefix(val, "http") {
-						itemType = "url"
-					}
-					if strings.Contains(val, "github.com") {
-						itemType = "git"
-					}
+					itemType := guessItemType(val)
 					plg.pr.Items = append(plg.pr.Items, Items{
 						APIVersion: "tekton.dev/v1alpha1",
 						Kind:       "PipelineResource",
 						Metadata:   Metadata{Name: name},
 						Spec: PipelineResourceSpec{
-							Params: PipelineResourceParams{
-								Name:  itemName,
-								Value: val,
+							Params: []PipelineResourceParams{
+								{
+									Name:  itemName,
+									Value: val,
+								},
 							},
 							Type: itemType,
 						},
@@ -406,10 +421,10 @@ func transformSteps(plg *PlGen, stepstr string, index int) {
 					plg.pl.Spec.Resources = append(plg.pl.Spec.Resources, Resources{Name: name, Type: itemType})
 					if key == "ARGIN" || key == "ARG" {
 						plg.pspecs.Inputs.Resources = append(plg.pspecs.Inputs.Resources, Resources{Name: name, Type: itemType})
-						plg.pl.Spec.Tasks.Resources.Inputs = append(plg.pl.Spec.Tasks.Resources.Inputs, PipelineInputs{Name: name, Resource: itemType})
+						plg.pl.Spec.Tasks[0].Resources.Inputs = append(plg.pl.Spec.Tasks[0].Resources.Inputs, PipelineInputs{Name: name, Resource: name})
 					} else {
 						plg.pspecs.Outputs.Resources = append(plg.pspecs.Outputs.Resources, Resources{Name: name, Type: itemType})
-						plg.pl.Spec.Tasks.Resources.Outputs = append(plg.pl.Spec.Tasks.Resources.Outputs, PipelineOutputs{Name: name, Resource: itemType})
+						plg.pl.Spec.Tasks[0].Resources.Outputs = append(plg.pl.Spec.Tasks[0].Resources.Outputs, PipelineOutputs{Name: name, Resource: name})
 					}
 					step.Arg = append(step.Arg, Arg{Name: name, Value: val})
 					debuglog("processing ARG", step.Arg)

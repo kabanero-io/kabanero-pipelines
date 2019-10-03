@@ -119,7 +119,7 @@ func main() {
 		debug = true
 	}
 
-	nomenClature = strings.ReplaceAll(os.Args[1], ".", "_")
+	nomenClature = strings.ReplaceAll(os.Args[1], ".", "-")
 
 	// Get the file data
 	filename := os.Args[1]
