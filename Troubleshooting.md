@@ -51,8 +51,12 @@
      NOTE: You should see two persistent volumes as shown above, `registry-volume` is by default present for you and `manual-pipeline-run-pvc` 
      is supposed to be applied as manual pre-requisite step before running any pipelinerun. Follow steps [here](https://github.com/kabanero-io/kabanero-pipelines/blob/master/README.md#create-a-persistent-volume)
     
-2. I get the below error while running the building step of any kabanero pipeline if I forget to do below three things as pre-requisite
-```
+2. I see the error below while running the building step of a Kabanero Pipeline.The cause of this could be either of the 3 situations mentioned below before running the pipelines
+
+    - The user has created a secret for github but not patched that secret onto the service account used by the PipelineRun or TaskRun in question, or
+    - The user has not created a secret for github, but has tried to patch the relevant service account, or
+    - The user has not created a secret for github and has not patched the relevant service account
+
 Error Snippet:
 {"level":"warn","ts":1568057939.538,"logger":"fallback-logger","caller":"logging/config.go:69","msg":"Fetch GitHub commit ID from kodata failed: \"KO_DATA_PATH\" does not exist or is empty"}
 {"level":"error","ts":1568057939.8545134,"logger":"fallback-logger","caller":"git/git.go:35","msg":"Error running git [fetch --depth=1 --recurse-submodules=yes origin fc7fe7fb8d87779dd5419b509dd2c91e63ba87b7]: exit status 128\nfatal: could not read Username for 'https://github.ibm.com': No such device or address\n","stacktrace":"github.com/tektoncd/pipeline/pkg/git.run\n\t/go/src/github.com/tektoncd/pipeline/pkg/git/git.go:35\ngithub.com/tektoncd/pipeline/pkg/git.Fetch\n\t/go/src/github.com/tektoncd/pipeline/pkg/git/git.go:88\nmain.main\n\t/go/src/github.com/tektoncd/pipeline/cmd/git-init/main.go:36\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:198"}
