@@ -2,7 +2,7 @@
 
 1. My pipelinerun failed in Tekton Dashboard with `Unable to fetch log`, what is wrong?
    
-  - Throubleshooting steps
+  Throubleshooting steps
    - Check whether your pipelinerun failed due to `unbound PersistentVolumeClaims`
    
    Command:
@@ -35,7 +35,7 @@
    
    ```
    
-  - If you see above message you have to check if persistent volume is applied for pipelinerun
+   - If you see above message you have to check if persistent volume is applied for pipelinerun
    
     Command:
     `kubectl get PersistentVolume`
@@ -67,6 +67,6 @@ Error Snippet:
 
 Step failed
 
-```
- - Throubleshooting steps
+
+ Throubleshooting steps
   - When running your Tekton Pipelines, if you see a `fatal: could not read Username for *GitHub  repository*: No such device or address` message in your failing Task logs, this indicates there is no `tekton.dev/git`  annotated GitHub secret in use by the ServiceAccount that launched this PipelineRun. You need to create one via the Tekton Dashboard. The annotation will be added and the specified ServiceAccount will be patched.
