@@ -39,6 +39,7 @@ const (
 var (
 	nomenClature = "test"
 	debug        = false
+	rindex       = 0
 )
 
 // Valid verbs at the moment. When adding one, all
@@ -46,13 +47,15 @@ var (
 // for it in the switch case of transformSteps.
 var verbs = []string{"ARG", "ARGIN", "ARGOUT", "FROM", "RUN", "LABEL", "ENV", "MOUNT", "USER"}
 
-func replace(arg []Arg, variable string) string {
-	if arg == nil {
+func replace(steps *[]Steps, variable string) string {
+	if steps == nil {
 		return variable
 	}
-	for _, e := range arg {
-		if "$"+e.Name == variable {
-			return e.Value
+	for _, step := range *steps {
+		for _, e := range step.Arg {
+			if "$"+e.Name == variable {
+				return e.Value
+			}
 		}
 	}
 	return variable
@@ -125,7 +128,7 @@ func main() {
 	filename := os.Args[1]
 	rawdata, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("error: ", err)
+		fmt.Println("error reading input file:", err)
 		os.Exit(1)
 	}
 	debuglog("reading", filename)
@@ -158,8 +161,6 @@ func main() {
 	GenRoleBinding(plg)
 	GenResource(plg)
 	GenPipeline(plg)
-	plg.pspecs.Steps = plg.psteps
-	plg.plt.Spec = plg.pspecs
 	GenPipelineTask(plg)
 	GenPipelineRun(plg)
 }

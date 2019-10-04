@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-var rindex int = 0
-
+// Master structure that represents the entire pipeline
 type PlGen struct {
-	pr          PR
+	pr          PipelineResource
 	pspecs      Spec
 	psteps      []Steps
 	plt         PipelineTask
@@ -35,16 +35,24 @@ type PlGen struct {
 	plr         PipelineRun
 }
 
+// Used by PipelineResource,
+type Metadata struct {
+	Name string `yaml:"name"`
+}
+
+// Used by PipelineResource, through PipelineResource->Items->PipelineResourceSpec
 type PipelineResourceParams struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
 }
 
+// Used by PipelineResource, through PipelineResource->Items
 type PipelineResourceSpec struct {
 	Type   string                   `yaml:"type"`
 	Params []PipelineResourceParams `yaml:"params"`
 }
 
+// Used by PipelineResource, top level to PipelineResource
 type Items struct {
 	APIVersion string               `yaml:"apiVersion"`
 	Kind       string               `yaml:"kind"`
@@ -52,169 +60,163 @@ type Items struct {
 	Spec       PipelineResourceSpec `yaml:"spec"`
 }
 
-type PipelineRunResourceRef struct {
-	Name string `yaml:"name"`
+// Used by PlGen, top level.
+type PipelineResource struct {
+	APIVersion string  `yaml:"apiVersion"`
+	Items      []Items `yaml:"items"`
+	Kind       string  `yaml:"kind"`
 }
 
-type PipelineRunResources struct {
-	Name        string                 `yaml:"name"`
-	ResourceRef PipelineRunResourceRef `string:"resourceRef"`
-}
-
-type PipelineRunTrigger struct {
-	Type string `yaml:"type"`
-}
-
-type PipelineRunPipelineRef struct {
-	Name string `yaml:"name"`
-}
-
-type PipelineRunSpec struct {
-	ServiceAccount string                 `yaml:"serviceAccount"`
-	Timeout        string                 `yaml:"timeout"`
-	PipelineRef    PipelineRunPipelineRef `yaml:"pipelineRef"`
-	Trigger        PipelineRunTrigger     `yaml:"trigger"`
-	Resources      []PipelineRunResources `yaml:"resources,omitempty"`
-}
-
-type PipelineRun struct {
-	APIVersion string          `yaml:"apiVersion"`
-	Kind       string          `yaml:"kind"`
-	Metadata   Metadata        `yaml:"metadata"`
-	Spec       PipelineRunSpec `yaml:"spec"`
-}
-
+// Used by PlGen, top level
 type Role struct {
 	APIVersion string   `yaml:"apiVersion"`
 	Kind       string   `yaml:"kind"`
 	Metadata   Metadata `yaml:"metadata"`
 }
 
+// Used by RoleBinding, through Rolebinding
 type Subjects struct {
 	Kind      string `yaml:"kind"`
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
 }
 
+// Used by RoleBinding, through Rolebinding
 type RoleRef struct {
 	Kind     string `yaml:"kind"`
 	Name     string `yaml:"name"`
 	APIGroup string `yaml:"apiGroup"`
 }
 
+// Used by PlGen, top level
 type RoleBinding struct {
 	APIVersion string     `yaml:"apiVersion"`
-	Kind       string     `yaml:"kind"`
-	Metadata   Metadata   `yaml:"metadata"`
-	Subjects   []Subjects `yaml:"subjects"`
-	RoleRef    RoleRef    `yaml:"roleRef"`
+	Kind       string     `yaml:"kind,omitempty"`
+	Metadata   Metadata   `yaml:"metadata,omitempty"`
+	Subjects   []Subjects `yaml:"subjects,omitempty"`
+	RoleRef    RoleRef    `yaml:"roleRef,omitempty"`
 }
 
-type Metadata struct {
-	Name string `yaml:"name"`
-}
-
-type TaskRef struct {
-	Name string `yaml:"name"`
-	Kind string `yaml:"kind"`
-}
-
-type PipelineInputs struct {
-	Name     string `yaml:"name"`
-	Resource string `yaml:"resource"`
-}
-
-type PipelineOutputs struct {
-	Name     string `yaml:"name"`
-	Resource string `yaml:"resource"`
-}
-
-type PipelineResources struct {
-	Inputs  []PipelineInputs  `yaml:"inputs,omitempty"`
-	Outputs []PipelineOutputs `yaml:"outputs,omitempty"`
-}
-
-type Tasks struct {
-	Name      string            `yaml:"name"`
-	Taskref   TaskRef           `yaml:"taskRef"`
-	Resources PipelineResources `yaml:"resources"`
-	Params    []Params          `yaml:"params,omitempty"`
-}
-
-type PR struct {
-	APIVersion string  `yaml:"apiVersion"`
-	Items      []Items `yaml:"items"`
-	Kind       string  `yaml:"kind"`
-}
-
+// Used by Pipeline, through Pipeline->PipelineSpec->Tasks
 type Params struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"default"`
 }
 
+// Used by Pipeline, through Pipeline->PipelineSpec->Tasks->PipelineResources
+type PipelineInputs struct {
+	Name     string `yaml:"name"`
+	Resource string `yaml:"resource,omitempty"`
+}
+
+// Used by Pipeline, through Pipeline->PipelineSpec->Tasks->PipelineResources
+type PipelineOutputs struct {
+	Name     string `yaml:"name"`
+	Resource string `yaml:"resource,omitempty"`
+}
+
+// Used by Pipeline, through Pipeline->PipelineSpec->Tasks
+type PipelineResources struct {
+	Inputs  []PipelineInputs  `yaml:"inputs,omitempty"`
+	Outputs []PipelineOutputs `yaml:"outputs,omitempty"`
+}
+
+// Used by Pipeline, through Pipeline->PipelineSpec->Tasks
+type TaskRef struct {
+	Name string `yaml:"name"`
+	Kind string `yaml:"kind"`
+}
+
+// Used by Pipeline, through Pipeline->PipelineSpec
 type Resources struct {
 	Name string `yaml:"name"`
 	Type string `yaml:"type"`
 }
 
-type Inputs struct {
+// Used by Pipeline, through Pipeline->PipelineSpec
+type Tasks struct {
+	Name      string            `yaml:"name,omitempty"`
+	Taskref   TaskRef           `yaml:"taskRef,omitempty"`
+	Resources PipelineResources `yaml:"resources,omitempty"`
+	Params    []Params          `yaml:"params,omitempty"`
+}
+
+// Used by Pipeline, through Pipeline
+type PipelineSpec struct {
 	Resources []Resources `yaml:"resources,omitempty"`
-	Params    []Params    `yaml:"params,omitempty"`
+	Tasks     [1]Tasks    `yaml:"tasks,omitempty"`
 }
 
-type Outputs struct {
-	Resources []Resources `yaml:"resources,omitempty"`
-	Params    []Params    `yaml:"params,omitempty"`
+// Used by PlGen, top level
+type Pipeline struct {
+	APIVersion string       `yaml:"apiVersion"`
+	Kind       string       `yaml:"kind"`
+	Meta       Metadata     `yaml:"metadata"`
+	Spec       PipelineSpec `yaml:"spec"`
 }
 
-type Spec struct {
-	Inputs  Inputs    `yaml:"inputs"`
-	Outputs Outputs   `yaml:"outputs"`
-	Steps   []Steps   `yaml:"steps,omitempty"`
-	Volumes []Volumes `yaml:"volumes,omitempty"`
-}
-
-type Env struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
-}
-
+// Used by PipelineTask, through PipelineTask->Spec->Steps
 type Arg struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
 }
 
+// Used by PipelineTask, through PipelineTask->Spec->Steps
 type Mount struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"mountPath"`
 }
 
-type Cmd struct {
-	Command string   `yaml:"commandXXXX"`
-	Args    []string `yaml:"args,omitempty"`
+// Used by PipelineTask, through PipelineTask->Spec->Steps
+type Env struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
 }
 
+// Used by PipelineTask, through PipelineTask->Spec->Volumes
 type HostPath struct {
 	Path string `yaml:"path"`
 	Type string `yaml:"type"`
 }
 
+// Used by PipelineTask, through PipelineTask->Spec
 type Volumes struct {
 	Name     string   `yaml:"name"`
 	HostPath HostPath `yaml:"hostPath"`
 }
 
+// Used by PipelineTask, through PipelineTask->Spec
 type Steps struct {
 	Name    string   `yaml:"name"`
 	Image   string   `yaml:"image"`
 	Env     []Env    `yaml:"env,omitempty"`
-	Command []string `yaml:"command`
+	Command []string `yaml:"command,omitempty`
 	Args    []string `yaml:"args,omitempty"`
-	//	Cmd   []Cmd   `yaml:"command,omitempty"`
-	Mount []Mount `yaml:"volumeMounts,omitempty"`
-	Arg   []Arg   `yaml:"arg,omitempty"`
+	Mount   []Mount  `yaml:"volumeMounts,omitempty"`
+	Arg     []Arg    `yaml:"arg,omitempty"`
 }
 
+// Used by PipelineTask, through PipelineTask->Spec
+type Inputs struct {
+	Resources []Resources `yaml:"resources,omitempty"`
+	Params    []Params    `yaml:"params,omitempty"`
+}
+
+// Used by PipelineTask, through PipelineTask->Spec
+type Outputs struct {
+	Resources []Resources `yaml:"resources,omitempty"`
+	Params    []Params    `yaml:"params,omitempty"`
+}
+
+// Used by PipelineTask, through PipelineTask
+type Spec struct {
+	Inputs  Inputs    `yaml:"inputs,omitempty"`
+	Outputs Outputs   `yaml:"outputs,omitempty"`
+	Steps   []Steps   `yaml:"steps,omitempty"`
+	Volumes []Volumes `yaml:"volumes,omitempty"`
+}
+
+// Used by PlGen, top level
 type PipelineTask struct {
 	APIVersion string   `yaml:"apiVersion"`
 	Kind       string   `yaml:"kind"`
@@ -222,16 +224,36 @@ type PipelineTask struct {
 	Spec       Spec     `yaml:"spec"`
 }
 
-type PipelineSpec struct {
-	Resources []Resources `yaml:"resources,omitempty"`
-	Tasks     [1]Tasks    `yaml:"tasks,omitempty"`
+// Used by PipelineRun, through PipelineRun->PipelineRunSpec->PipelineRunResources
+type PipelineRunResourceRef struct {
+	Name string `yaml:"name"`
 }
 
-type Pipeline struct {
-	APIVersion string       `yaml:"apiVersion"`
-	Kind       string       `yaml:"kind"`
-	Meta       Metadata     `yaml:"metadata"`
-	Spec       PipelineSpec `yaml:"spec"`
+// Used by PipelineRun, through PipelineRun->PipelineRunSpec
+type PipelineRunResources struct {
+	Name        string                 `yaml:"name"`
+	ResourceRef PipelineRunResourceRef `string:"resourceRef"`
+}
+
+// Used by PipelineRun, through PipelineRun->PipelineRunSpec
+type PipelineRunPipelineRef struct {
+	Name string `yaml:"name"`
+}
+
+// Used by PipelineRun, through PipelineRun
+type PipelineRunSpec struct {
+	ServiceAccount string                 `yaml:"serviceAccount"`
+	Timeout        string                 `yaml:"timeout"`
+	PipelineRef    PipelineRunPipelineRef `yaml:"pipelineRef"`
+	Resources      []PipelineRunResources `yaml:"resources,omitempty"`
+}
+
+// Used by PlGen, top level
+type PipelineRun struct {
+	APIVersion string          `yaml:"apiVersion"`
+	Kind       string          `yaml:"kind"`
+	Metadata   Metadata        `yaml:"metadata"`
+	Spec       PipelineRunSpec `yaml:"spec"`
 }
 
 // Marshals a GO struct into YAML definition
@@ -266,6 +288,7 @@ func GenPipeline(plg PlGen) {
 	pl.Meta.Name = nomenClature + "-pipeline"
 	pl.Spec.Tasks[0].Name = nomenClature
 	pl.Spec.Tasks[0].Taskref.Name = nomenClature + "-task"
+	pl.Spec.Tasks[0].Taskref.Kind = "Task"
 	Marshal(&pl)
 }
 
@@ -277,12 +300,27 @@ func GenPipelineRun(plg PlGen) {
 	plr.Metadata.Name = nomenClature + "-pipeline-run"
 	plr.Spec.Timeout = pipelineTimeout
 	plr.Spec.PipelineRef.Name = nomenClature + "-pipeline"
-	plr.Spec.Trigger.Type = pipelineTrigger
 	Marshal(&plr)
+}
+
+// Arg was used for internal purposes:
+// spreading the input/output,
+// as a cache for dollar variable lookup
+// remove this before pipeline generation
+// use normal for loop as opposed to iterator
+// to effect the change in the actual structure
+func removeArgs(plg *PlGen) {
+	steps := plg.pspecs.Steps
+	for i := 0; i < len(steps); i++ {
+		steps[i].Arg = []Arg{}
+	}
 }
 
 // Generates a pipeline task
 func GenPipelineTask(plg PlGen) {
+	plg.pspecs.Steps = plg.psteps
+	plg.plt.Spec = plg.pspecs
+	removeArgs(&plg)
 	plt := plg.plt
 	plt.APIVersion = apiVersion
 	plt.Kind = "Task"
@@ -300,22 +338,25 @@ func GenResource(plg PlGen) {
 
 // Transform a RUN step. Basically:
 // 1. Transalate any $ variables
+// search in the old steps, and the current one
 // 2. suffix the commands under /bin/bash
-func TransformRun(line string, step *Steps) {
-	var v []string
+func TransformRun(line string, step *Steps, steps *[]Steps) {
 	u := strings.Split(line, " ")[1:]
+	var v = strings.Join(u, " ")
 	for _, old := range u {
-		if strings.HasPrefix(old, "$") {
-			v = append(v, replace(step.Arg, old))
-		} else {
-			v = append(v, old)
+		re := regexp.MustCompile("\\$([^\\s]+)")
+		words := re.FindAllString(old, -1)
+		for _, token := range words {
+			v = strings.ReplaceAll(v, token, replace(steps, token))
+			current := []Steps{
+				*step,
+			}
+			v = strings.ReplaceAll(v, token, replace(&current, token))
 		}
 	}
-	value := strings.Join(v, " ")
 	step.Command = []string{"/bin/bash"}
-	step.Args = append(step.Args, "-c", value)
-	step.Arg = []Arg{}
-	debuglog("processing RUN", u, "as", step.Command)
+	step.Args = append(step.Args, "-c", v)
+	debuglog("processing RUN", v, "as", step.Command)
 }
 
 // Transform a USER verb.
@@ -348,6 +389,7 @@ func TransformRole(line string, plg *PlGen) {
 	plg.plr.Spec.ServiceAccount = role.Metadata.Name
 	plg.role = role
 	plg.rolebinding = rolebinding
+
 	debuglog("processing USER", name, "as ClusterRoleBinding")
 }
 
@@ -361,6 +403,55 @@ func TransformMount(step *Steps, name string, val string, plg *PlGen) {
 	volumes := Volumes{Name: mname, HostPath: HostPath{Path: name, Type: "unknown"}}
 	plg.pspecs.Volumes = append(plg.pspecs.Volumes, volumes)
 	debuglog("processing MOUNT", mname, "as", volumes, "and", step.Mount)
+}
+
+// Transform an ENV verb
+// Also record the key values in ARG verb, for future $ translations
+func TransformEnv(step *Steps, name string, val string, plg *PlGen) {
+	step.Env = append(step.Env, Env{Name: name, Value: val})
+	step.Arg = append(step.Arg, Arg{Name: name, Value: val})
+	debuglog("processing ENV", step.Env)
+}
+
+// Transform ARG, ARGIN, ARGOUT verbs
+// 1. From the value, try to `decipher` its resource type:
+// ref: https://github.com/tektoncd/pipeline/blob/master/docs/resources.md
+// 2. compose headers
+// 3. create an artifical name for the resource
+// 4. bind the resource as input or output appropriately
+// 5. later, this will be looked up for $ variable translations.
+func TransformArg(step *Steps, name string, key string, val string, plg *PlGen) {
+	itemName := "resource" + strconv.Itoa(rindex)
+	rindex++
+	itemType := guessItemType(val)
+	params := []PipelineResourceParams{{Name: itemName, Value: val}}
+	plg.pr.Items = append(plg.pr.Items, Items{
+		APIVersion: "tekton.dev/v1alpha1",
+		Kind:       "PipelineResource",
+		Metadata:   Metadata{Name: name},
+		Spec:       PipelineResourceSpec{Params: params, Type: itemType}})
+	plrrr := PipelineRunResourceRef{Name: name}
+	plrr := PipelineRunResources{Name: name, ResourceRef: plrrr}
+	plg.plr.Spec.Resources = append(plg.plr.Spec.Resources, plrr)
+	r := Resources{Name: name, Type: itemType}
+	plg.pl.Spec.Resources = append(plg.pl.Spec.Resources, r)
+	if key == "ARGIN" || key == "ARG" {
+		r := Resources{Name: name, Type: itemType}
+		t := append(plg.pspecs.Inputs.Resources, r)
+		plg.pspecs.Inputs.Resources = t
+		pi := PipelineInputs{Name: name, Resource: name}
+		pq := append(plg.pl.Spec.Tasks[0].Resources.Inputs, pi)
+		plg.pl.Spec.Tasks[0].Resources.Inputs = pq
+	} else {
+		r := Resources{Name: name, Type: itemType}
+		s := append(plg.pspecs.Outputs.Resources, r)
+		plg.pspecs.Outputs.Resources = s
+		plo := PipelineOutputs{Name: name, Resource: name}
+		plp := append(plg.pl.Spec.Tasks[0].Resources.Outputs, plo)
+		plg.pl.Spec.Tasks[0].Resources.Outputs = plp
+	}
+	step.Arg = append(step.Arg, Arg{Name: name, Value: val})
+	debuglog("processing ARG", step.Arg)
 }
 
 func guessItemType(item string) string {
@@ -400,46 +491,19 @@ func transformSteps(plg *PlGen, stepstr string, index int) {
 				name := strings.Split(value, "=")[0]
 				val := strings.Split(value, "=")[1]
 				if strings.HasPrefix(key, "ARG") {
-					itemName := "resource" + strconv.Itoa(rindex)
-					rindex++
-					itemType := guessItemType(val)
-					plg.pr.Items = append(plg.pr.Items, Items{
-						APIVersion: "tekton.dev/v1alpha1",
-						Kind:       "PipelineResource",
-						Metadata:   Metadata{Name: name},
-						Spec: PipelineResourceSpec{
-							Params: []PipelineResourceParams{
-								{
-									Name:  itemName,
-									Value: val,
-								},
-							},
-							Type: itemType,
-						},
-					})
-					plg.plr.Spec.Resources = append(plg.plr.Spec.Resources, PipelineRunResources{Name: name, ResourceRef: PipelineRunResourceRef{Name: name}})
-					plg.pl.Spec.Resources = append(plg.pl.Spec.Resources, Resources{Name: name, Type: itemType})
-					if key == "ARGIN" || key == "ARG" {
-						plg.pspecs.Inputs.Resources = append(plg.pspecs.Inputs.Resources, Resources{Name: name, Type: itemType})
-						plg.pl.Spec.Tasks[0].Resources.Inputs = append(plg.pl.Spec.Tasks[0].Resources.Inputs, PipelineInputs{Name: name, Resource: name})
-					} else {
-						plg.pspecs.Outputs.Resources = append(plg.pspecs.Outputs.Resources, Resources{Name: name, Type: itemType})
-						plg.pl.Spec.Tasks[0].Resources.Outputs = append(plg.pl.Spec.Tasks[0].Resources.Outputs, PipelineOutputs{Name: name, Resource: name})
-					}
-					step.Arg = append(step.Arg, Arg{Name: name, Value: val})
-					debuglog("processing ARG", step.Arg)
+					TransformArg(&step, name, key, val, plg)
 				} else if key == "ENV" {
-					step.Env = append(step.Env, Env{Name: name, Value: val})
-					debuglog("processing ENV", step.Env)
+					TransformEnv(&step, name, val, plg)
 				} else {
 					TransformMount(&step, name, val, plg)
 				}
 			case "RUN":
-				TransformRun(line, &step)
+				TransformRun(line, &step, &plg.psteps)
 			case "USER":
 				TransformRole(line, plg)
 			default:
 				fmt.Println("bad pipeline verb:", key)
+				os.Exit(1)
 			}
 		}
 	}
