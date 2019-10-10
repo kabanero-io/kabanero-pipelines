@@ -80,11 +80,11 @@ do
    # retry 1000 "oc logs $pod --all-containers | grep -q '$MESSAGE'"
   
    # Wait for the pipeline run to start  
-   retry 10 6 "oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1"
+   retry 20 6 "oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1"
    # Handle error if the pod doesn't start
    
    # Wait for pipeline run to finish
-   retry 60 10  "[[ \$(oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
+   retry 120 10  "[[ \$(oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf \$2 }' | grep -c -v -E '(True|False)') -eq 0 ]]"
    succeeded=$( oc get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
           
    if [ "$succeeded" != "True" ]; then
@@ -94,7 +94,7 @@ do
       log_dir=$collection/$(date +%Y-%m-%d-%H-%M-%S)
       mkdir -p $log_dir
       echo
-      echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir
+      echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir", succeeded: "$succeeded
       echo
       oc logs $pod --all-containers > $log_dir/$pod.log 
     else  
@@ -102,9 +102,7 @@ do
       echo "Pipeline run for collection "$collection" succeeded."    
       echo         
    fi  
-
    # Delete the pipeline run and application
    oc delete pipelineruns --all
    oc delete appsodyapplications  --all
-   
 done
