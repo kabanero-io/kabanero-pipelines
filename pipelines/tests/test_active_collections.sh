@@ -89,17 +89,14 @@ do
           
    if [ "$succeeded" != "True" ]; then
       # Piplerun failed, collect logs
-      build_pod_id=$( oc get pods | grep $collection.*build-task)
-      deploy_pod_id=$( oc get pods | grep $collection.*deploy-task)
-      declare $( echo $build_pod_id | awk '{printf "build_pod="$1}')
-      declare $( echo $deploy_pod_id | awk '{printf "deploy_pod="$1}')
+      pod_id=$( oc get pods | grep $collection.*build-task)
+      declare $( echo $pod_id| awk '{printf "pod="$1}')
       log_dir=$collection/$(date +%Y-%m-%d-%H-%M-%S)
       mkdir -p $log_dir
       echo
       echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir", succeeded: "$succeeded
       echo
-      oc logs $pod --all-containers > $log_dir/$build_pod.log 
-      oc logs $pod --all-containers > $log_dir/$deploy_pod.log 
+      oc logs $pod --all-containers > $log_dir/$pod.log 
     else  
       echo
       echo "Pipeline run for collection "$collection" succeeded."    
