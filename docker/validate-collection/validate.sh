@@ -29,6 +29,7 @@ else
    kubectl describe collections | grep -q $stack 
    if [ $? -eq 0 ]; then
       # The Kabanero collection was found as active
+      echo "The Kabanero collection contained in "$stack" is active on this system and can be built."
       exit 0 
    else
       echo "The Kabanero collection contained in "$stack" is not active on this system and cannot be built."
