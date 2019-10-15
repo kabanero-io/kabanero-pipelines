@@ -39,7 +39,7 @@ spec:
         - name: YAMLFILE
           value: $(inputs.params.app-deploy-file-name)
     - name: deploy-image
-      image: lachlanevenson/k8s-kubectl
+      image: kvijai/ubi-kubectl
       command: ['/bin/sh']
       args: ['-c', 'find /workspace/git-source -name ${YAMLFILE} -type f|xargs kubectl apply -f']
       env:
