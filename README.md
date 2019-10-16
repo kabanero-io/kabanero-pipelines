@@ -64,6 +64,10 @@ This has to be created in the `kabanero` namespace and associated with the servi
 Alternatively you can configure this in the OKD console or you can setup the secret using the OKD CLI. 
 
 
+Below is a video that walks through setting up the prereqs to run the pipelines:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/MfS05SU9yIM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Pipeline execution using Tekton Dashboard Webhook Extension
 
 You can leverage the Tekton Dashboard Webhook Extensions to drive the pipelines automatically by configuring webhooks to github.  This enables the CI/CD flow by automatically building and deploying the applications with code updates in your git repo.  Events such as commits or pull requests in a github repo can be setup to automatically trigger pipeline runs.
