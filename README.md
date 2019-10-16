@@ -64,9 +64,7 @@ This has to be created in the `kabanero` namespace and associated with the servi
 Alternatively you can configure this in the OKD console or you can setup the secret using the OKD CLI. 
 
 
-Below is a video that walks through setting up the prereqs to run the pipelines:
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/MfS05SU9yIM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+The following video that walks through setting up the prereqs to run the pipelines: https://youtu.be/MfS05SU9yIM
 
 ## Pipeline execution using Tekton Dashboard Webhook Extension
 
@@ -143,6 +141,8 @@ Sample PipelineRun files are provided under ./pipelines/manual-pipeline-runs.  L
 ```
 oc apply -f <collection-name>-pipeline-run.yaml
 ```
+
+The following video walks through the steps above that show how to manually run the pipelines: https://youtu.be/643sJczM9bU
 
 # Checking the status of the pipeline run
 
