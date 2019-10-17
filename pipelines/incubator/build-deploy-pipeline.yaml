@@ -4,29 +4,38 @@ kind: Pipeline
 metadata:
   name: CollectionId-build-deploy-pipeline
 spec:
+  params:
+  - name: event-headers
+    type: string
+    description: "The event headers"
   resources:
-    - name: git-source
-      type: git
-    - name: docker-image
-      type: image
+  - name: git-source
+    type: git
+  - name: docker-image
+    type: image
   tasks:
-    - name: build-task
-      taskRef:
-        name: CollectionId-build-task
-      resources:
-        inputs:
-        - name: git-source
-          resource: git-source
-        outputs:
-        - name: docker-image
-          resource: docker-image
-    - name: deploy-task
-      taskRef:
-        name: CollectionId-deploy-task
-      runAfter: [build-task]
-      resources:
-        inputs:
-        - name: git-source
-          resource: git-source
-        - name: docker-image
-          resource: docker-image
+  - name: build-task
+    taskRef:
+      name: CollectionId-build-task
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      outputs:
+      - name: docker-image
+        resource: docker-image
+  - name: deploy-task
+    conditions:
+    - conditionRef: deployment-condition
+      params:
+      - name: event-headers
+        value: $(params.event-headers)
+    taskRef:
+      name: CollectionId-deploy-task
+    runAfter: [build-task]
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      - name: docker-image
+        resource: docker-image

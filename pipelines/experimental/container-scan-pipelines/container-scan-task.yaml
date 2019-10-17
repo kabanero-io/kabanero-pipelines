@@ -25,7 +25,7 @@ spec:
         privileged: true
       image: <image_containing_scanner>
       command: ['/bin/bash']
-      args: ['-c', '${inputs.params.command-with-flags} ${inputs.resources.docker-image.url} ${inputs.params.scanner-arguments}']
+      args: ['-c', '$(inputs.params.command-with-flags) $(inputs.resources.docker-image.url) $(inputs.params.scanner-arguments)']
       volumeMounts:
         - name: docker-socket
           mountPath: /var/run/docker.sock
