@@ -70,3 +70,14 @@ Step failed
 
  Throubleshooting steps
   - When running your Tekton Pipelines, if you see a `fatal: could not read Username for *GitHub  repository*: No such device or address` message in your failing Task logs, this indicates there is no `tekton.dev/git`  annotated GitHub secret in use by the ServiceAccount that launched this PipelineRun. You need to create one via the Tekton Dashboard. The annotation will be added and the specified ServiceAccount will be patched.
+  
+ 3. Unable to load PipelineRun details: CouldntGetResource
+
+Error message:
+PipelineRun kabanero/web-mon-1571161246 can't be Run; it tries to bind Resources that don't exist: Couldn't retrieve PipelineResource: couldn't retrieve referenced input PipelineResource "web-mon-git-source-1571161246": pipelineresource.tekton.dev "web-mon-git-source-1571161246" not found
+
+Cause:
+This is caused due to a timing issue in Tekton where the PipelineRun triggered by the webhook gets kicked off before the git-source resource is fully created.  Bug open in Tekton for this:  https://github.com/tektoncd/experimental/issues/240.
+
+Workaround:
+Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with the first PipelineRun triggered by the webhook.
