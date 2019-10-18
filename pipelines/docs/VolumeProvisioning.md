@@ -1,12 +1,6 @@
 # Volume Provisioning for Kabanero Pipelineruns
 
-Tekton pipelines require a configured volume that is used by the framework to share data across tasks. The build task, which uses Buildah, also requires a volume mount. The minimum required volume size is five Gi.
-
-## Static Persistent Volumes
-
-If you are using an unmanaged cluster, you can set up a persistent volume to be used by the pipelinerun. A simple persistent volume definition is provided in the following example. Update the path and other values in your `pv.yaml` file provided in this repository, to suit your requirements. 
-
-For instance, the following example is configured for local storage. You might edit this file to configure it for NFS, the standard configuration in a production environment.
+Tekton pipelines require a configured volume that is used by the framework to share data across tasks. The build task, which uses Buildah, also requires a volume mount. The pipelinerun should be creating a [Persistent Volume Claim PVC](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#introduction) with a requirement for 5 Gi persistent volume.
 
 1. Log in to your cluster. For example, for OKD
 
@@ -20,7 +14,13 @@ oc login <master node IP>:8443
 git clone https://github.com/kabanero-io/kabanero-pipelines
 ```
 
-3. Clone the `pv.yaml` file in this repository and apply it.
+## Static Persistent Volumes
+
+The example `pv.yaml` shows how to configure a [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#introduction) using a `hostPath` type on the Persistent Volume. This is shown just for the ease of creating the simplest Persistent Volume to enable a pipeline run. It is not the recommended approach to use hostPath in anything beyond a test environment.Update the path and other values in your `pv.yaml` file provided in this repository, to suit your requirements. Please find all the different types of Persistent Volumes [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes)
+
+For instance, the following example is configured for local storage. You might edit this file to configure it for NFS, the standard configuration in a production environment.
+
+- Clone the `pv.yaml` file in this repository and apply it.
 
 ```
 cd ./pipelines/common
