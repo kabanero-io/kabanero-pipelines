@@ -35,7 +35,8 @@ Your persistent volume must be configured in accordance with your cloud provider
 
 1. For running the Kabanero pipelines you should have your [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) to be configured to provision atleast 5Gi of persistent volume dynamically.
 
-2. The storage class used for dynamic provisioning should have the reclaiming policy of `Recycle` if you have the requirement to run multiple pipelines and that too frequently. Usually if the `default` [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) is configured in the public cloud the reclaiming policy is `delete`. To know more about the reclaiming policy go [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#reclaiming)
+2. The storage class used for dynamic provisioning should have the reclaiming policy of `Recycle` if you have the requirement to run multiple pipelines and that too frequently. 
+Usually if the `default` [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) is configured in the public cloud the reclaiming policy is `delete` and in that case your pipelines might create a new volume for each run, which increases your pipeline run execution time. To know more about the reclaiming policy go [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#reclaiming)
 
 #### Feature Coming soon for Dynamic provisioning using customized [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction)
 
