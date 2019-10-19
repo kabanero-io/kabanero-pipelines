@@ -1,17 +1,17 @@
 ![](https://raw.githubusercontent.com/kabanero-io/kabanero-website/master/src/main/content/img/Kabanero_Logo_Hero.png)
 
 # Kabanero Pipelines
-The kabanero-pipelines repository contains a collection of Tekton tasks and pipelines that are intended to work out of the box with the featured Kabanero collections to illustrate a CI/CD work flow.  The pipelines and tasks can be executed manually or via a webhook.  The steps below walk through how to drive a pipeline manually (using a script or CLI), which is useful for pipeline development, or driving it via a webhook, which is perfect for CI/CD workflows once there is a functional pipeline.
+The kabanero-pipelines repository contains a collection of Tekton tasks and pipelines that are intended to work out of the box with the featured Kabanero collections to illustrate a CI/CD work flow.  The pipelines and tasks can be executed manually or via a webhook.  The steps below walk one through on how to drive a pipeline manually (using a script or a CLI), which is useful for pipeline development, or by driving it via a webhook, which is perfect for CI/CD workflows once there is a functional pipeline.
 
-# Prereqs
+# Prerequisites
 
-You have the Kabanero foundation installed on Red Hat Origin Community Distribution of Kubernetes (OKD) or OpenShift Container Platform (OCP) cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
+You need to have the Kabanero foundation installed on Red Hat Origin Community Distribution of Kubernetes (OKD) or OpenShift Container Platform (OCP) cluster.  It has the necessary Kabanero, Isito, Knative, and Tekton components installed.  Please refer to https://github.com/kabanero-io/kabanero-foundation for more details on installing the Kabanero foundation.
 
 Identify the Tekton Dashboard URL after your have completed the installation.  You can login to your OKD cluster and run ```oc get routes``` to find this or check in the OKD console.  This is useful for a few of the steps documented below.  You can find more details about the dashboard at https://github.com/tektoncd/dashboard.
 
 NOTE: Everything is assumed to be running in `kabanero` namespace.
 
-### Create a persistent volume
+### Create a persistent volume (pv)
 The persistent volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
 
 Login to your cluster.  For example for OKD,
@@ -29,8 +29,8 @@ oc apply -f pv.yaml -n kabanero
 
 ### Create secrets to pull from git repo and push to docker registry
 
-This has to be created in the `kabanero` namespace and associated with the `kabanero-operator` service account.  The secrets can be created in a few different ways.  Simplest option is to go configure this is the Tekton Dashboard under the secrets section as given [here](https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md#create-credentials-git).  
-Alternatively you can configure this in the OKD console or you can setup the secret using the OKD CLI. 
+This has to be created in the `kabanero` namespace and associated with the `kabanero-operator` service account.  The secrets can be created in a few different ways.  The simplest option is to go configure this with the Tekton Dashboard under the secrets section as illustrated [here](https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md#create-credentials-git).  
+Alternatively you can configure this in the OKD console or you can setup the secrets using the OKD CLI. 
 
 
 # Execute pipelines using Tekton Dashboard Webhook Extension
@@ -82,7 +82,7 @@ cd kabanero-pipelines
 
 ### Create PipelineResources
 
-Update the pipeline-resources.yaml with github & docker repo info to create the PipelineResources.  Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
+Update the pipeline-resources.yaml with github and docker repo info to create the PipelineResources.  Sample pipeline-resources.yaml files are provided for each featured collection under the manual-pipeline-runs dir.  Update the docker-image URL.  You can use the sample github repo provided or update it to point to your github repo.
 
 After updating the file, apply it
 
@@ -90,8 +90,8 @@ After updating the file, apply it
 oc apply -f <collection-name>-pipeline-resources.yaml
 ```
 
-### Activate the tasks & pipelines
-The installations will activate the featured collections should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually
+### Activate the tasks and pipelines
+The installations will activate the featured collections and should have activated the tasks and pipelines already.  If you are creating a new task or pipeline, activate them manually.
 
 ```
 oc apply -f <task.yaml>
