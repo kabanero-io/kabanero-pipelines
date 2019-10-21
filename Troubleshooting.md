@@ -53,7 +53,8 @@
  
  ********
  
-  **1.1** My pipelinerun is shown started, however the first step itself is shown with loading symbol in tekton dashboard and the pod of build task is not started.
+   
+   **1.1** My pipelinerun is shown started, however the first step itself is shown with loading symbol in tekton dashboard and the pod of build task is not started.
  
  Problem:
  
