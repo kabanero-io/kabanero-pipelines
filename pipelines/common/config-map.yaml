@@ -1,0 +1,8 @@
+kind: ConfigMap 
+apiVersion: v1 
+metadata:
+  name: ibmc-block-configmap 
+data:
+# Configuration values can be set as key-value properties
+  size: 20Gi
+  storageClassName: ibmc-block-custom-storageclass

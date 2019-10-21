@@ -38,12 +38,23 @@ Your persistent volume must be configured in accordance with your cloud provider
 2. The storage class used for dynamic provisioning should have the reclaiming policy of `Recycle` if you have the requirement to run multiple pipelines and that too frequently. 
 Usually if the `default` [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) is configured in the public cloud the reclaiming policy is `delete` and in that case your pipelines might create a new volume for each run, which increases your pipeline run execution time. To know more about the reclaiming policy go [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#reclaiming)
 
-#### Feature Coming soon for Dynamic provisioning using customized [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction)
+#### Feature Coming soon from Tekton to provision persistent volume based on customized [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction)
 
-1. Create your customized [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) for dynamic provisioning for the persistent volumes.
+1. Create your customized [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/#introduction) for persistent volume provisioning.
 
-example: Example showing the `storageclass` template
+example: Use the storage class template for provisioning the persistent volume in IBM Cloud with Openshift.
 
-2. Tell the Tekton to use your storage class via [configMap](https://github.com/tektoncd/pipeline/blob/master/docs/install.md#how-are-resources-shared-between-tasks), so when the kabanero pipelines are run, tekton can use your custom storage class to provision dynamic persistent volumes.
+```
+cd ../common
+oc create -f ibmcloud-ibmc-block.yaml
+```
 
-example : Example showing the `configMap` template
+2. Tell the Tekton to use your storage class via [configMap](https://github.com/tektoncd/pipeline/blob/master/docs/install.md#how-are-resources-shared-between-tasks), so when the kabanero pipelines are run, tekton can use your custom storage class to provision persistent volumes.
+
+example : Use the configmap as per below command and apply it.
+
+```
+cd ../common
+oc create -f config-map.yaml
+
+```

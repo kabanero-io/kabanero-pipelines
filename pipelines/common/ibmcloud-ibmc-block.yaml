@@ -1,0 +1,20 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ibmc-block-custom-storageclass
+  labels:
+    app: ibmcloud-block-storage-plugin
+    chart: ibmcloud-block-storage-plugin-1.5.0
+    heritage: Tiller
+    release: release-name
+  resourceVersion: "1609"
+parameters:
+  billingType: hourly
+  classVersion: "2"
+  fsType: ext4
+  iopsPerGB: "2"
+  sizeRange: '[20-12000]Gi'
+  type: Endurance
+provisioner: ibm.io/ibmc-block
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
