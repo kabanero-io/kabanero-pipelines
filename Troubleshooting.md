@@ -1,7 +1,15 @@
 # Kabanero Pipelines Troubleshooting Guide
 
 **1.** My pipelinerun failed in Tekton Dashboard with `Unable to fetch log`, what is wrong?
+ 
+  Problem:
+ 
+   - The pipelinerun never starts, and after one hour gives the above error.
    
+  Reason:
+   
+   - The persistent volume `pv.yaml` is not applied so no persistent volume present.
+ 
   Throubleshooting steps
    - Check whether your pipelinerun failed due to `unbound PersistentVolumeClaims`
    
