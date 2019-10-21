@@ -1,6 +1,6 @@
 # Kabanero Pipelines Troubleshooting Guide
 
-1. My pipelinerun failed in Tekton Dashboard with `Unable to fetch log`, what is wrong?
+**1.** My pipelinerun failed in Tekton Dashboard with `Unable to fetch log`, what is wrong?
    
   Throubleshooting steps
    - Check whether your pipelinerun failed due to `unbound PersistentVolumeClaims`
@@ -50,8 +50,10 @@
    
   NOTE: You should see two persistent volumes as shown above, `registry-volume` is by default present for you and `manual-pipeline-run-pvc` 
      is supposed to be applied as manual pre-requisite step before running any pipelinerun. Follow steps [here](https://github.com/kabanero-io/kabanero-pipelines/blob/master/README.md#create-a-persistent-volume)
-     
-  1.1 My pipelinerun is shown started, however the first step itself is shown with loading symbol in tekton dashboard and the pod of build task is not started.
+ 
+ ********
+ 
+  **1.1** My pipelinerun is shown started, however the first step itself is shown with loading symbol in tekton dashboard and the pod of build task is not started.
  
  Problem:
  
@@ -83,8 +85,9 @@
    - Try to find if the default storage class provisons Persistent Volumes when PVC(persistent volume claim) request comes in.
      If not, then try to either tweak the storage class to provison persistent volume when PVC comes in, else delete the default storage class so the PVC when comes in it will bound to the `pv.yaml` PV which was statically created as per the assumptions.
     
-    
-2. I see the error below while running the building step of a Kabanero Pipeline.The cause of this could be either of the 3 situations mentioned below before running the pipelines
+********
+
+**2**. I see the error below while running the building step of a Kabanero Pipeline.The cause of this could be either of the 3 situations mentioned below before running the pipelines
 
     - The user has created a secret for github but not patched that secret onto the service account used by the PipelineRun or TaskRun in question, or
     - The user has not created a secret for github, but has tried to patch the relevant service account, or
