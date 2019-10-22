@@ -115,8 +115,10 @@ Step failed
 
  Throubleshooting steps
   - When running your Tekton Pipelines, if you see a `fatal: could not read Username for *GitHub  repository*: No such device or address` message in your failing Task logs, this indicates there is no `tekton.dev/git`  annotated GitHub secret in use by the ServiceAccount that launched this PipelineRun. You need to create one via the Tekton Dashboard. The annotation will be added and the specified ServiceAccount will be patched.
-  
- 3. Unable to load PipelineRun details: CouldntGetResource
+ 
+ *******
+ 
+ **3**. Unable to load PipelineRun details: CouldntGetResource
 
 Error message:
 PipelineRun kabanero/web-mon-1571161246 can't be Run; it tries to bind Resources that don't exist: Couldn't retrieve PipelineResource: couldn't retrieve referenced input PipelineResource "web-mon-git-source-1571161246": pipelineresource.tekton.dev "web-mon-git-source-1571161246" not found
@@ -126,3 +128,23 @@ This is caused due to a timing issue in Tekton where the PipelineRun triggered b
 
 Workaround:
 Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with the first PipelineRun triggered by the webhook.
+
+*****
+
+ **4**. I do not have dockerhub container registry but the local container registry provided by Openshift, how would I use it ?
+  
+  Troubleshooting Steps: 
+   - Find the local container registry URL given by Openshift in your cluster.
+     - Goto Openshift web console and select the workspace `default`.
+     - Click the pod with name `docker-registry`.
+     - Go to the tab `Environment` for `docker-registry` pod.
+     - You will get the URL `OPENSHIFT_DEFAULT_REGISTRY` = `docker-registry.default.svc:5000`
+   - Once you found the local container registry use it while setting the webhook as value for `Docker Registry` , or mention it when you are running the pipelinerun manually as a pipeline resource `docker-image`.
+   
+   example1 : In Tekton dashboard via a Webhook
+   
+   `Docker Registry : docker-registry.default.svc:5000/kabanero`
+     
+   example2 : In manual pipelinerun pipelineresource as
+   
+   `docker-image : docker-registry.default.svc:5000/kabanero/my-image-name`
