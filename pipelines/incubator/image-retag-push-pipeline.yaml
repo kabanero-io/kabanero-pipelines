@@ -2,21 +2,21 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: CollectionId-build-tag-push-pipeline
+  name: CollectionId-image-retag-push-pipeline
 spec:
   resources:
-    - name: docker-image
+    - name: docker-src-image
       type: image
     - name: docker-dest-image
       type: image
   tasks:
-    - name: build-task
+    - name: image-retag-task
       taskRef:
-        name: CollectionId-build-tag-push-task
+        name: CollectionId-image-retag-push-task
       resources:
         inputs:
-        - name: docker-image
-          resource: docker-image
+        - name: docker-src-image
+          resource: docker-src-image
         - name: docker-dest-image
           resource: docker-dest-image
         outputs:

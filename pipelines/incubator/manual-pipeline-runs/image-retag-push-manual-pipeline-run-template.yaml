@@ -1,18 +1,16 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineRun
 metadata:
-  name: <collection-name>-build-push-tag-manual-pipeline-run
+  name: <collection-name>-image-retag-push-manual-pipeline-run
 spec:
   serviceAccount: kabanero-operator
   timeout: "1h0m0s"
   pipelineRef:
-    name: <collection-name>-build-tag-push-pipeline
-  trigger:
-    type: manual
+    name: <collection-name>-image-retag-push-pipeline
   resources:
-    - name: docker-image
+    - name: docker-src-image
       resourceRef:
-        name: docker-image
+        name: docker-src-image
     - name: docker-dest-image
       resourceRef:
         name: docker-dest-image

@@ -3,7 +3,7 @@ items:
 - apiVersion: tekton.dev/v1alpha1
   kind: PipelineResource
   metadata:
-    name: docker-image
+    name: docker-src-image
   spec:
     params:
     - name: url

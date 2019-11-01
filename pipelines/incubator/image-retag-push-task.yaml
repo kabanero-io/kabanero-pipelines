@@ -2,11 +2,11 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: CollectionId-build-tag-push-task
+  name: CollectionId-image-retag-push-task
 spec:
   inputs:
     resources:
-      - name: docker-image
+      - name: docker-src-image
         type: image
       - name: docker-dest-image
         type: image
@@ -24,7 +24,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'pull', '--tls-verify=false', '$(inputs.resources.docker-image.url)']
+      command: ['buildah', 'pull', '--tls-verify=false', '$(inputs.resources.docker-src-image.url)']
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
@@ -32,7 +32,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'tag', '$(inputs.resources.docker-image.url)', '$(inputs.resources.docker-dest-image.url)']
+      command: ['buildah', 'tag', '$(inputs.resources.docker-src-image.url)', '$(inputs.resources.docker-dest-image.url)']
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
