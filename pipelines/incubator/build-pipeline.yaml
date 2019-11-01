@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: CollectionId-build-only-pipeline
+  name: CollectionId-build-pipeline
 spec:
   resources:
     - name: git-source
@@ -10,7 +10,7 @@ spec:
   tasks:
     - name: build-task
       taskRef:
-        name: CollectionId-build-only-task
+        name: CollectionId-build-task
       resources:
         inputs:
         - name: git-source
