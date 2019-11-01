@@ -24,7 +24,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'pull', '--tls-verify=false', '${inputs.resources.docker-image.url}']
+      command: ['buildah', 'pull', '--tls-verify=false', '$(inputs.resources.docker-image.url)']
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
@@ -32,7 +32,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'tag', '${inputs.resources.docker-image.url}', '${inputs.resources.docker-dest-image.url}']
+      command: ['buildah', 'tag', '$(inputs.resources.docker-image.url)', '$(inputs.resources.docker-dest-image.url)']
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
@@ -40,7 +40,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'push', '--tls-verify=false', '${outputs.resources.docker-dest-image.url}', 'docker://${outputs.resources.docker-dest-image.url}']
+      command: ['buildah', 'push', '--tls-verify=false', '$(outputs.resources.docker-dest-image.url)', 'docker://$(outputs.resources.docker-dest-image.url)']
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
