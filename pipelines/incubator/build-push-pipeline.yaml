@@ -20,3 +20,13 @@ spec:
         outputs:
         - name: docker-image
           resource: docker-image
+    - name: image-scan-task
+      taskRef:
+        name: image-scan-task
+      runAfter: [build-push-task]
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image
