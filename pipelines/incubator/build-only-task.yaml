@@ -46,7 +46,7 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
-      command: ['buildah', 'bud', '--tls-verify=false', '--format=docker', '-f', '${inputs.params.pathToDockerFile}', '${inputs.params.pathToContext}']
+      command: ['buildah', 'bud', '--tls-verify=false', '--format=docker', '-f', '$(inputs.params.pathToDockerFile)', '$(inputs.params.pathToContext)']
       env:
         - name: gitsource
           value: git-source
