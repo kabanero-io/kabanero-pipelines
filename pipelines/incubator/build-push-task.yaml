@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: CollectionId-build-task
+  name: CollectionId-build-push-task
 spec:
   inputs:
     resources:
@@ -43,7 +43,7 @@ spec:
     env:
     - name: gitsource
       value: git-source
-  - name: build-bud
+  - name: build
     securityContext:
       privileged: true
     image: appsody/appsody-buildah
@@ -54,7 +54,7 @@ spec:
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
-  - name: build-push
+  - name: push
     securityContext:
       privileged: true
     image: appsody/appsody-buildah
