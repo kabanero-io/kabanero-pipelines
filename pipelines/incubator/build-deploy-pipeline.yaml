@@ -25,11 +25,6 @@ spec:
       - name: docker-image
         resource: docker-image
   - name: deploy-task
-    conditions:
-    - conditionRef: deployment-condition
-      params:
-      - name: event-headers
-        value: $(params.event-headers)
     taskRef:
       name: CollectionId-deploy-task
     runAfter: [build-task]
