@@ -7,9 +7,6 @@ spec:
   timeout: "1h0m0s"
   pipelineRef:
     name: <collection-name>-build-only-pipeline
-  trigger:
-    type: manual
   resources:
     - name: git-source
-      resourceRef:
-name: git-source
+      resourceRef: name: git-source
