@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: CollectionId-build-only-task
+  name: CollectionId-build-task
 spec:
   inputs:
     resources:
@@ -42,7 +42,7 @@ spec:
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
-    - name: build-bud
+    - name: build
       securityContext:
         privileged: true
       image: appsody/appsody-buildah
