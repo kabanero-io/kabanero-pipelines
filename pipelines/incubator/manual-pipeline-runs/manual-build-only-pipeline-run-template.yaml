@@ -9,4 +9,5 @@ spec:
     name: <collection-name>-build-only-pipeline
   resources:
     - name: git-source
-      resourceRef: name: git-source
+      resourceRef:
+        name: git-source
