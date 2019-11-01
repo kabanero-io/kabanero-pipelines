@@ -14,9 +14,9 @@ spec:
   - name: docker-image
     type: image
   tasks:
-  - name: build-task
+  - name: build-push-task
     taskRef:
-      name: CollectionId-build-task
+      name: CollectionId-build-push-task
     resources:
       inputs:
       - name: git-source
