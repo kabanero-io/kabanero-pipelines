@@ -148,3 +148,14 @@ Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with t
    example2 : In manual pipelinerun pipelineresource as
    
    `docker-image : docker-registry.default.svc:5000/kabanero/my-image-name`
+
+ **5** When using OpenShift Container Platform on a cloud with Kubernetes service and an internal Docker registry, performing a `docker push` into the internal Docker
+registry might result in a gateway time-out error.  
+
+  Reason:
+
+This happens in cases where the input-output operations per second (IOPS) setting for the backing storage
+of the registry's persistent volume (PV) is too low.
+
+  Troubleshooting step:
+   - To resolve this problem, change the IOPS setting of the PV's backing storage device.
