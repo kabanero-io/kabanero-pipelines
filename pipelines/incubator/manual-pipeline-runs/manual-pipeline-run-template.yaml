@@ -6,7 +6,7 @@ spec:
   serviceAccount: kabanero-operator
   timeout: "1h0m0s"
   pipelineRef:
-    name: <collection-name>-build-deploy-pipeline
+    name: <collection-name>-build-push-deploy-pipeline
   resources:
     - name: git-source
       resourceRef:
