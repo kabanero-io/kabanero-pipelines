@@ -89,7 +89,7 @@ do
           
    if [ "$succeeded" != "True" ]; then
       # Piplerun failed, collect logs
-      build_pod_id=$( oc get pods | grep $collection.*build-push-task)
+Ω      build_pod_id=$( oc get pods | grep $collection.*build-task)
       deploy_pod_id=$( oc get pods | grep $collection.*deploy-task)
       declare $( echo $build_pod_id | awk '{printf "build_pod="$1}')
       declare $( echo $deploy_pod_id | awk '{printf "deploy_pod="$1}')
