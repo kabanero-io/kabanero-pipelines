@@ -98,8 +98,8 @@ do
       echo
       echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir", succeeded: "$succeeded
       echo
-      oc logs $pod --all-containers > $log_dir/$build_pod.log 
-      oc logs $pod --all-containers > $log_dir/$deploy_pod.log 
+      oc logs $build_pod --all-containers > $log_dir/$build_pod.log 
+      oc logs $deploy_pod --all-containers > $log_dir/$deploy_pod.log 
     else  
       echo
       echo "Pipeline run for collection "$collection" succeeded."    
