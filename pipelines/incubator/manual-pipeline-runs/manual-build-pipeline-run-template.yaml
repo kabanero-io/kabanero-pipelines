@@ -11,3 +11,6 @@ spec:
     - name: git-source
       resourceRef:
         name: git-source
+    - name: docker-image
+      resourceRef:
+        name: docker-image

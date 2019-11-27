@@ -19,8 +19,6 @@ spec:
     resources:
     - name: docker-image
       type: image
-    - name: git-source
-      type: git
   steps:
   - name: assemble-extract
     securityContext:
