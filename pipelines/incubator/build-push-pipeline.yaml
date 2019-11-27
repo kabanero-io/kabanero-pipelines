@@ -20,6 +20,8 @@ spec:
         outputs:
         - name: docker-image
           resource: docker-image
+        - name: git-source
+          resource: git-source
     - name: image-scan-task
       taskRef:
         name: CollectionId-image-scan-task
