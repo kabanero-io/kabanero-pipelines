@@ -134,4 +134,3 @@ spec:
     secret:
       secretName: default-collection-image-registry-secret
       optional: true
-      
