@@ -12,7 +12,7 @@ Identify the Tekton Dashboard URL after your have completed the installation.  Y
 NOTE: Everything is assumed to be running in `kabanero` namespace.
 
 ### Create a persistent volume (pv)
-The persistent volume is used by the pipelines.  An example pv definition is provided.  Update path and other values in pv.yaml to suit your requirements.
+The persistent volume is used by the pipelines.  An example nfs pv definition is provided.  Update path and server ip address in pv.yaml to suit your requirements. Assumption is you already have nfs installed in the cluster and you need to use that server ip address in the configuration file pv.yaml
 
 Login to your cluster.  For example for OKD,
 
