@@ -20,6 +20,36 @@ spec:
     - name: docker-image
       type: image
   steps:
+  - name: extract
+    securityContext:
+      privileged: true
+    image: appsody/appsody-buildah:0.5.0-buildah1.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo "running appsody extract"
+        appsody extract --buildah --target-dir /workspace/$gitsource -v
+        echo "extract completed"
+        ls -la /workspace/$gitsource
+        cat /workspace/git-source/$(inputs.params.app-deploy-file-name)
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: validate-collection-is-active
+    securityContext:
+      privileged: true
+    image: kabanero/validate-collection:0.1
+    command: ["/bin/bash"]
+    args:
+    - -c
+    - "/validate.sh"
+    env:
+    - name: gitsource
+      value: git-source
   - name: build
     securityContext:
       privileged: true
@@ -91,17 +121,6 @@ spec:
       mountPath: /config
     - name: secret-volume
       mountPath: /etc/secret-volume
-  - name: validate-collection-is-active
-    securityContext:
-      privileged: true
-    image: kabanero/validate-collection:0.1
-    command: ["/bin/bash"]
-    args:
-    - -c
-    - "/validate.sh"
-    env:
-    - name: gitsource
-      value: git-source
   volumes:
   - name: varlibcontainers
     emptyDir: {}
