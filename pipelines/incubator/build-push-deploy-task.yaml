@@ -8,8 +8,6 @@ spec:
     resources:
     - name: git-source
       type: git
-    - name: docker-image
-      type: image
     params:
     - name: pathToDockerFile
       default: /workspace/extracted/Dockerfile
@@ -21,6 +19,10 @@ spec:
       default: CollectionId
     - name: app-deploy-file-name
       default: app-deploy.yaml
+  outputs:
+    resources:
+    - name: docker-image
+      type: image
   steps:
   - name: extract
     securityContext:
