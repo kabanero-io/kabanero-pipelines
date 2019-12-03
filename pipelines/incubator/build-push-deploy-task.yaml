@@ -22,7 +22,7 @@ spec:
     - name: app-deploy-file-name
       default: app-deploy.yaml
   steps:
-  - name: assemble-extract
+  - name: build
     securityContext:
       privileged: true
     image: appsody/appsody-buildah:0.5.0-buildah1.9.0
