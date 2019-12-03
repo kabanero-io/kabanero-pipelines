@@ -64,9 +64,7 @@ spec:
              ./cert-creation.sh
         fi
         cd /workspace/$gitsource
-        appsody build -t $(outputs.resources.docker-image.url) --buildah --buildah-options "--format=docker"
-        echo "printing content of /workspace/git-source/${YAMLFILE}"
-        cat /workspace/git-source/${YAMLFILE}
+        appsody build -t $(inputs.resources.docker-image.url) --buildah --buildah-options "--format=docker"
     env:
     - name: gitsource
       value: git-source
@@ -110,7 +108,7 @@ spec:
     securityContext:
       privileged: true
     image: appsody/appsody-buildah:0.5.0-buildah1.9.0
-    command: ['buildah', 'push', '--tls-verify=false', '$(outputs.resources.docker-image.url)', 'docker://$(outputs.resources.docker-image.url)']
+    command: ['buildah', 'push', '--tls-verify=false', '$(inputs.resources.docker-image.url)', 'docker://$(inputs.resources.docker-image.url)']
     env:
     - name: gitsource
       value: git-source
