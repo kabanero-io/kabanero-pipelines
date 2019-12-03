@@ -27,7 +27,7 @@ spec:
   - name: image-scan-task
     taskRef:
       name: CollectionId-image-scan-task
-    runAfter: [build-push-task]
+    runAfter: [build-push-deploy-task]
     resources:
       inputs:
       - name: git-source
