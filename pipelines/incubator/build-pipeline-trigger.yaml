@@ -35,8 +35,6 @@ spec:
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
-# This requires the simple pipeline tasks from the pipeline hotel to be installed first
-# and the simple pipeline, and the conditional resource
 metadata:
   name: CollectionId-build-pipeline-template
 spec:
