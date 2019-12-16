@@ -3,6 +3,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: CollectionId-build-push-pipeline-pullrequest-binding
+  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -20,6 +21,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: CollectionId-build-push-pipeline-push-binding
+  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -37,6 +39,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: CollectionId-build-push-pipeline-template
+  namespace: tekton-pipelines
 spec:
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
