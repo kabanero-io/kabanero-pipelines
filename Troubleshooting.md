@@ -148,3 +148,19 @@ Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with t
    example2 : In manual pipelinerun pipelineresource as
    
    `docker-image : docker-registry.default.svc:5000/kabanero/my-image-name`
+   
+**5**. Error initializing source docker://kabanero/nodejs-express:0.2: unable to retrieve auth token: invalid username/password[Info]
+
+Error Message:
+```
+The following failures happened while trying to pull image specified by "kabanero/nodejs-express:0.2" based on search registries in /etc/containers/registries.conf:[Info] * "localhost/kabanero/nodejs-express:0.2": Error initializing source docker://localhost/kabanero/nodejs-express:0.2: pinging docker registry returned: Get https://localhost/v2/: dial tcp [::1]:443: connect: connection refused[Info] * "docker.io/kabanero/nodejs-express:0.2": Error initializing source docker://kabanero/nodejs-express:0.2: unable to retrieve auth token: invalid username/password[Info]
+```
+
+Possible reason:
+
+Sometimes if the docker secret is set by the user and that is with invalid credentials, while pulling the kabanero stacks it may try to validate the docker credentials in the docker secret and it gives above mentioned error.
+
+Workaround:
+
+If you see such error of invalid username/password while pulling the kabanero stack it tries to pull, you can delete your docker secret and try to run the pipeline and check if it is getting passed this error. 
+If it does get ahead and fails in the pipeline to push the image to your docker repository , then you need to put back your docker secret with correct credentials so the pipeline could push the image to your docker repository.
