@@ -69,7 +69,7 @@ spec:
             IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL
              
             #Creating a cert for authentication of buildah login of the DEFAULT_COLLECTION_IMAGE_REGISTRY_URL registry url 
-            echo "HOST=$CUSTOM_COLLECTION_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "HOST=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" > cert-creation.sh
             echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
             echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
             
