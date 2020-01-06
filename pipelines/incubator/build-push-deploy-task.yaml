@@ -61,13 +61,13 @@ spec:
       - -c
       - |
         echo "Checking for configmap value....DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL"
-        IMAGE_REGISTRY_URL=$(inputs.params.image-registry-url)
+        COLLECTION_IMAGE_REGISTRY_URL=$(inputs.params.image-registry-url)
         if [ -z "$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" ]
         then
-            echo "DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL given as input by user is empty, so using the registry=$IMAGE_REGISTRY_URL for collection image download"
+            echo "DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL given as input by user is empty, so using the registry=$COLLECTION_IMAGE_REGISTRY_URL for collection image download"
         else
             echo "Collection image registry url setup by user is $DEFAULT_COLLECTION_IMAGE_REGISTRY_URL"            
-            IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL 
+            COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL 
             
             #Creating a cert for authentication of buildah login of the DEFAULT_COLLECTION_IMAGE_REGISTRY_URL registry url 
             echo "HOST=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" > cert-creation.sh
@@ -86,7 +86,7 @@ spec:
              ./cert-creation.sh
         fi
         cd /workspace/$gitsource
-        appsody build -t $(outputs.resources.docker-image.url) --buildah --buildah-options "--format=docker" --stack-registry "$IMAGE_REGISTRY_URL"
+        appsody build -t $(outputs.resources.docker-image.url) --buildah --buildah-options "--format=docker" --stack-registry "$COLLECTION_IMAGE_REGISTRY_URL"
     env:
     - name: gitsource
       value: git-source
