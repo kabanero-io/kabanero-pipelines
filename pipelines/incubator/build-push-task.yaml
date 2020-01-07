@@ -17,7 +17,7 @@ spec:
       default: $HOME/.appsody/.appsody.yaml
     - name: app-deploy-file-name
       default: app-deploy.yaml
-    - name: image-registry-url
+    - name: collection-image-registry-url
       default: docker.io
   outputs:
     resources:
@@ -59,7 +59,7 @@ spec:
       - -c
       - |
         echo "Checking for configmap value....DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL"
-        COLLECTION_IMAGE_REGISTRY_URL=$(inputs.params.image-registry-url)
+        COLLECTION_IMAGE_REGISTRY_URL=$(inputs.params.collection-image-registry-url)
         if [ -z "$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" ]
         then
             echo "DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL given as input by user is empty, so using the registry=$COLLECTION_IMAGE_REGISTRY_URL for collection image download"
