@@ -57,7 +57,7 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: CollectionId-pipeline-run-
+      generateName: CollectionId-build-pl-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
