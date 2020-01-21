@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-push-pipeline-pullrequest-binding
+  name: CollectionId-build-push-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -20,7 +20,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-push-pipeline-push-binding
+  name: CollectionId-build-push-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:

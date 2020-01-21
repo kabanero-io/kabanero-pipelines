@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-pipeline-pullrequest-binding
+  name: CollectionId-build-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -20,7 +20,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-pipeline-push-binding
+  name: CollectionId-build-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -38,7 +38,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: CollectionId-build-pipeline-template
+  name: CollectionId-build-pl-template
   namespace: tekton-pipelines
 spec:
   resourcetemplates:
@@ -67,7 +67,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: CollectionId-build-pipeline
+        name: CollectionId-build-pl
       params:
       - name: event-type
         value: $(params.event-type)
