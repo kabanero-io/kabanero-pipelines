@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+#Kabanero! on activate substitute scott for text 'scott'
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: CollectionId-build-push-task
+  name: scott-build-push-task
 spec:
   inputs:
     resources:
@@ -69,7 +69,7 @@ spec:
         fi
         cd /workspace/$gitsource
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $(outputs.resources.docker-image.url) |  tr '[:upper:]' '[:lower:]' )
-        appsody build -t $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE --buildah --buildah-options "--format=docker" --stack-registry "$COLLECTION_IMAGE_REGISTRY_URL"
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$COLLECTION_IMAGE_REGISTRY_URL"
     env:
     - name: gitsource
       value: git-source
