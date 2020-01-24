@@ -86,7 +86,5 @@ spec:
         resourceRef:
           name: git-source-$(uid)
       - name: docker-image
-        resourceRef: 
+        resourceRef:
           name: docker-image-$(uid)
-
-
