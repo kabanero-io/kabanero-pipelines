@@ -36,7 +36,7 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: appsody/appsody-buildah:0.5.3
+    image: appsody/appsody-buildah:0.5.6-buildah1.9.0
     command: ["/bin/bash"]
     args:
       - -c
