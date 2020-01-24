@@ -55,6 +55,16 @@ spec:
       - name: url
         value: $(params.gitrepositoryurl)
   - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: docker-image-$(uid)
+      namespace: $(params.webhooks-tekton-target-namespace)
+    spec:
+      type: image
+      params:
+      - name: url
+        value: $(params.webhooks-tekton-docker-registry)/$(params.docker-tag)
+  - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
       generateName: CollectionId-build-pl-run-
@@ -75,5 +85,6 @@ spec:
       - name: git-source
         resourceRef:
           name: git-source-$(uid)
-
-
+      - name: docker-image
+        resourceRef:
+          name: docker-image-$(uid)
