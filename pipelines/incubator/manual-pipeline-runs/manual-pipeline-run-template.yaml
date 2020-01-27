@@ -3,7 +3,7 @@ kind: PipelineRun
 metadata:
   name: <collection-name>-manual-pipeline-run
 spec:
-  serviceAccountName: kabanero-pipeline
+  serviceAccount: kabanero-operator
   timeout: "1h0m0s"
   pipelineRef:
     name: <collection-name>-build-push-deploy-pipeline
