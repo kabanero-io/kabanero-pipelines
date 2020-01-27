@@ -1,0 +1,30 @@
+#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: CollectionId-build-pl
+spec:
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: validate-collection-task
+      taskRef:
+        name: CollectionId-validate-collection-task
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+    - name: build-task
+      taskRef:
+        name: CollectionId-build-task
+      runAfter: [validate-collection-task]
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        outputs:
+        - name: docker-image
+          resource: docker-image
