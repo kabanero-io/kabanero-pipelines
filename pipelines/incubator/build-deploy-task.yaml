@@ -24,17 +24,6 @@ spec:
     - name: docker-image
       type: image
   steps:
-  - name: validate-collection-is-active
-    securityContext:
-      privileged: true
-    image: kabanero/validate-collection:0.1
-    command: ["/bin/bash"]
-    args:
-    - -c
-    - "/validate.sh"
-    env:
-    - name: gitsource
-      value: git-source
   - name: build
     securityContext:
       privileged: true
