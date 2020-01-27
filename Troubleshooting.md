@@ -143,11 +143,11 @@ Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with t
    
    example1 : In Tekton dashboard via a Webhook
    
-   `Docker Registry : docker-registry.default.svc:5000/kabanero`
+   `Docker Registry : image-registry.openshift-image-registry.svc:5000/kabanero`
      
    example2 : In manual pipelinerun pipelineresource as
    
-   `docker-image : docker-registry.default.svc:5000/kabanero/my-image-name`
+   `docker-image : image-registry.openshift-image-registry.svc:5000/kabanero/my-image-name`
    
 **5**. Error initializing source docker://kabanero/nodejs-express:0.2: unable to retrieve auth token: invalid username/password[Info]
 
