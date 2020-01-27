@@ -147,9 +147,22 @@ Rerun the PipelineRun from the Tekton dashboard.  Usually seems to happen with t
      
    example2 : In manual pipelinerun pipelineresource as
    
+   `docker-image : docker-registry.default.svc:5000/kabanero/my-image-name`
+
+ **5** When using OpenShift Container Platform on a cloud with Kubernetes service and an internal Docker registry, performing a `docker push` into the internal Docker
+registry might result in a gateway time-out error.  
+
+  Reason:
+
+This happens in cases where the input-output operations per second (IOPS) setting for the backing storage
+of the registry's persistent volume (PV) is too low.
+
+  Troubleshooting step:
+   - To resolve this problem, change the IOPS setting of the PV's backing storage device.
+   
    `docker-image : image-registry.openshift-image-registry.svc:5000/kabanero/my-image-name`
    
-**5**. Error initializing source docker://kabanero/nodejs-express:0.2: unable to retrieve auth token: invalid username/password[Info]
+**6**. Error initializing source docker://kabanero/nodejs-express:0.2: unable to retrieve auth token: invalid username/password[Info]
 
 Error Message:
 ```
@@ -165,6 +178,7 @@ Workaround:
 If you see such error of invalid username/password while pulling the kabanero stack it tries to pull, you can delete your docker secret and try to run the pipeline and check if it is getting passed this error. 
 If it does get ahead and fails in the pipeline to push the image to your docker repository , then you need to put back your docker secret with correct credentials so the pipeline could push the image to your docker repository.
 
-**6**. My persistant volume claims are not deleted after my pipelinerun has completed.
+**7**. My persistant volume claims are not deleted after my pipelinerun has completed.
 
 This is the default behavior of Tekton & Kubernetes.  When a pipelinerun has completed, the associated pods will be in completed state.  The PV claims are bounds to this resource and will be in terminating state til the pods are deleted.  This helps preserve logs for debugging.  All the associated pods and PV claims will get deleted when the the pipelinerun is deleted.  You can check on the pipelineruns using ```oc get pipelineruns``` and the appropriate run using ```oc delete pipelinerun <pipelinerun_name>```.
+
