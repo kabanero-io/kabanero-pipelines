@@ -28,9 +28,27 @@ spec:
         privileged: true
       image: appsody/appsody-buildah:0.5.0-buildah1.9.0
 # Temporarily make copy of mounted image since the mounted image will be unmounted when the container for this task ends.
-# TODO: Determine another way to persist the mounted container image accross containers
+# TODO: Determine another way to persist the mounted container image across containers
       command: ['/bin/bash']
-      args: ['-c', 'echo "Pulling image $(inputs.resources.docker-image.url)"; buildah from --tls-verify=false $(inputs.resources.docker-image.url); echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt; echo "Mounted image to $(cat /var/lib/containers/rootfs.txt)"; cd $(cat /var/lib/containers/rootfs.txt); ls -la; cp -a $(cat /var/lib/containers/rootfs.txt) /var/lib/containers; echo "Copied mounted image to /var/lib/containers/merged"; ls -la /var/lib/containers/merged; echo $(buildah images -q $(inputs.resources.docker-image.url)) > /var/lib/containers/imageid.txt; echo "Image ID of the image to scan: $(cat /var/lib/containers/imageid.txt)"']
+      args:
+        - -c
+        - |
+          echo "Pulling image docker://$(inputs.resources.docker-image.url)"
+          buildah from --tls-verify=false docker://$(inputs.resources.docker-image.url)
+          echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
+          mountDir=$(cat /var/lib/containers/rootfs.txt)
+          echo ""
+          echo "Mounted image to $mountDir with contents:"
+          ls -la $mountDir
+          cp -a $mountDir /var/lib/containers
+          echo ""
+          imageDir=/var/lib/containers/merged
+          imageIdFileName=/var/lib/containers/imageid.txt
+          echo "Copied mounted image to $imageDir:"
+          ls -la $imageDir
+          echo $(buildah images -q) > $imageIdFileName
+          echo ""
+          echo "Image ID of the image to scan: $(cat $imageIdFileName)"
       env:
         - name: gitsource
           value: git-source
@@ -42,7 +60,34 @@ spec:
         privileged: true
       image: kabanero/scanner:1.3.1
       command: ['/bin/bash']
-      args: ['-c', 'mkdir -p /workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$(cat /var/lib/containers/imageid.txt); echo "Scanning copy of image $(inputs.resources.docker-image.url) with image ID $(cat /var/lib/containers/imageid.txt) in /var/lib/containers/merged"; cd /var/lib/containers/merged; ls -la; $(inputs.params.command) /var/lib/containers/merged oval eval --results /workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$(cat /var/lib/containers/imageid.txt)/results.xml --report /workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$(cat /var/lib/containers/imageid.txt)/report.html $(inputs.params.pathToInputFile)']
+      args:
+        - -c
+        - |
+          imageid=$(cat /var/lib/containers/imageid.txt)
+          imageDir=/var/lib/containers/merged
+          outputDir=/workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$imageid
+          mkdir -p $outputDir
+          echo "Scanning copy of image docker://$(inputs.resources.docker-image.url) with image ID $imageid in $imageDir with contents:"
+          cd $imageDir
+          ls -la
+          echo ""
+          echo "Scanning image with command:"
+          echo "$(inputs.params.command) $imageDir oval eval --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
+          $(inputs.params.command) $imageDir oval eval --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)
+          echo ""
+          echo "Scanning of copy of image $(inputs.resources.docker-image.url) with image ID $imageid in $imageDir complete"
+          echo ""
+
+          #Display contents of the results.xml and report.html files
+          echo "Displaying contents of $outputDir/results.xml"
+          echo "********** START OF results.xml **********"
+          cat $outputDir/results.xml
+          echo "********** END OF results.xml ************"
+          echo ""
+          echo "Displaying contents of $outputDir/report.html"
+          echo "********** START OF report.html **********"
+          cat $outputDir/report.html
+          echo "********** END OF report.html ************"
       volumeMounts:
         - name: host-save-dir
           mountPath: /workspace/scans
