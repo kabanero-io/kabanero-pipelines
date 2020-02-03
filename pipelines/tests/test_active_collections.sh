@@ -71,7 +71,7 @@ do
    echo
    echo "Starting pipeline run for collection: "$collection
    echo
-   command="./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/$collection -c $collection"
+   command="./kabanero-pipelines/pipelines/sample-helper-files/manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/$collection -c $collection"
    echo $command
    eval $command 
    
