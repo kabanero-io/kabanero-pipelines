@@ -16,12 +16,18 @@ spec:
       - name: command
         description: The scanner command
         default: oscap-chroot
+      - name: module
+        description: Specifies the type of SCAP content to use. For example, oval or xccdf.
+        default: oval
+      - name: options-and-arguments
+        description: Specifies the module operation options and arguments
+        default: ""
       - name: scansDir
         description: The relative directory to save the scan outputs to
         default: kabanero/scans
       - name: pathToInputFile
         description: The scanner's XCCDF or OVAL file 
-        default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml 
+        default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
   steps:
     - name: mount-image          
       securityContext:
@@ -67,13 +73,16 @@ spec:
           imageDir=/var/lib/containers/merged
           outputDir=/workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$imageid
           mkdir -p $outputDir
+          optionsAndArgs="$(inputs.params.options-and-arguments) --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
+          scanCommand="$(inputs.params.command) $imageDir $(inputs.params.module) eval $optionsAndArgs"
+
           echo "Scanning copy of image docker://$(inputs.resources.docker-image.url) with image ID $imageid in $imageDir with contents:"
           cd $imageDir
           ls -la
           echo ""
           echo "Scanning image with command:"
-          echo "$(inputs.params.command) $imageDir oval eval --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
-          $(inputs.params.command) $imageDir oval eval --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)
+          echo $scanCommand
+          $scanCommand
           echo ""
           echo "Scanning of copy of image $(inputs.resources.docker-image.url) with image ID $imageid in $imageDir complete"
           echo ""
