@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-base_dir="$(pwd)"
-echo "base_dir: $base_dir"
+base_dir=$(pwd)
 pipelines_dir=$base_dir/pipelines/incubator
 
 # directory to store assets for test or release
@@ -16,7 +15,7 @@ else
 fi
 
 # Generate a manifest.yaml file for each file in the tar.gz file
-asset_manifest=$assets_dir/manifest.yaml
+asset_manifest=$pipelines_dir/manifest.yaml
 echo "contents:" > $asset_manifest
 
 # for each of the assets generate a sha256 and add it to the manifest.yaml
@@ -33,7 +32,5 @@ do
 done
 
 # build archive of pipelines
-cd $pipelines_dir
-cp $asset_manifest $pipelines_dir
-tar -czf $assets_dir/default-kabanero-pipelines.tar.gz ./*
+tar -czf $assets_dir/default-kabanero-pipelines.tar.gz -C $pipelines_dir .
 echo -e "--- Created kabanero-pipelines.tar.gz"

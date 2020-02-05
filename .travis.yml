@@ -14,7 +14,7 @@ deploy:
   provider: releases
   skip_cleanup: true
   api_key: $GITHUB_TOKEN
-  file: ci/release/*
+  file: ci/assets/*
   file_glob: true
   on:
     tags: true
