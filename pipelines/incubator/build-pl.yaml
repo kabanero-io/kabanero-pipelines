@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: CollectionId-build-pl
+  name: StackId-build-pl
 spec:
   resources:
     - name: git-source
@@ -12,14 +12,14 @@ spec:
   tasks:
     - name: validate-collection-task
       taskRef:
-        name: CollectionId-validate-collection-task
+        name: StackId-validate-collection-task
       resources:
         inputs:
         - name: git-source
           resource: git-source
     - name: build-task
       taskRef:
-        name: CollectionId-build-task
+        name: StackId-build-task
       runAfter: [validate-collection-task]
       resources:
         inputs:
