@@ -14,13 +14,6 @@ spec:
   - name: docker-image
     type: image
   tasks:
-  - name: validate-collection-task
-    taskRef:
-      name: CollectionId-validate-collection-task
-    resources:
-      inputs:
-      - name: git-source
-        resource: git-source
   - name: build-deploy-task
     taskRef:
       name: CollectionId-build-deploy-task
