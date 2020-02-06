@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: CollectionId-build-deploy-pl
+  name: StackId-build-deploy-pl
 spec:
   params:
   - name: event-headers
@@ -16,7 +16,7 @@ spec:
   tasks:
   - name: build-deploy-task
     taskRef:
-      name: CollectionId-build-deploy-task
+      name: StackId-build-deploy-task
     runAfter: [validate-collection-task]
     resources:
       inputs:
@@ -27,7 +27,7 @@ spec:
         resource: docker-image
   - name: image-scan-task
     taskRef:
-      name: CollectionId-image-scan-task
+      name: StackId-image-scan-task
     runAfter: [build-deploy-task]
     resources:
       inputs:

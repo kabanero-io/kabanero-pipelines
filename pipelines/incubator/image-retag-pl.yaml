@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: CollectionId-image-retag-pl
+  name: StackId-image-retag-pl
 spec:
   resources:
     - name: docker-src-image
@@ -12,7 +12,7 @@ spec:
   tasks:
     - name: image-retag-task
       taskRef:
-        name: CollectionId-image-retag-task
+        name: StackId-image-retag-task
       resources:
         inputs:
         - name: docker-src-image

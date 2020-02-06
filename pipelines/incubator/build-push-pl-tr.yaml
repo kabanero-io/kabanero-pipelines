@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute CollectionId for text 'CollectionId'
+#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-push-pl-pullrequest-binding
+  name: StackId-build-push-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -20,7 +20,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: CollectionId-build-push-pl-push-binding
+  name: StackId-build-push-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -38,7 +38,7 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: CollectionId-build-push-pl-template
+  name: StackId-build-push-pl-template
   namespace: tekton-pipelines
 spec:
   resourcetemplates:
@@ -67,7 +67,7 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: CollectionId-build-push-pl-run-
+      generateName: StackId-build-push-pl-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -77,7 +77,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: CollectionId-build-push-pl
+        name: StackId-build-push-pl
       params:
       - name: event-type
         value: $(params.event-type)
