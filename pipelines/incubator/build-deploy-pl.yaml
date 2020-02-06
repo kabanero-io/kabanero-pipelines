@@ -17,7 +17,6 @@ spec:
   - name: build-deploy-task
     taskRef:
       name: StackId-build-deploy-task
-    runAfter: [validate-collection-task]
     resources:
       inputs:
       - name: git-source
