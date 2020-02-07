@@ -12,11 +12,68 @@ spec:
   - name: validate-collection-is-active
     securityContext:
       privileged: true
-    image: kabanero/validate-collection:0.1
+    image: kabanero/validate-stack:0.1
     command: ["/bin/bash"]
     args:
-    - -c
-    - "/validate.sh"
+      - -c
+      - |
+        # env var gitsource
+        GITSOURCE=$gitsource
+        APPSODY_CONFIG=".appsody-config.yaml"
+        
+        cd /workspace/$GITSOURCE
+        if [ ! -f "$APPSODY_CONFIG" ]; then
+           echo $APPSODY_CONFIG" is not found in the root of the source directory. Unable to validate if the stack is active."
+           exit 1
+        fi
+        
+        # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
+        declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
+        if [ -z "$STACK" ]; then
+           echo "$APPSODY_CONFIG does not contain a stack: definition. Unable to validate if the stack is active."
+           exit 1
+        fi
+        
+        # Parse the image value for the project, stackname and version
+        # format example: appsody/java-microprofile:0.2
+        VERSION="$( echo $STACK | cut -d':' -f2 )"
+        PROJECT_STACK="$( echo $STACK | cut -d':' -f1 )"
+        PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f1 )"
+        STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f2 )"
+        
+        # Check to make sure the stack is active by name first
+        oc get stack $STACK_NAME -o json > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+           echo "$APPSODY_CONFIG specifies stack $STACK_NAME , but no versions of $STACK_NAME are active, and cannot be built."
+           exit 1
+        fi
+        
+        
+        # Get the 3 digit stack values
+        # Assumed the version(s) are in the metadata
+        STACK_VERSIONS=$( oc get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' ) 
+        
+        # format example: docker://docker.io/smcclem/java-microprofile:0.1.1
+        TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "docker://$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        
+        if [ -z "$TARGET_DIGEST" ]; then
+           echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and cannot be built."
+           exit 1
+        fi
+        
+        for STACK_VERSION in ${STACK_VERSIONS}
+        do
+           CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "docker://$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+           if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
+              echo "The Kabanero stack contained in $STACK is active on this system and can be built."
+              exit 0
+           else
+              echo "Version: $STACK_VERSION, Digest: $CURRENT_DIGEST, Target Digest: $TARGET_DIGEST"
+           fi
+        done
+        
+        echo "The Kabanero stack contained in "$STACK" is not active on this system and contained in the image registry and cannot be built."
+        exit 1   
     env:
     - name: gitsource
       value: git-source
