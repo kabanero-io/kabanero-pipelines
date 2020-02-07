@@ -1,12 +1,12 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineRun
 metadata:
-  name: <collection-name>-manual-pipeline-run
+  name: <stack-name>-manual-pipeline-run
 spec:
   serviceAccountName: kabanero-pipeline
   timeout: "1h0m0s"
   pipelineRef:
-    name: <collection-name>-build-push-deploy-pipeline
+    name: <stack-name>-build-deploy-pl
   resources:
     - name: git-source
       resourceRef:
