@@ -9,13 +9,7 @@ spec:
     - name: git-source
       type: git
     params:
-    - name: pathToContext
-      default: /workspace/extracted
-    - name: appsody-yaml-file-path
-      default: $HOME/.appsody/.appsody.yaml
-    - name: app-deploy-file-name
-      default: app-deploy.yaml
-    - name: collection-image-registry-url
+    - name: stack-image-registry-url
       default: docker.io
   outputs:
     resources:
@@ -25,58 +19,58 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: appsody/appsody-buildah:0.5.6-buildah1.9.0
+    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
-        echo "Checking for configmap value....DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL"
-        COLLECTION_IMAGE_REGISTRY_URL=$(inputs.params.collection-image-registry-url)
-        if [ -z "$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" ]
+        echo "Checking for configmap value....DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
+        STACK_IMAGE_REGISTRY_URL=$(inputs.params.stack-image-registry-url)
+        if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
         then
-            echo "DEFAULT_COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL given as input by user is empty, so using the registry=$COLLECTION_IMAGE_REGISTRY_URL for collection image download"
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL not configured; using $STACK_IMAGE_REGISTRY_URL for stack image download"
         else
-            echo "Collection image registry url setup by user is $DEFAULT_COLLECTION_IMAGE_REGISTRY_URL"            
-            COLLECTION_IMAGE_REGISTRY_URL=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL
-              
-            #Creating a cert for authentication of buildah login of the DEFAULT_COLLECTION_IMAGE_REGISTRY_URL registry url 
-            echo "HOST=$DEFAULT_COLLECTION_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "Stack image registry url setup by user is $DEFAULT_STACK_IMAGE_REGISTRY_URL"
+            STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+
+            #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
+            echo "HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
             echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
             echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
-            
-            if [[ ( -z "$DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
+
+            if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
             then
-               echo "DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_PASSWORD is empty ,Assumption is $DEFAULT_COLLECTION_IMAGE_REGISTRY_URL is internal registry, skipping the login to the registry"
+               echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty ,Assumption is $DEFAULT_STACK_IMAGE_REGISTRY_URL is internal registry, skipping the login to the registry"
             else
-               echo "Both DEFAULT_COLLECTION_IMAGE_REGISTRY_URL and Secrets are provided"
+               echo "Both DEFAULT_STACK_IMAGE_REGISTRY_URL and Secrets are provided"
                echo "Adding buildah login command to cert-creation.sh script"
-               echo "buildah login -u $DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh  
+               echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
             fi
              chmod 755 cert-creation.sh
              ./cert-creation.sh
         fi
         cd /workspace/$gitsource
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $(outputs.resources.docker-image.url) |  tr '[:upper:]' '[:lower:]' )
-        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$COLLECTION_IMAGE_REGISTRY_URL"
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
     env:
     - name: gitsource
       value: git-source
-    - name: DEFAULT_COLLECTION_IMAGE_REGISTRY_URL
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
       valueFrom:
         configMapKeyRef:
-         name: collection-image-registry-map
-         key: default-collection-image-registry-url
+         name: stack-image-registry-map
+         key: default-stack-image-registry-url
          optional: true
-    - name: DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_USERNAME
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
       valueFrom:
         secretKeyRef:
-          name: default-collection-image-registry-secret
+          name: default-stack-image-registry-secret
           key: username
           optional: true
-    - name: DEFAULT_COLLECTION_IMAGE_REGISTRY_SECRET_PASSWORD
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: default-collection-image-registry-secret
+          name: default-stack-image-registry-secret
           key: password
           optional: true
     volumeMounts:
@@ -91,9 +85,9 @@ spec:
     emptyDir: {}
   - name: config-volume
     configMap:
-      name: collection-image-registry-map
+      name: stack-image-registry-map
       optional: true
   - name: secret-volume
     secret:
-      secretName: default-collection-image-registry-secret
+      secretName: default-stack-image-registry-secret
       optional: true
