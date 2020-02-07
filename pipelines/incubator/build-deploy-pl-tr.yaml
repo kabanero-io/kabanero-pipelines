@@ -32,6 +32,8 @@ spec:
     value: $(body.repository.name):$(body.head_commit.id)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
@@ -41,6 +43,9 @@ metadata:
   name: StackId-build-deploy-pl-template
   namespace: tekton-pipelines
 spec:
+  params:
+  - name: event-ref
+    default: other
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -81,10 +86,14 @@ spec:
       params:
       - name: event-type
         value: $(params.event-type)
+      - name: event-ref
+        value: $(params.event-ref)
       resources:
       - name: git-source
         resourceRef:
           name: git-source-$(uid)
       - name: docker-image
-        resourceRef:
+        resourceRef: 
           name: docker-image-$(uid)
+
+

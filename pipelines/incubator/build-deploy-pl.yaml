@@ -5,18 +5,21 @@ metadata:
   name: StackId-build-deploy-pl
 spec:
   params:
-  - name: event-headers
+  - name: event-type
     type: string
-    description: "The event headers"
+    description: "The event type"
+  - name: event-ref
+    type: string
+    description: "The event ref"
   resources:
   - name: git-source
     type: git
   - name: docker-image
     type: image
   tasks:
-  - name: build-deploy-task
+  - name: build-push-task
     taskRef:
-      name: StackId-build-deploy-task
+      name: StackId-build-push-task
     resources:
       inputs:
       - name: git-source
@@ -27,7 +30,24 @@ spec:
   - name: image-scan-task
     taskRef:
       name: StackId-image-scan-task
-    runAfter: [build-deploy-task]
+    runAfter: [build-push-task]
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      - name: docker-image
+        resource: docker-image
+  - name: deploy-task
+    conditions:
+    - conditionRef: deployment-condition
+      params:
+      - name: event-type
+        value: $(params.event-type)
+      - name: event-ref
+        value: $(params.event-ref)
+    taskRef:
+      name: StackId-deploy-task
+    runAfter: [image-scan-task]
     resources:
       inputs:
       - name: git-source
