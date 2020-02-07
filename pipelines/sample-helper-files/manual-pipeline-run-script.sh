@@ -65,7 +65,7 @@ PIPELINE_RESOURCE_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pi
 pipeline_resource_dockerimage_template_text="index.docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
-PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/sample-helper-files/manual-pipeline-run-template.yaml
+PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/sample-helper-files/manual-pipeline-run-template.yaml
 pipeline_run_collections_name_template_text="<collection-name>"
 
 echo "Printing all the inputs"
