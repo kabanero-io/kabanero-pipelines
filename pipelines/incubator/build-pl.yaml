@@ -10,9 +10,9 @@ spec:
     - name: docker-image
       type: image
   tasks:
-    - name: validate-collection-task
+    - name: validate-stack-task
       taskRef:
-        name: StackId-validate-collection-task
+        name: StackId-validate-stack-task
       resources:
         inputs:
         - name: git-source
@@ -20,7 +20,7 @@ spec:
     - name: build-task
       taskRef:
         name: StackId-build-task
-      runAfter: [validate-collection-task]
+      runAfter: [validate-stack-task]
       resources:
         inputs:
         - name: git-source

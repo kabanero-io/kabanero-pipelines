@@ -12,7 +12,7 @@ spec:
       type: image
     params:
     - name: repository-name
-      default: CollectionId
+      default: StackId
     - name: app-deploy-file-name
       default: app-deploy.yaml
   steps:
