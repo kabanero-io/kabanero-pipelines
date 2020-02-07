@@ -20,6 +20,7 @@ spec:
         # env var gitsource
         GITSOURCE=$gitsource
         APPSODY_CONFIG=".appsody-config.yaml"
+        IMAGE_REGISTRY_HOST="docker.io"
         
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
