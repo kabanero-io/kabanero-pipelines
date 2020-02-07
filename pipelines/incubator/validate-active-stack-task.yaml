@@ -12,7 +12,7 @@ spec:
   - name: validate-stack-is-active
     securityContext:
       privileged: true
-    image: kabanero/validate-stack:0.1
+    image: kabanero/validate-stack:0.6.0
     command: ["/bin/bash"]
     args:
       - -c
