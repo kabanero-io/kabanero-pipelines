@@ -74,7 +74,7 @@ spec:
         done
         
         echo "The Kabanero stack contained in "$STACK" is not active on this system and contained in the image registry and cannot be built."
-        exit 1   
+        exit 1
     env:
     - name: gitsource
       value: git-source

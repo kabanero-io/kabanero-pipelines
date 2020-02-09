@@ -9,12 +9,6 @@ spec:
     - name: git-source
       type: git
     params:
-    - name: pathToContext
-      default: /workspace/extracted
-    - name: appsody-yaml-file-path
-      default: $HOME/.appsody/.appsody.yaml
-    - name: repository-name
-      default: StackId
     - name: app-deploy-file-name
       default: app-deploy.yaml
     - name: stack-image-registry-url
@@ -36,7 +30,7 @@ spec:
         STACK_IMAGE_REGISTRY_URL=$(inputs.params.stack-image-registry-url)
         if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
         then
-            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL given as input by user is empty, so using the registry=$STACK_IMAGE_REGISTRY_URL for stack image download"
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL not configured; using $STACK_IMAGE_REGISTRY_URL for stack image download"
         else
             echo "Stack image registry url setup by user is $DEFAULT_STACK_IMAGE_REGISTRY_URL"
             STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
