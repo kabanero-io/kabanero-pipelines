@@ -1,0 +1,8 @@
+kind: ConfigMap 
+apiVersion: v1 
+metadata:
+  name: stack-image-registry-map
+data:
+# Configuration values can be set as key-value properties
+# Below is the global stack image registry url where the stack images are published and the pipeline will pull the images from
+  default-stack-image-registry-url: <your-external-route-registry-url>
