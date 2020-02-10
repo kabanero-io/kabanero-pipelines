@@ -7,7 +7,7 @@ set +v
 display_help() {
  echo "Usage"
  echo "******************************************************"
- echo "./manual-pipeline-run-script.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [collections name of which pipeline to be run]"
+ echo "./manual-pipeline-run-script.sh -r [git_repo of the Appsody app project] -i [docker registery path of the image to be created] -c [stack name of which pipeline to be run]"
  echo "example: "
  echo "./manual-pipeline-run-script.sh -r https://github.com/<my-github-id>/appsody-test-project -i index.docker.io/<my-dockerhub-id>/my-java-microprofile-image -c java-microprofile"
  echo "******************************************************"
@@ -29,7 +29,7 @@ while getopts ":hi:r:c:" opt; do
       appGitRepo=$OPTARG
       ;;
     c)
-      collectionsName=$OPTARG
+      stackName=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -62,11 +62,11 @@ DOCKER_IMAGE=$dockerImage
 APP_REPO=$appGitRepo
 
 PIPELINE_RESOURCE_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/sample-helper-files/pipeline-resources-template.yaml
-pipeline_resource_dockerimage_template_text="index.docker.io/<docker_id>/<docker_image_name>"
+pipeline_resource_dockerimage_template_text="docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
 PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/sample-helper-files/manual-pipeline-run-template.yaml
-pipeline_run_collections_name_template_text="<collection-name>"
+pipeline_run_stack_name_template_text="<stack-name>"
 
 echo "Printing all the inputs"
 echo "DOCKER_IMAGE=$DOCKER_IMAGE"
@@ -87,6 +87,6 @@ curl -L ${PIPELINE_RESOURCE_FILE} \
 
 # Manual Pipeline Run
 curl -L ${PIPELINE_RUN_MANUAL_FILE} \
-  | sed "s|${pipeline_run_collections_name_template_text}|${collectionsName}|" \
+  | sed "s|${pipeline_run_stack_name_template_text}|${stackName}|" \
   | oc apply -n ${namespace} --filename -
 echo "done updating pipelinerun template"
