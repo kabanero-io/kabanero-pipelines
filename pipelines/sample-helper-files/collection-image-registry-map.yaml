@@ -1,8 +1,0 @@
-kind: ConfigMap 
-apiVersion: v1 
-metadata:
-  name: collection-image-registry-map
-data:
-# Configuration values can be set as key-value properties
-# Below is the global collection image registry url where the collections image is present and 'appsody/appsody-buildah' will pull it from there for the pipeline.
-  default-collection-image-registry-url: <your-external-route-registry-url>
