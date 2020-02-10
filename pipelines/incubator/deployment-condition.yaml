@@ -4,15 +4,19 @@ metadata:
   name: deployment-condition
 spec:
   params:
-  - name: event-headers
+  - name: "event-type"
     type: string
-    description: "The GitHub event headers"
+    description: "The Git event type"
+  - name: "event-ref"
+    type: string
+    description: "The Git event ref"
   check:
     name: deployment-condition
-    image: stedolan/jq
-    command:
-    - bash
+    image: alpine
+    command: ["/bin/sh"]
     args:
-    - -ce
-    - |
-      [[ $(jq '."Ce-Github-Event"[0]' <<< '$(params.event-headers)') = *"push"* ]]
+      - -ce
+      - |
+        echo $(params.event-type)
+        echo $(params.event-ref)
+        [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]
