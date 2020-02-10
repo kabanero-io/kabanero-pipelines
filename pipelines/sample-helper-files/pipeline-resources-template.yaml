@@ -8,8 +8,6 @@ items:
     params:
     - name: url
       value: docker.io/<docker_id>/<docker_image_name>
-    - name: tag
-      value: <tag_name>
     type: image
 - apiVersion: tekton.dev/v1alpha1
   kind: PipelineResource
