@@ -15,6 +15,8 @@ spec:
     resources:
     - name: docker-image
       type: image
+    - name: git-source
+      type: git
   steps:
   - name: build
     securityContext:
@@ -52,6 +54,8 @@ spec:
         cd /workspace/$gitsource
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $(outputs.resources.docker-image.url) |  tr '[:upper:]' '[:lower:]' )
         appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
+        echo "Copying the generated app-deploy.yaml file from input to the output to pass the file to the next task when this task is used in deploy pipeline"
+        cp app-deploy.yaml $(outputs.resources.git-source.path)
     env:
     - name: gitsource
       value: git-source
