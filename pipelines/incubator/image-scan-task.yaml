@@ -29,6 +29,41 @@ spec:
         description: The scanner's XCCDF or OVAL file 
         default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
   steps:
+    - name: imagename-lowercase
+      securityContext:
+        privileged: true
+      image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          #logic to make docker image image_name as lowercase
+          #example input docker-image-url=image-registry.openshift-image-registry.svc:5000/kabanero/appsodyMPversion:abcDEF
+          # Then output should be = image-registry.openshift-image-registry.svc:5000/kabanero/appsodympversion:abcDEF
+        
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL=\$( echo \$(inputs.resources.docker-image.url) ) " > imageurl_imagename_lowercase.sh
+
+          # we cut the string with last occurance of '/' to get image name and tag as secondHalf of URL
+          echo "firstHalfURL=\$(echo \$INPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f2- | rev)"  >> imageurl_imagename_lowercase.sh
+          echo "secondHalfURL=\$(echo \$INPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f1 | rev)" >>  imageurl_imagename_lowercase.sh
+
+          # we then cut the secondHalfURL based on delimiter ":" to get image name and tag name
+          echo "imagename=\$(cut -d ':' -f 1 <<< \"\$secondHalfURL\" )" >>  imageurl_imagename_lowercase.sh
+          echo "tagname=\$(cut -d ':' -f 2- <<< \"\$secondHalfURL\" )" >>  imageurl_imagename_lowercase.sh
+
+          # we only convert imagename to lowercase, and not the tag name.
+          echo "imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >>  imageurl_imagename_lowercase.sh
+
+          # finally concatinate the image url with all the pieces together with imagename as lowercase.
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase:\$tagname" >>  imageurl_imagename_lowercase.sh
+          echo "echo \"\$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE\" " >>  imageurl_imagename_lowercase.sh
+          chmod 755 imageurl_imagename_lowercase.sh
+      env:
+      - name: gitsource
+        value: git-source
+      volumeMounts:
+      - mountPath: /var/lib/containers
+        name: varlibcontainers
     - name: mount-image          
       securityContext:
         privileged: true
@@ -39,8 +74,11 @@ spec:
       args:
         - -c
         - |
-          echo "Pulling image docker://$(inputs.resources.docker-image.url)"
-          buildah from --tls-verify=false docker://$(inputs.resources.docker-image.url)
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $( /workspace/imageurl_imagename_lowercase.sh ) )
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+ 
+          echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+          buildah from --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
           echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
           mountDir=$(cat /var/lib/containers/rootfs.txt)
           echo ""
@@ -71,12 +109,16 @@ spec:
         - |
           imageid=$(cat /var/lib/containers/imageid.txt)
           imageDir=/var/lib/containers/merged
-          outputDir=/workspace/scans/$(inputs.params.scansDir)/$(inputs.resources.docker-image.url)/$imageid
+
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $( /workspace/imageurl_imagename_lowercase.sh ) )
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+          outputDir=/workspace/scans/$(inputs.params.scansDir)/$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE/$imageid
           mkdir -p $outputDir
           optionsAndArgs="$(inputs.params.options-and-arguments) --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
           scanCommand="$(inputs.params.command) $imageDir $(inputs.params.module) eval $optionsAndArgs"
 
-          echo "Scanning copy of image docker://$(inputs.resources.docker-image.url) with image ID $imageid in $imageDir with contents:"
+          echo "Scanning copy of image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir with contents:"
           cd $imageDir
           ls -la
           echo ""
@@ -84,7 +126,7 @@ spec:
           echo $scanCommand
           $scanCommand
           echo ""
-          echo "Scanning of copy of image $(inputs.resources.docker-image.url) with image ID $imageid in $imageDir complete"
+          echo "Scanning of copy of image $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir complete"
           echo ""
 
           #Display contents of the results.xml and report.html files
