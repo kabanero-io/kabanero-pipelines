@@ -39,7 +39,7 @@ spec:
         resource: docker-image
   - name: deploy-task
     conditions:
-    - conditionRef: deployment-condition
+    - conditionRef: StackId-deployment-condition
       params:
       - name: event-type
         value: $(params.event-type)
