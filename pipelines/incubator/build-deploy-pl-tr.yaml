@@ -46,6 +46,8 @@ spec:
   params:
   - name: event-ref
     default: other
+  - name: webhooks-tekton-target-namespace
+    description: The namespace in which to create this TriggerTemplate's 
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
