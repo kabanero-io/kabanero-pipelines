@@ -27,6 +27,8 @@ spec:
       outputs:
       - name: docker-image
         resource: docker-image
+      - name: git-source
+        resource: git-source
   - name: image-scan-task
     taskRef:
       name: StackId-image-scan-task
@@ -52,5 +54,6 @@ spec:
       inputs:
       - name: git-source
         resource: git-source
+        from: [build-push-task]
       - name: docker-image
         resource: docker-image
