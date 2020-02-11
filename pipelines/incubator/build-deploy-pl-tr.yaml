@@ -46,8 +46,28 @@ spec:
   params:
   - name: event-ref
     default: other
+  - name: gitrevision
+    description: The revision of your Git repository
+  - name: gitrepositoryurl
+    description: The url of your Git repository
+  - name: webhooks-tekton-git-server
+    description: The server name in the Git url
+  - name: webhooks-tekton-git-org
+    description: The org name in the Git url
+  - name: webhooks-tekton-git-repo
+    description: The repository name in the Git url
+  - name: webhooks-tekton-git-branch
+    description: The branch for the Git repository
+  - name: event-type
+    description: The Git event type
+  - name: webhooks-tekton-docker-registry
+    description: The image registry
+  - name: docker-tag
+    description: The image tag
+  - name: webhooks-tekton-service-account
+    description: The ServiceAccount that the PipelineRun will execute under
   - name: webhooks-tekton-target-namespace
-    description: The namespace in which to create this TriggerTemplate's 
+    description: The namespace in which to create this TriggerTemplate's resources
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
