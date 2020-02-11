@@ -20,7 +20,14 @@ spec:
         # env var gitsource
         GITSOURCE=$gitsource
         APPSODY_CONFIG=".appsody-config.yaml"
-        IMAGE_REGISTRY_HOST="docker.io"
+        IMAGE_REGISTRY_HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+        IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
+        IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+        
+        # If the host wasn't specified, default to docker.io
+        if [ -z "$IMAGE_REGISTRY_HOST" ]; then
+           IMAGE_REGISTRY_HOST="docker://docker.io"
+        fi
         
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
@@ -49,13 +56,17 @@ spec:
            exit 1
         fi
         
-        
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
         STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' ) 
         
-        # format example: docker://docker.io/smcclem/java-microprofile:0.1.1
-        TARGET_DIGEST=$( skopeo inspect --tls-verify=false "docker://$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        
+        # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
+        if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        else
+          TARGET_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        fi    
         
         if [ -z "$TARGET_DIGEST" ]; then
            echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and cannot be built."
@@ -63,18 +74,59 @@ spec:
         fi
         
         for STACK_VERSION in ${STACK_VERSIONS}
-        do
-           CURRENT_DIGEST=$( skopeo inspect --tls-verify=false "docker://$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
-           if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
-              echo "The Kabanero stack contained in $STACK is active on this system and can be built."
-              exit 0
-           else
-              echo "Version: $STACK_VERSION, Digest: $CURRENT_DIGEST, Target Digest: $TARGET_DIGEST"
-           fi
-        done
+           do
+              if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
+                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+              else
+                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+              fi    
+       
+              if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
+                 echo "The Kabanero stack contained in $STACK is active on this system and can be built."
+                 exit 0
+              else
+                 echo "Version: $STACK_VERSION, Digest: $CURRENT_DIGEST, Target Digest: $TARGET_DIGEST"
+              fi
+           done
         
-        echo "The Kabanero stack contained in "$STACK" is not active on this system and contained in the image registry and cannot be built."
-        exit 1
+           echo "The Kabanero stack contained in "$STACK" is not active on this system and contained in the image registry and cannot be built."
+           exit 1
     env:
     - name: gitsource
       value: git-source
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: stack-image-registry-map
+         key: default-stack-image-registry-url
+         optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: username
+          optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: password
+          optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: config-volume
+      mountPath: /config
+    - name: secret-volume
+      mountPath: /etc/secret-volume
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+  - name: config-volume
+    configMap:
+      name: stack-image-registry-map
+      optional: true
+  - name: secret-volume
+    secret:
+      secretName: default-stack-image-registry-secret
+      optional: true
