@@ -17,6 +17,13 @@ spec:
   - name: docker-image
     type: image
   tasks:
+  - name: validate-stack-task
+    taskRef:
+      name: StackId-validate-stack-task
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
   - name: build-push-task
     taskRef:
       name: StackId-build-push-task
