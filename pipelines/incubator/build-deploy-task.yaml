@@ -36,17 +36,21 @@ spec:
         echo "firstHalfURL=\$(echo \$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f2- | rev)"  >> imageurl_imagename_lowercase.sh
         echo "secondHalfURL=\$(echo \$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f1 | rev)" >>  imageurl_imagename_lowercase.sh
         
-        # we then cut the secondHalfURL based on delimiter ":" to get image name and tag name
-        echo "imagename=\$(cut -d ':' -f 1 <<< \"\$secondHalfURL\" )" >>  imageurl_imagename_lowercase.sh
-        echo "tagname=\$(cut -d ':' -f 2- <<< \"\$secondHalfURL\" )" >>  imageurl_imagename_lowercase.sh
-        
-        # we only convert imagename to lowercase, and not the tag name.
-        echo "imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >>  imageurl_imagename_lowercase.sh
-        
-        # finally concatinate the image url with all the pieces together with imagename as lowercase.
-        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase:\$tagname" >>  imageurl_imagename_lowercase.sh
+        #Conditional check if ':' is present in 'secondHalfURL'. 
+        #for ex - secondHalfURL=appsodympversion:abcDEF
+        echo "if [[ \$secondHalfURL == *\":\"* ]]; then" >> imageurl_imagename_lowercase.sh
+        echo "  imagename=\$(cut -d ':' -f 1 <<< \"\$secondHalfURL\" )" >> imageurl_imagename_lowercase.sh
+        echo "  imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >> imageurl_imagename_lowercase.sh
+        echo "  tagname=\$(cut -d ':' -f 2- <<< \"\$secondHalfURL\" )" >> imageurl_imagename_lowercase.sh
+        echo "  OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase:\$tagname" >> imageurl_imagename_lowercase.sh
+        #conditional check for ex - secondHalfURL=appsodympversion:abcDEF
+        echo "else" >> imageurl_imagename_lowercase.sh
+        echo "  imagename=\$secondHalfURL" >> imageurl_imagename_lowercase.sh
+        echo "  imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >> imageurl_imagename_lowercase.sh
+        echo "  OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase" >> imageurl_imagename_lowercase.sh
+        echo "fi" >> imageurl_imagename_lowercase.sh 
         echo "echo \"\$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE\" " >>  imageurl_imagename_lowercase.sh
-        
+         
         chmod 755 imageurl_imagename_lowercase.sh
     env:
     - name: gitsource
