@@ -18,6 +18,46 @@ spec:
     - name: docker-image
       type: image
   steps:
+  - name: imagename-lowercase
+    securityContext:
+      privileged: true
+    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        #logic to make docker image image_name as lowercase
+        #example input docker-image-url=image-registry.openshift-image-registry.svc:5000/kabanero/appsodyMPversion:abcDEF
+        # Then output should be = image-registry.openshift-image-registry.svc:5000/kabanero/appsodympversion:abcDEF
+        
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL=\$( echo \$(outputs.resources.docker-image.url) ) " > imageurl_imagename_lowercase.sh
+        
+        # we cut the string with last occurance of '/' to get image name and tag as secondHalf of URL
+        echo "firstHalfURL=\$(echo \$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f2- | rev)"  >> imageurl_imagename_lowercase.sh
+        echo "secondHalfURL=\$(echo \$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL | rev | cut -d\"/\" -f1 | rev)" >>  imageurl_imagename_lowercase.sh
+        
+        #Conditional check if ':' is present in 'secondHalfURL'. 
+        #for ex - secondHalfURL=appsodympversion:abcDEF
+        echo "if [[ \$secondHalfURL == *\":\"* ]]; then" >> imageurl_imagename_lowercase.sh
+        echo "  imagename=\$(cut -d ':' -f 1 <<< \"\$secondHalfURL\" )" >> imageurl_imagename_lowercase.sh
+        echo "  imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >> imageurl_imagename_lowercase.sh
+        echo "  tagname=\$(cut -d ':' -f 2- <<< \"\$secondHalfURL\" )" >> imageurl_imagename_lowercase.sh
+        echo "  OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase:\$tagname" >> imageurl_imagename_lowercase.sh
+        #conditional check for ex - secondHalfURL=appsodympversion:abcDEF
+        echo "else" >> imageurl_imagename_lowercase.sh
+        echo "  imagename=\$secondHalfURL" >> imageurl_imagename_lowercase.sh
+        echo "  imagename_lowercase=\$(echo \$imagename |  tr '[:upper:]' '[:lower:]')" >> imageurl_imagename_lowercase.sh
+        echo "  OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=\$firstHalfURL/\$imagename_lowercase" >> imageurl_imagename_lowercase.sh
+        echo "fi" >> imageurl_imagename_lowercase.sh 
+        echo "echo \"\$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE\" " >>  imageurl_imagename_lowercase.sh
+         
+        chmod 755 imageurl_imagename_lowercase.sh
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
   - name: build
     securityContext:
       privileged: true
@@ -52,7 +92,10 @@ spec:
              ./cert-creation.sh
         fi
         cd /workspace/$gitsource
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $(outputs.resources.docker-image.url) |  tr '[:upper:]' '[:lower:]' )
+
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $( /workspace/imageurl_imagename_lowercase.sh ) )
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
         appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
     env:
     - name: gitsource
@@ -90,7 +133,10 @@ spec:
     args:
       - -c
       - |
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $(outputs.resources.docker-image.url) |  tr '[:upper:]' '[:lower:]' )
+
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $( /workspace/imageurl_imagename_lowercase.sh ) )
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
         buildah push --tls-verify=false "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
     env:
     - name: gitsource
