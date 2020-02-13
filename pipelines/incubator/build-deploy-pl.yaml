@@ -27,6 +27,7 @@ spec:
   - name: build-push-task
     taskRef:
       name: StackId-build-push-task
+    runAfter: [validate-stack-task]
     resources:
       inputs:
       - name: git-source
