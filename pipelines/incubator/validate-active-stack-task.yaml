@@ -63,9 +63,9 @@ spec:
         
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
-          TARGET_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         fi    
         
         if [ -z "$TARGET_DIGEST" ]; then
@@ -76,9 +76,9 @@ spec:
         for STACK_VERSION in ${STACK_VERSIONS}
            do
               if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
-              else
                  CURRENT_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+              else
+                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
               fi    
        
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
