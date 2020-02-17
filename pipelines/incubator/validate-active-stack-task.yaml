@@ -47,15 +47,15 @@ spec:
         # example 1: appsody/java-microprofile:0.2
         # example 2: image-registry.openshift-image-registry.svc:5000/kabanero/java-microprofile:0.2
 
-        # For version get everything after last :
+        # For version get everything after last `:`
         VERSION="${STACK##*:}"
         echo "VERSION = $VERSION "
 
-        # For project stack get eerything before the last :
+        # For project stack get everything before the last `:`
         PROJECT_STACK="${STACK%:*}"
         echo "PROJECT_STACK = $PROJECT_STACK"
 
-        # The stack name could be after the 2nd of 3rd / based on appsody version. Check after 3rd first
+        # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
         STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f3 )"
         echo "Initial STACK_NAME = $STACK_NAME"
 
