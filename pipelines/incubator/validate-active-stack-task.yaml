@@ -42,13 +42,36 @@ spec:
            exit 1
         fi
         
-        # Parse the image value for the project, stackname and version
-        # format example: appsody/java-microprofile:0.2
-        VERSION="$( echo $STACK | cut -d':' -f2 )"
-        PROJECT_STACK="$( echo $STACK | cut -d':' -f1 )"
-        PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f1 )"
-        STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f2 )"
-        
+        # Parse the image value for the repo, project, stackname and version
+        # It can be in one of two formats based on appsody CLI used.
+        # example 1: appsody/java-microprofile:0.2
+        # example 2: image-registry.openshift-image-registry.svc:5000/kabanero/java-microprofile:0.2
+
+        # For version get everything after last :
+        VERSION="${STACK##*:}"
+        echo "VERSION = $VERSION "
+
+        # For project stack get eerything before the last :
+        PROJECT_STACK="${STACK%:*}"
+        echo "PROJECT_STACK = $PROJECT_STACK"
+
+        # The stack name could be after the 2nd of 3rd / based on appsody version. Check after 3rd first
+        STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f3 )"
+        echo "Initial STACK_NAME = $STACK_NAME"
+
+        if [ -z "$STACK_NAME" ]; then
+            echo "No repo name in string. Adjust cut commands."
+            PROJECT="$(echo $PROJECT_STACK | cut -d'/' -f1)"
+            STACK_NAME="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
+        else
+            REPO="$(echo $PROJECT_STACK | cut -d'/' -f1)"
+            PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
+        fi
+
+        echo "REPO = $REPO"
+        echo "PROJECT = $PROJECT"
+        echo "STACK_NAME = $STACK_NAME"
+
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
         if [ $? -ne 0 ]; then
