@@ -3,6 +3,11 @@ kind: PipelineRun
 metadata:
   name: <stack-name>-manual-pipeline-run
 spec:
+  params:
+  - name: event-type
+    value: push
+  - name: event-ref
+    value: refs/heads/master
   serviceAccountName: kabanero-pipeline
   timeout: "1h0m0s"
   pipelineRef:
