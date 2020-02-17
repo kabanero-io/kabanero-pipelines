@@ -24,10 +24,6 @@ spec:
         IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
         IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
         
-        # If the host wasn't specified, default to docker.io
-        if [ -z "$IMAGE_REGISTRY_HOST" ]; then
-           IMAGE_REGISTRY_HOST="docker://docker.io"
-        fi
         
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
@@ -49,7 +45,7 @@ spec:
 
         # For version get everything after last `:`
         VERSION="${STACK##*:}"
-        echo "VERSION = $VERSION "
+        echo "VERSION = $VERSION"
 
         # For project stack get everything before the last `:`
         PROJECT_STACK="${STACK%:*}"
@@ -60,7 +56,6 @@ spec:
         echo "Initial STACK_NAME = $STACK_NAME"
 
         if [ -z "$STACK_NAME" ]; then
-            echo "No repo name in string. Adjust cut commands."
             PROJECT="$(echo $PROJECT_STACK | cut -d'/' -f1)"
             STACK_NAME="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         else
@@ -68,27 +63,44 @@ spec:
             PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         fi
 
-        echo "REPO = $REPO"
         echo "PROJECT = $PROJECT"
+        echo "REPO = $REPO"
         echo "STACK_NAME = $STACK_NAME"
+
+        # If the host wasn't specified, default to docker.io; if only specified in appsody-cfg.yaml use that
+        # If it's in the config map use that and should match with what's in appsody-cfg.yaml
+        if [ -z "$IMAGE_REGISTRY_HOST" ]; then
+            if [ -z "$REPO" ]; then
+              IMAGE_REGISTRY_HOST="docker.io"
+            else
+              IMAGE_REGISTRY_HOST=$REPO
+            fi
+        else  
+            if [ ! -z "$REPO" ] && [ "$REPO" != "$IMAGE_REGISTRY_HOST" ]; then
+                echo "$APPSODY_CONFIG specifies different repository, $REPO, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync."
+                exit 1
+            fi
+        fi
+
+        echo "IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
 
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
         if [ $? -ne 0 ]; then
            echo "$APPSODY_CONFIG specifies stack $STACK_NAME , but no versions of $STACK_NAME are active, and cannot be built."
+           echo "Stack messages = $?"
            exit 1
         fi
         
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
-        STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' ) 
-        
+        STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )    
         
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         fi    
         
         if [ -z "$TARGET_DIGEST" ]; then
@@ -99,9 +111,9 @@ spec:
         for STACK_VERSION in ${STACK_VERSIONS}
            do
               if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
               else
-                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" "$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
+                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
               fi    
        
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
