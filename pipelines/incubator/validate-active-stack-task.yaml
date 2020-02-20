@@ -62,9 +62,9 @@ spec:
             PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         fi
 
-        echo "STACK_REGISTRY in $APPSODY_CONFIG = $STACK_REGISTRY"
-        echo "PROJECT in $APPSODY_CONFIG = $PROJECT"
-        echo "STACK_NAME in $APPSODY_CONFIG = $STACK_NAME"
+        echo "STACK_REGISTRY = $STACK_REGISTRY"
+        echo "PROJECT = $PROJECT"
+        echo "STACK_NAME = $STACK_NAME"
 
         # If the host wasn't specified, default to docker.io; if only specified in appsody-cfg.yaml use that
         # If it's in the config map use that and should match with what's in appsody-cfg.yaml
