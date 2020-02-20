@@ -45,7 +45,7 @@ spec:
 
         # For version get everything after last `:`
         VERSION="${STACK##*:}"
-        echo "VERSION = $VERSION"
+        echo "VERSION in $APPSODY_CONFIG = $VERSION"
 
         # For project stack get everything before the last `:`
         PROJECT_STACK="${STACK%:*}"
@@ -53,19 +53,18 @@ spec:
 
         # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
         STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f3 )"
-        echo "Initial STACK_NAME = $STACK_NAME"
 
         if [ -z "$STACK_NAME" ]; then
             PROJECT="$(echo $PROJECT_STACK | cut -d'/' -f1)"
             STACK_NAME="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         else
-            REPO="$(echo $PROJECT_STACK | cut -d'/' -f1)"
+            STACK_REGISTRY="$(echo $PROJECT_STACK | cut -d'/' -f1)"
             PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         fi
 
-        echo "PROJECT = $PROJECT"
-        echo "REPO = $REPO"
-        echo "STACK_NAME = $STACK_NAME"
+        echo "STACK_REGISTRY in $APPSODY_CONFIG = $STACK_REGISTRY"
+        echo "PROJECT in $APPSODY_CONFIG = $PROJECT"
+        echo "STACK_NAME in $APPSODY_CONFIG = $STACK_NAME"
 
         # If the host wasn't specified, default to docker.io; if only specified in appsody-cfg.yaml use that
         # If it's in the config map use that and should match with what's in appsody-cfg.yaml
@@ -73,12 +72,11 @@ spec:
             if [ -z "$REPO" ]; then
               IMAGE_REGISTRY_HOST="docker.io"
             else
-              IMAGE_REGISTRY_HOST=$REPO
+              IMAGE_REGISTRY_HOST=$STACK_REGISTRY
             fi
         else  
-            if [ ! -z "$REPO" ] && [ "$REPO" != "$IMAGE_REGISTRY_HOST" ]; then
-                echo "$APPSODY_CONFIG specifies different repository, $REPO, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync."
-                exit 1
+            if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
+                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync.  Config map entry takes priority.  Using IMAGE_REGISTRY_HOST as the default stack registry."
             fi
         fi
 
