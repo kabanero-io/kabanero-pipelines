@@ -49,7 +49,6 @@ spec:
 
         # For project stack get everything before the last `:`
         PROJECT_STACK="${STACK%:*}"
-        echo "PROJECT_STACK = $PROJECT_STACK"
 
         # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
         STACK_NAME="$(echo $PROJECT_STACK | cut -d'/' -f3 )"
@@ -76,11 +75,11 @@ spec:
             fi
         else  
             if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
-                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync.  Config map entry takes priority.  Using IMAGE_REGISTRY_HOST as the default stack registry."
+                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
             fi
         fi
 
-        echo "IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo "STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
 
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
@@ -89,7 +88,30 @@ spec:
            echo "Stack messages = $?"
            exit 1
         fi
-        
+
+        # Check if the project names in the cfg file and active stack match
+        CLUSTER_STACK_IMAGE=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].images.image?' ) 
+        echo "CLUSTER_STACK_IMAGE in the cluster is $CLUSTER_STACK_IMAGE"
+
+        # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
+        THIRD_ENTRY="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f3 )"
+
+        if [ -z "$THIRD_ENTRY" ]; then
+            CLUSTER_PROJECT="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f1)"
+        else
+            CLUSTER_STACK_REGISTRY="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f1)"
+            CLUSTER_PROJECT="$( echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2 )"
+        fi
+
+        if [ "$CLUSTER_PROJECT" != "$PROJECT" ]
+            echo "Project name, $CLUSTER_PROJECT, of active stack in cluster and project name in the stack in APPSODY_CONFIG, $PROJECT, do not match."
+            echo "Validation failed. Stack cannot be built."
+            exit 1
+        fi
+
+        # TODO add registry validation logic here.  Implictly handled by digest check.
+        # But can give a better error message with just a name check
+
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
         STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )    
