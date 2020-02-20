@@ -14,17 +14,13 @@ oc login <master node IP>:8443
 git clone https://github.com/kabanero-io/kabanero-pipelines
 ```
 
-## Static Persistent Volumes
+## Static Persistent Volumes Example
 
-The example `pv.yaml` shows how to configure a [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#introduction) using a `hostPath` type on the Persistent Volume. This is shown just for the ease of creating the simplest Persistent Volume to enable a pipeline run. It is not the recommended approach to use hostPath in anything beyond a test environment.Update the path and other values in your `pv.yaml` file provided in this repository, to suit your requirements. Please find all the different types of Persistent Volumes [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes)
-
-For instance, the following example is configured for local storage. You might edit this file to configure it for NFS, the standard configuration in a production environment.
-
-- Clone the `pv.yaml` file in this repository and apply it.
+The example `nfs-pv.yaml` shows how to configure a [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#introduction) using a NFS server.  In OpenShift 4.3, there is a NFS server available out of the box.  Update the server value to point to your infrastructure node in the `nfs-pv.yaml` file provided in this repository.  You can make other updates to suit your needs and requirements.  Please find all the different types of Persistent Volumes [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes)
 
 ```
-cd ./pipelines/common
-oc apply -f pv.yaml -n kabanero
+cd ./pipelines/sample-helper-files/storage-samples
+oc apply -f nfs-pv.yaml -n kabanero
 ```
 
 ## Dynamic Volume Provisioning
