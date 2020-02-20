@@ -1,7 +1,12 @@
 #!/bin/bash
 set -e
 
-base_dir=$(pwd)
+# setup environment
+. $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/env.sh
+
+# expose an extension point for running before main 'package' processing
+exec_hooks $script_dir/ext/pre_package.d
+
 pipelines_dir=$base_dir/pipelines/incubator
 
 # directory to store assets for test or release
@@ -34,3 +39,25 @@ done
 # build archive of pipelines
 tar -czf $assets_dir/default-kabanero-pipelines.tar.gz -C $pipelines_dir .
 echo -e "--- Created kabanero-pipelines.tar.gz"
+
+# expose an extension point for running after main 'package' processing
+exec_hooks $script_dir/ext/post_package.d
+
+nginx_arg=
+
+echo "BUILDING: $IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION}" > ${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log
+if image_build ${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log \
+    $nginx_arg \
+    -t $IMAGE_REGISTRY/$IMAGE_REGISTRY_ORG/$INDEX_IMAGE \
+    -t $IMAGE_REGISTRY/$IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION} \
+    -f $script_dir/nginx/Dockerfile $script_dir
+then
+    echo "$IMAGE_REGISTRY/$IMAGE_REGISTRY_ORG/$INDEX_IMAGE" >> $build_dir/image_list
+    echo "$IMAGE_REGISTRY/$IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION}" >> $build_dir/image_list
+    echo "created $IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION}"
+    trace "${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log"
+else
+    stderr "${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log"
+    stderr "failed building $IMAGE_REGISTRY/$IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION}"
+    exit 1
+fi

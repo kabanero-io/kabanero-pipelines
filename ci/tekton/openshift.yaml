@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelines-index
+  labels:
+    app: pipelines-index
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelines-index
+  template:
+    metadata:
+      labels:
+        app: pipelines-index
+      annotations:
+        date: "DATE"
+        sidecar.istio.io/inject: "false"
+    spec:
+      containers:
+      - name: nginx
+        image: REGISTRY/NAMESPACE/IMAGE:TAG
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /etc/tls/private
+          name: pipelines-index-tls
+      volumes:
+      - name: pipelines-index-tls
+        secret:
+          secretName: pipelines-index-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelines-index
+  labels:
+    app: pipelines-index
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: pipelines-index-tls
+spec:
+  type: ClusterIP
+  selector:
+    app: pipelines-index
+  ports:
+  - name: https
+    port: 8443
+    targetPort: 8443
+    protocol: TCP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: pipelines-index
+spec:
+  host: HOST
+  to:
+    kind: Service
+    name: pipelines-index
+  tls:
+    termination: Reencrypt
+    insecureEdgeTerminationPolicy: Redirect

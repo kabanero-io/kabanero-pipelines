@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: pipelines-build-pipeline
+spec:
+  resources:
+    - name: git-source
+      type: git
+  params:
+    - name: deploymentSuffix
+      type: string
+      description: Deployment name suffix. Specify 'git' to use Git revision as the suffix.
+      default: "latest"
+  tasks:
+    - name: build-task
+      taskRef:
+        name: pipelines-build-task
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+      params:
+        - name: deploymentSuffix
+          value: "$(params.deploymentSuffix)"

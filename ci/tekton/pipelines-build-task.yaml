@@ -1,0 +1,215 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: pipelines-build-task
+spec:
+  inputs:
+    resources:
+      - name: git-source
+        type: git
+    params:
+      - name: registry
+        type: string
+        description: Container registry
+        default: image-registry.openshift-image-registry.svc:5000
+      - name: registryNamespace
+        type: string
+        description: Container registry namespace
+        default: kabanero
+      - name: hostname
+        type: string
+        description: Hostname of the application hosting pipeline assets
+        default: pipelines-index
+      - name: clusterSubdomain
+        type: string
+        default: ""
+        description: Cluster subdomain
+      - name: indexImage
+        type: string
+        description: Name of the pipelines index image
+        default: pipelines-index
+      - name: deploymentSuffix
+        type: string
+        description: Deployment name suffix. Specify 'git' to use Git revision as the suffix.
+        default: "latest"
+
+  steps:
+    - name: build-pipelines
+      securityContext:
+        privileged: true
+      image: quay.io/buildah/stable:v1.9.0
+      command: ["/bin/bash"]
+      args:
+        - -cex
+        - |
+          # install dependencies
+          yum install -y findutils
+    
+          # do build and release
+          export USE_BUILDAH="true"
+          export BUILDAH_FORMAT="docker"
+          export IMAGE_REGISTRY="$(inputs.params.registry)"
+          export IMAGE_REGISTRY_ORG="$(inputs.params.registryNamespace)"
+          export INDEX_IMAGE="$(inputs.params.indexImage)"
+          export INDEX_VERSION=$(echo '$(inputs.resources.git-source.revision)' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:].-')
+          export IMAGE_REGISTRY_PUBLISH="true"
+          cd /workspace/git-source/
+          ./ci/package.sh
+          ./ci/release.sh
+      env:
+        - name: gitsource
+          value: git-source
+      volumeMounts:
+        - name: var-lib-containers
+          mountPath: /var/lib/containers
+
+    - name: deploy-pipelines-index
+      image: kabanero/kabanero-utils:0.3.0
+      command: ['/bin/bash']
+      args:
+        - -cex
+        - |
+          export IMAGE_REGISTRY="$(inputs.params.registry)"
+          export IMAGE_REGISTRY_ORG="$(inputs.params.registryNamespace)"
+          export INDEX_IMAGE="$(inputs.params.indexImage)"
+          export INDEX_VERSION=$(echo '$(inputs.resources.git-source.revision)' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:].-')
+
+          YAML_FILE=/workspace/git-source/ci/tekton/openshift.yaml
+          if [ -z "$(inputs.params.clusterSubdomain)" ]; then
+            sed -i -e '/host:/d' $YAML_FILE
+          else
+            sed -i -e 's/HOST/$(inputs.params.hostname).$(inputs.params.clusterSubdomain)/' $YAML_FILE
+          fi
+          if [ "$(inputs.params.deploymentSuffix)" == "git" ]; then
+            sed -i -e "s/pipelines-index/pipelines-index-$INDEX_VERSION/" $YAML_FILE
+          else
+            sed -i -e "s/pipelines-index/pipelines-index-$(inputs.params.deploymentSuffix)/" $YAML_FILE
+          fi
+          sed -i -e "s/REGISTRY/$IMAGE_REGISTRY/" $YAML_FILE
+          sed -i -e "s/NAMESPACE/$IMAGE_REGISTRY_ORG/" $YAML_FILE
+          sed -i -e "s/IMAGE/$INDEX_IMAGE/" $YAML_FILE
+          sed -i -e "s/TAG/$INDEX_VERSION/" $YAML_FILE
+          sed -i -e "s/DATE/$(date --utc '+%FT%TZ')/" $YAML_FILE
+          kubectl apply --validate=false -f $YAML_FILE
+
+  volumes:
+    - name: var-lib-containers
+      emptyDir: {}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pipelines-index
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pipelines-index
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - deployments
+  - services
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - deployments/rollback
+  - deployments/scale
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - route.openshift.io
+  attributeRestrictions: null
+  resources:
+  - routes
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - route.openshift.io
+  attributeRestrictions: null
+  resources:
+  - routes/custom-host
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  - route.openshift.io
+  attributeRestrictions: null
+  resources:
+  - routes/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreams/layers
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreams
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  - build.openshift.io
+  attributeRestrictions: null
+  resources:
+  - builds/details
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  - build.openshift.io
+  attributeRestrictions: null
+  resources:
+  - builds
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pipelines-index
+subjects:
+- kind: ServiceAccount
+  name: pipelines-index
+roleRef:
+  kind: Role
+  name: pipelines-index
+  apiGroup: rbac.authorization.k8s.io
