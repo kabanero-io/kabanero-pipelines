@@ -90,7 +90,7 @@ spec:
         fi
 
         # Check if the project names in the cfg file and active stack match
-        CLUSTER_STACK_IMAGE=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].images.image?' ) 
+        CLUSTER_STACK_IMAGE=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].images[].image?' ) 
         echo "CLUSTER_STACK_IMAGE in the cluster is $CLUSTER_STACK_IMAGE"
 
         # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
@@ -103,8 +103,8 @@ spec:
             CLUSTER_PROJECT="$( echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2 )"
         fi
 
-        if [ "$CLUSTER_PROJECT" != "$PROJECT" ]
-            echo "Project name, $CLUSTER_PROJECT, of active stack in cluster and project name in the stack in APPSODY_CONFIG, $PROJECT, do not match."
+        if [ "$CLUSTER_PROJECT" != "$PROJECT" ]; then
+            echo "Project name, $CLUSTER_PROJECT, of active stack in cluster and project name in the stack in $APPSODY_CONFIG, $PROJECT, do not match."
             echo "Validation failed. Stack cannot be built."
             exit 1
         fi
