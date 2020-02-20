@@ -66,33 +66,67 @@ spec:
     args:
       - -c
       - |
-        echo "Checking for configmap value....DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
-        STACK_IMAGE_REGISTRY_URL=$(inputs.params.stack-image-registry-url)
+        echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
+
         if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
         then
-            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL not configured; using $STACK_IMAGE_REGISTRY_URL for stack image download"
-        else
-            echo "Stack image registry url setup by user is $DEFAULT_STACK_IMAGE_REGISTRY_URL"
-            STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL not configured in a config map.  Look for the stack registry info in the .appsody-cfg file."
+            APPSODY_CONFIG=".appsody-config.yaml"
+            
+            # Default the stack registry to docker.io
+            STACK_IMAGE_REGISTRY_URL="docker.io"
 
+            cd /workspace/$gitsource
+            
+            if [ ! -f "$APPSODY_CONFIG" ]; then
+                echo "$APPSODY_CONFIG is not found in the root of the source directory."
+            else
+                # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
+                declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
+                if [ -z "$STACK" ]; then
+                  echo "$APPSODY_CONFIG does not contain a stack definition."
+                fi
+            fi
+
+            # The stack registry may or may not be in the appsody-cfg.yaml file
+            # If it's there the format should be like registry/project/name:version
+            # It could also just be project/name:version.
+            # Try to determine if the registry is there and if it is, parse it out
+            NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${STACK}")
+            if [ "$NUM_SLASHES" = 1 ]; then
+                echo "No stack registry specified in $APPSODY_CONFIG. Using docker.io as the stack registry."
+            elif [ "$NUM_SLASHES" = 2 ]; then
+                STACK_IMAGE_REGISTRY_URL="$(echo $STACK | cut -d'/' -f1)"
+                echo "Stack registry specified in $APPSODY_CONFIG as $STACK_IMAGE_REGISTRY_URL.  Using this as the stack registry."
+            else
+                echo "Unexpeted format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
+            fi
+        else
+            echo "Using stack image registry url setup by user in configmap as $DEFAULT_STACK_IMAGE_REGISTRY_URL"
+            STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+        fi
+        
+        echo "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL."
+
+        if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
+        then
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty.  Assumption is authentication to the registry is not required."
+        else
+            echo "Secrets are provided to login to stack registry"
+            
             #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
-            echo "HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
             echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
             echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
-
-            if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
-            then
-               echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty ,Assumption is $DEFAULT_STACK_IMAGE_REGISTRY_URL is internal registry, skipping the login to the registry"
-            else
-               echo "Both DEFAULT_STACK_IMAGE_REGISTRY_URL and Secrets are provided"
-               echo "Adding buildah login command to cert-creation.sh script"
-               echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
-            fi
-             chmod 755 cert-creation.sh
-             ./cert-creation.sh
+            echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
+            
+            echo "Creating certificates and logging into the registry."
+            chmod 755 cert-creation.sh
+            ./cert-creation.sh
         fi
-        cd /workspace/$gitsource
 
+        cd /workspace/$gitsource
+ 
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( echo $( /workspace/imageurl_imagename_lowercase.sh ) )
         echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 

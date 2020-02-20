@@ -74,8 +74,6 @@ spec:
             STACK_IMAGE_REGISTRY_URL="docker.io"
 
             cd /workspace/$gitsource
-
-            ls -al
             
             if [ ! -f "$APPSODY_CONFIG" ]; then
                 echo "$APPSODY_CONFIG is not found in the root of the source directory."
