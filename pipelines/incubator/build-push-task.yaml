@@ -99,27 +99,28 @@ spec:
                 echo "Unexpeted format for stack in APPSODY_CONFIG."
             fi
         else
-            echo "Stack image registry url setup by user is $DEFAULT_STACK_IMAGE_REGISTRY_URL"
+            echo "Using stack image registry url setup by user in configmap as $DEFAULT_STACK_IMAGE_REGISTRY_URL"
             STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+        fi
+        
+        echo "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL."
 
+        if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
+        then
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty.  Assumption is authentication to the registry is not required."
+        else
+            echo "Secrets are provided to login to stack registry"
+            
             #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
-            echo "HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
             echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
             echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
-
-            if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
-            then
-               echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty ,Assumption is $DEFAULT_STACK_IMAGE_REGISTRY_URL is internal registry, skipping the login to the registry"
-            else
-               echo "Both DEFAULT_STACK_IMAGE_REGISTRY_URL and Secrets are provided"
-               echo "Adding buildah login command to cert-creation.sh script"
-               echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
-            fi
-             chmod 755 cert-creation.sh
-             ./cert-creation.sh
+            echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
+            
+            echo "Creating certificates and logging into the registry."
+            chmod 755 cert-creation.sh
+            ./cert-creation.sh
         fi
-
-        echo "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL."
 
         cd /workspace/$gitsource
  
