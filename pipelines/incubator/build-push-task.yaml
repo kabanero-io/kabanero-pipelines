@@ -73,10 +73,12 @@ spec:
             # Default the stack registry to docker.io
             STACK_IMAGE_REGISTRY_URL="docker.io"
 
-            cd /workspace/$GITSOURCE
+            cd /workspace/$gitsource
+
+            ls -al
             
             if [ ! -f "$APPSODY_CONFIG" ]; then
-                echo $APPSODY_CONFIG" is not found in the root of the source directory.
+                echo "$APPSODY_CONFIG is not found in the root of the source directory."
             else
                 # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
                 declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
@@ -87,16 +89,16 @@ spec:
 
             # The stack registry may or may not be in the appsody-cfg.yaml file
             # If it's there the format should be like registry/project/name:version
-            # It could also just e project/name:version.
+            # It could also just be project/name:version.
             # Try to determine if the registry is there and if it is, parse it out
-            NUM_SLASHES=awk -F"/" '{print NF-1}' <<< "${STACK}"
+            NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${STACK}")
             if [ "$NUM_SLASHES" = 1 ]; then
-                echo "No stack registry specified in APPSODY_CONFIG."
+                echo "No stack registry specified in $APPSODY_CONFIG. Using docker.io as the stack registry."
             elif [ "$NUM_SLASHES" = 2 ]; then
                 STACK_IMAGE_REGISTRY_URL="$(echo $STACK | cut -d'/' -f1)"
-                echo "Stack registry specified in APPSODY_CONFIG as $APP_CFG_REGISTRY.  Using this as the stack registry."
+                echo "Stack registry specified in $APPSODY_CONFIG as $STACK_IMAGE_REGISTRY_URL.  Using this as the stack registry."
             else
-                echo "Unexpeted format for stack in APPSODY_CONFIG."
+                echo "Unexpeted format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
             fi
         else
             echo "Using stack image registry url setup by user in configmap as $DEFAULT_STACK_IMAGE_REGISTRY_URL"
