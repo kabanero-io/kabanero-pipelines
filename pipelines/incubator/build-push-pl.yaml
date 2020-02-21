@@ -19,7 +19,7 @@ spec:
           resource: git-source
     - name: build-push-task
       taskRef:
-        name: StackId-build-push-task
+        name: StackId-build-push-jenkins-task
       runAfter: [validate-stack-task]
       resources:
         inputs:
