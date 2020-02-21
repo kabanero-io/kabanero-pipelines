@@ -108,6 +108,14 @@ spec:
         if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
         then
             echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty.  Assumption is authentication to the registry is not required."
+            #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
+            echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
+            echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
+            
+            echo "Creating certificates and logging into the registry."
+            chmod 755 cert-creation.sh
+            ./cert-creation.sh        
         else
             echo "Secrets are provided to login to stack registry"
             
