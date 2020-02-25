@@ -24,7 +24,6 @@ spec:
         IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
         IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
         
-        
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
            echo $APPSODY_CONFIG" is not found in the root of the source directory. Unable to validate if the stack is active."
@@ -45,7 +44,7 @@ spec:
 
         # For version get everything after last `:`
         VERSION="${STACK##*:}"
-        echo "In $APPSODY_CONFIG... "
+        echo "Git project config in $APPSODY_CONFIG... "
         echo "VERSION = $VERSION"
 
         # For project stack get everything before the last `:`
@@ -62,7 +61,7 @@ spec:
             PROJECT="$( echo $PROJECT_STACK | cut -d'/' -f2 )"
         fi
 
-        echo "STACK_REGISTRY = $STACK_REGISTRY"
+        echo "STACK_IMAGE_REGISTRY = $STACK_REGISTRY"
         echo "PROJECT = $PROJECT"
         echo "STACK_NAME = $STACK_NAME"
 
@@ -76,16 +75,17 @@ spec:
             fi
         else  
             if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
-                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST in the cluster.  They should be in sync.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
+                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  They should be in sync.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
             fi
         fi
 
-        echo "STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo ""
 
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
         if [ $? -ne 0 ]; then
-           echo "$APPSODY_CONFIG specifies stack $STACK_NAME , but no versions of $STACK_NAME are active, and cannot be built."
+           echo "No versions of $STACK_NAME in $APPSODY_CONFIG are active in the cluster.  Stack cannot be built since $STACK_NAME is not active."
            echo "Stack messages = $?"
            exit 1
         fi
@@ -93,17 +93,23 @@ spec:
         # Check if the project names in the cfg file and active stack match
         CLUSTER_STACK_IMAGE=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].images[].image?' ) 
         echo "In the cluster..."
-        echo "CLUSTER_STACK_IMAGE is $CLUSTER_STACK_IMAGE"
+        echo "STACK_IMAGE = $CLUSTER_STACK_IMAGE"
 
         # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
         THIRD_ENTRY="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f3 )"
 
         if [ -z "$THIRD_ENTRY" ]; then
             CLUSTER_PROJECT="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f1)"
+            CLUSTER_STACK="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2)"
         else
             CLUSTER_STACK_REGISTRY="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f1)"
             CLUSTER_PROJECT="$( echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2 )"
+            CLUSTER_STACK="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f3)"
         fi
+
+        echo "STACK_IMAGE_REGISTRY = $CLUSTER_STACK_REGISTRY"
+        echo "PROJECT = $CLUSTER_PROJECT"
+        echo "STACK_NAME = $CLUSTER_STACK"
 
         if [ "$CLUSTER_PROJECT" != "$PROJECT" ]; then
             echo "Project name, $CLUSTER_PROJECT, of active stack in cluster and project name in the stack in $APPSODY_CONFIG, $PROJECT, do not match."
@@ -116,8 +122,10 @@ spec:
 
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
-        STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )    
-        
+        CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )    
+        echo "VERSIONS = $CLUSTER_STACK_VERSIONS"
+        echo ""
+
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
            TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
@@ -130,7 +138,7 @@ spec:
            exit 1
         fi
         
-        for STACK_VERSION in ${STACK_VERSIONS}
+        for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
            do
               if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
                  CURRENT_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
@@ -139,15 +147,16 @@ spec:
               fi    
        
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
-                 echo "The Kabanero stack contained in $STACK is active on this system and can be built."
+                 echo "The application stack, $STACK, in $APPSODY_CONFIG is active on this cluster and can be built."
                  exit 0
               else
-                 echo "Version: $STACK_VERSION, Digest: $CURRENT_DIGEST, Target Digest: $TARGET_DIGEST"
+                 echo "Cluster stack version: $STACK_VERSION, Cluster stack digest: $CURRENT_DIGEST"
+                 echo "Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
               fi
            done
         
-           echo "The Kabanero stack contained in "$STACK" is not active on this system and contained in the image registry and cannot be built."
-           exit 1
+           echo "WARNING: A compatible version of the application stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+           exit 0
     env:
     - name: gitsource
       value: git-source
