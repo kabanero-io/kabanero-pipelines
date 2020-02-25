@@ -44,7 +44,7 @@ spec:
 
         # For version get everything after last `:`
         VERSION="${STACK##*:}"
-        echo "In $APPSODY_CONFIG... "
+        echo "Git project config in $APPSODY_CONFIG... "
         echo "VERSION = $VERSION"
 
         # For project stack get everything before the last `:`
@@ -147,14 +147,15 @@ spec:
               fi    
        
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
-                 echo "The Kabanero stack, $STACK, in $APPSODY_CONFIG is active on this cluster and can be built."
+                 echo "The application stack, $STACK, in $APPSODY_CONFIG is active on this cluster and can be built."
                  exit 0
               else
-                 echo "Version: $STACK_VERSION, Digest: $CURRENT_DIGEST, Target Digest: $TARGET_DIGEST"
+                 echo "Cluster stack version: $STACK_VERSION, Cluster stack digest: $CURRENT_DIGEST"
+                 echo "Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
               fi
            done
         
-           echo "WARNING: A compatible version of the Kabanero stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster and the stack specification in the $APPSODY_CONFIG file of the git project."
+           echo "WARNING: A compatible version of the application stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stacks -n) and the stack specification in the $APPSODY_CONFIG file of the git project."
            exit 0
     env:
     - name: gitsource
