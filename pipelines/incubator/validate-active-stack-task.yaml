@@ -79,8 +79,8 @@ spec:
             fi
         fi
 
-        echo ""
         echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo ""
 
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
@@ -124,6 +124,7 @@ spec:
         # Assumed the version(s) are in the metadata
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )    
         echo "VERSIONS = $CLUSTER_STACK_VERSIONS"
+        echo ""
 
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
