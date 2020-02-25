@@ -155,7 +155,7 @@ spec:
               fi
            done
         
-           echo "WARNING: A compatible version of the application stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stacks -n) and the stack specification in the $APPSODY_CONFIG file of the git project."
+           echo "WARNING: A compatible version of the application stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
            exit 0
     env:
     - name: gitsource
