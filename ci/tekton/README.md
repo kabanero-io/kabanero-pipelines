@@ -46,7 +46,7 @@ Use these steps to trigger a Tekton pipeline build of your pipelines repository.
       params:
         - name: deploymentSuffix
           value: latest
-      serviceAccount: pipelines-index
+      serviceAccountName: pipelines-index
       timeout: 60m
     ```
 
