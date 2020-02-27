@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: StackId-build-push-jenkins-task
+  name: StackId-build-push-jk-task
 spec:
   inputs:
     resources:

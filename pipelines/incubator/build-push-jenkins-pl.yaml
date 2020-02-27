@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: StackId-build-push-pl
+  name: StackId-build-push-jk-pl
 spec:
   resources:
     - name: git-source
@@ -19,7 +19,7 @@ spec:
           resource: git-source
     - name: build-push-task
       taskRef:
-        name: StackId-build-push-task
+        name: StackId-build-push-jk-task
       runAfter: [validate-stack-task]
       resources:
         inputs:

@@ -1,0 +1,117 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: StackId-build-push-jk-pl-pullrequest-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.pull_request.head.sha)
+  - name: gitrepositoryurl
+    value: $(body.repository.clone_url)
+  - name: docker-tag
+    value: $(body.repository.name):$(body.pull_request.head.sha)
+  - name: event-type
+    value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-branch
+    value: $(body.webhooks-tekton-git-branch)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: StackId-build-push-jk-pl-push-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.head_commit.id)
+  - name: gitrepositoryurl
+    value: $(body.repository.clone_url)
+  - name: docker-tag
+    value: $(body.repository.name):$(body.head_commit.id)
+  - name: event-type
+    value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-branch
+    value: $(body.webhooks-tekton-git-branch)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: StackId-build-push-jk-pl-template
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: event-ref
+    default: other
+  - name: gitrevision
+    description: The revision of your Git repository
+  - name: gitrepositoryurl
+    description: The url of your Git repository
+  - name: webhooks-tekton-git-server
+    description: The server name in the Git url
+  - name: webhooks-tekton-git-org
+    description: The org name in the Git url
+  - name: webhooks-tekton-git-repo
+    description: The repository name in the Git url
+  - name: webhooks-tekton-git-branch
+    description: The branch for the Git repository
+  - name: event-type
+    description: The Git event type
+  - name: webhooks-tekton-docker-registry
+    description: The image registry
+  - name: docker-tag
+    description: The image tag
+  - name: webhooks-tekton-service-account
+    description: The ServiceAccount that the PipelineRun will execute under
+  - name: webhooks-tekton-target-namespace
+    description: The namespace in which to create this TriggerTemplate's resources
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: git-source-$(uid)
+      namespace: $(params.webhooks-tekton-target-namespace)
+    spec:
+      type: git
+      params:
+      - name: revision
+        value: $(params.gitrevision)
+      - name: url
+        value: $(params.gitrepositoryurl)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: docker-image-$(uid)
+      namespace: $(params.webhooks-tekton-target-namespace)
+    spec:
+      type: image
+      params:
+      - name: url
+        value: $(params.webhooks-tekton-docker-registry)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      generateName: StackId-build-push-jk-pl-run-
+      namespace: $(params.webhooks-tekton-target-namespace)
+      labels:
+        webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
+        webhooks.tekton.dev/gitOrg: $(params.webhooks-tekton-git-org)
+        webhooks.tekton.dev/gitRepo: $(params.webhooks-tekton-git-repo)
+        webhooks.tekton.dev/gitBranch: $(params.webhooks-tekton-git-branch)
+    spec:
+      serviceAccountName: $(params.webhooks-tekton-service-account)
+      pipelineRef:
+        name: StackId-build-push-jk-pl
+      params:
+      - name: event-type
+        value: $(params.event-type)
+      resources:
+      - name: git-source
+        resourceRef:
+          name: git-source-$(uid)
+      - name: docker-image
+        resourceRef: 
+          name: docker-image-$(uid)
+
+
