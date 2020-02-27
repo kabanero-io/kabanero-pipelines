@@ -3,10 +3,14 @@ Use these steps to trigger a Tekton pipeline build of your pipelines repository.
 
 1. Deploy pipeline
     ```
+    oc -n kabanero apply -f tekton/pipelines-build-pipeline.yaml 
+    ```
+1. Deploy task
+    ```
     oc -n kabanero apply -f tekton/pipelines-build-task.yaml 
     ```
 
-1. Configure security constraints for service account
+1. Configure security constraints for service account `pipelines-index`
     ```
     oc -n kabanero adm policy add-scc-to-user privileged -z pipelines-index
     ```
