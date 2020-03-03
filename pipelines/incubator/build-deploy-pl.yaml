@@ -11,6 +11,10 @@ spec:
   - name: event-ref
     type: string
     description: "The event ref"
+  - name: docker-imagename
+    type: string
+  - name: docker-imagetag
+    type: string
   resources:
   - name: git-source
     type: git
@@ -24,14 +28,33 @@ spec:
       inputs:
       - name: git-source
         resource: git-source
-  - name: build-push-task
+  - name: imagename-lowercase-task
     taskRef:
-      name: StackId-build-push-task
+      name: StackId-imagename-lowercase-task
     runAfter: [validate-stack-task]
+    params:
+      - name: docker-imagename
+        value: "$(params.docker-imagename)"
+      - name: docker-imagetag
+        value: "$(params.docker-imagetag)"
     resources:
       inputs:
       - name: git-source
         resource: git-source
+      - name: docker-image
+        resource: docker-image
+      outputs:
+      - name: git-source
+        resource: git-source
+  - name: build-push-task
+    taskRef:
+      name: StackId-build-push-task
+    runAfter: [imagename-lowercase-task]
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+        from: [imagename-lowercase-task]
       outputs:
       - name: docker-image
         resource: docker-image
@@ -45,6 +68,7 @@ spec:
       inputs:
       - name: git-source
         resource: git-source
+        from: [imagename-lowercase-task]
       - name: docker-image
         resource: docker-image
   - name: deploy-task
