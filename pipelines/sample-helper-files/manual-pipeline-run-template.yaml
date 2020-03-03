@@ -8,6 +8,10 @@ spec:
     value: push
   - name: event-ref
     value: refs/heads/master
+  - name: docker-imagename
+    value: <stack-name>-image
+  - name: docker-imagetag
+    value: latest
   serviceAccountName: kabanero-pipeline
   timeout: "1h0m0s"
   pipelineRef:
