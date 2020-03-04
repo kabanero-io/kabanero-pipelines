@@ -136,4 +136,27 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
 
 ## Update the Kabanero CR to use the new release
 
-Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step. 
+Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step.  You will also have to generate the digest of the pipelines archive contained at this URL and specify it in the Kabanero CR.   Typically a command like sha256sum is used to obtain the digest.
+
+An example is shown below, where the pipelines pulished in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are assocaited with each of the stacks that exist in the stack repository.
+
+```
+apiVersion: kabanero.io/v1alpha1
+kind: Kabanero
+metadata:
+  name: kabanero
+spec:
+  version: "0.6.0"
+  stacks:
+    repositories:
+    - name: central
+      https:
+        url: https://github.com/kabanero-io/collections/releases/download/v0.6.0/kabanero-index.yaml
+    pipelines:
+    - id: default
+      sha256: 14d59b7ebae113c18fb815c2ccfd8a846c5fbf91d926ae92e0017ca5caf67c95
+      https:
+        url: https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz
+```
+
+Alternatively, you can specify the pipelines under the stacks section also.  This will result in the the pipelines in the archive getting associated with all the application stacks in all the repositories listed under stacks.
