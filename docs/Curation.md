@@ -22,9 +22,23 @@ The Kabanero operator expects all the pipelines artifacts to be packaged in an a
 
 ## Creating a release locally 
 
+You can build your pipeline repo locally and generate the necessary pipeline archive to use in the Kabanero CR.  The archive file can then be hosted someplace of your chooseing and used in the Kabanero CR.  To generate the archive file locally
+
+1. Run the following command from the root directory of your local copy of the pipelines repo:
+
+    ```
+    . ./ci/package.sh
+    ```
+
+2. Locate the archive file under the `ci/assests` directory.
+
+3. Upload the archive file to your preferred hosting location and use the URL in the Kabanero CR as described in the next section.
+
 ## Creating a release from your public Github pipelines repo using travis
 
-If your pipelines are hosted on a pulic github repo
+If your pipelines are hosted on a pulic github repo, you can setup a Travis build against a release of your pipelines repo.   This will generate the archive file and attach it to your release.  The kabanro-piplelines repo provides a sample `.travis.yml` file.
+
+Use the location of the archive file under the release in the Kabanero CR as described in the next section. 
 
 ## Creating a release from your GHE pipelines repo using a tekton pipeline
 
@@ -111,13 +125,15 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
 
    After the build completes successfully, a `pipelines-index-latest` container is deployed into your cluster.
 
-1. Get the route for the `pipelines-index-latest` pod and use it to generate pipelines URL:
+1. Get the route for the `pipelines-index-latest` pod.
 
     ```
     PIPELINES_URL=$(oc -n kabanero get route pipelines-index-latest --no-headers -o=jsonpath='https://{.status.ingress[0].host}/default-kabanero-pipelines.tar.gz')
     echo $PIPELINES_URL
     ```
 
+1. Use the URL in the Kabanero CR as described in the next section.
+
 ## Update the Kabanero CR to use the new release
 
-Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the `PIPELINES_URL` obtained in the previous step. 
+Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step. 
