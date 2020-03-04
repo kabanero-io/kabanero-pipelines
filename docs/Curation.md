@@ -1,4 +1,4 @@
-Kabanero ships a default set of tasks and pipelines that illustrate a variety of CI/CD functions.  Some of the functions include validating the application stack is active on the cluster, building applications stacks using appsody, pushing the built image to an image repositiry, deploying the application to the cluster, amongst other things.  These tasks and pipeline work with the default Kabanero application stacks and in many cases might work as is for new application stacks you might create.  However there are cases where you might want to update the tasks or pipelines or create new ones.  This guide will go over the steps to make those updates and how you can update your kabanero CR to use your new pipeline release.
+Kabanero ships a default set of tasks and pipelines that illustrate a variety of CI/CD functions.  Some of the functions include validating the application stack is active on the cluster, building applications stacks using appsody, pushing the built image to an image repositiry, deploying the application to the cluster, amongst other things.  These tasks and pipelines  work with the default Kabanero application stacks and in many cases might work as is for new application stacks you might create.  However there are cases where you might want to update the tasks or pipelines or create new ones.  This guide will go over the steps to make those updates and how you can update your kabanero CR to use your new pipeline release.
 
 # Creating and updating new tasks or pipelines in your pipelines repo
 
@@ -16,11 +16,11 @@ Kabanero ships a default set of tasks and pipelines that illustrate a variety of
   
 1. Edit the existing tasks, pipelines, or trigger files as needed or add your new tasks and pipelines here.  To learn more about pipelines and creating new tasks, see [the pipeline tutorial](https://github.com/tektoncd/pipeline/blob/master/docs/tutorial.md).
 
-# Creating a release from your pipelines repo
+# Creating a pipelines release from your pipelines repo
 
-The Kabanero operator expects all the pipelines artifacts to be packaged in an archive file.  The archive file should also include a manifest file that lists out each file in the archive along with it's sha256 hash.  The kabanero-pipelines contains a set of artifacts under the `ci` directory that lets you create and publish a release of your pipelines easily.  
+The Kabanero operator expects all the pipelines artifacts to be packaged in an archive file.  The archive file should also include a manifest file that lists out each file in the archive along with it's sha256 hash.  The kabanero-pipelines repo  contains a set of artifacts under the `ci` directory that lets you create and publish a release of your pipelines easily.  
 
-## Creating a release locally 
+## Creating the pipelines release artifacts locally 
 
 You can build your pipeline repo locally and generate the necessary pipeline archive to use in the Kabanero CR.  The archive file can then be hosted someplace of your chooseing and used in the Kabanero CR.  To generate the archive file locally
 
@@ -34,13 +34,13 @@ You can build your pipeline repo locally and generate the necessary pipeline arc
 
 3. Upload the archive file to your preferred hosting location and use the URL in the Kabanero CR as described in the next section.
 
-## Creating a release from your public Github pipelines repo using travis
+## Creating the pipelines release artifacts from your public Github pipelines repo using travis
 
-If your pipelines are hosted on a pulic github repo, you can setup a Travis build against a release of your pipelines repo.   This will generate the archive file and attach it to your release.  The kabanro-piplelines repo provides a sample `.travis.yml` file.
+If your pipelines are hosted on a public github repo, you can setup a Travis build against a release of your pipelines repo.   This will generate the archive file and attach it to your release.  The kabanro-piplelines repo provides a sample `.travis.yml` file.
 
 Use the location of the archive file under the release in the Kabanero CR as described in the next section. 
 
-## Creating a release from your GHE pipelines repo using a tekton pipeline
+## Creating the pipelines release artifacts from your GHE pipelines repo using a tekton pipeline on the OpenShift cluster
 
 Use these steps below to trigger a Tekton pipeline build of your pipelines repository. The pipeline will build the pipelines and deploy a `pipelines-index` container into your cluster.  The `pipelines-index` container will host the Kabanero pipeline archive on a NGINX server.
 
