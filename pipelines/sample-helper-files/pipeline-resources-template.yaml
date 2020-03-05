@@ -7,7 +7,7 @@ items:
   spec:
     params:
     - name: url
-      value: docker.io/<docker_id>/<docker_image_name>
+      value: docker.io/<docker_id>
     type: image
 - apiVersion: tekton.dev/v1alpha1
   kind: PipelineResource
