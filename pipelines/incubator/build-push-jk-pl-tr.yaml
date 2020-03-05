@@ -111,9 +111,9 @@ spec:
         name: StackId-build-push-jk-pl
       params:
       - name: event-type
-        value: ""
+        value: $(params.event-type)
       - name: docker-imagename
-        value: $(params.docker-imagename)
+        value: ""
       - name: docker-imagetag
         value: ""
       resources:
