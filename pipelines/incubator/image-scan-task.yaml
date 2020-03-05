@@ -116,6 +116,9 @@ spec:
           echo "********** START OF report.html **********"
           cat $outputDir/report.html
           echo "********** END OF report.html ************"
+      env:
+        - name: gitsource
+          value: git-source
       volumeMounts:
         - name: host-save-dir
           mountPath: /workspace/scans

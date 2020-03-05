@@ -30,8 +30,8 @@ spec:
     args:
       - -c
       - |
-        #This step generates a script with the logic to make docker-image resource url with image_name as lowercase
-        # usage example 1 in usecases where input param 'docker-imagename=appsodyMPversion' and 'docker-imagetag=abcDEF' is present and 'docker-iamge' url= image-registry.openshift-image-registry.svc:5000/kabanero/
+        #This step generates a script with the logic to change docker-image resource url with image_name as lowercase.
+        # usage example 1 in usecases where input param 'docker-imagename=appsodyMPversion' and 'docker-imagetag=abcDEF' is present and 'docker-iamge' url= image-registry.openshift-image-registry.svc:5000/kabanero
         #  Then output should be url with docker-imagename 'appsodyMPversion' as lowercase, OutputURL = 'image-registry.openshift-image-registry.svc:5000/kabanero/appsodympversion:abcDEF'
         # usage example 2 in jenkins case where input param 'docker-imagename' and 'docker-imagetag' are empty ,'docker-image' url=docker.io/abcd, and if app-deploy file has 'name=java-MP-project' 
         #  Then first the url is constructed from 'app-deploy.yaml' file from the github application project. Secondly the imagename in the url is converted to lowercase.
