@@ -1,4 +1,4 @@
-Kabanero ships a default set of tasks and pipelines that illustrate a variety of CI/CD functions.  Some of the functions include validating the application stack is active on the cluster, building applications stacks using appsody, pushing the built image to an image repositiry, deploying the application to the cluster, amongst other things.  These tasks and pipelines  work with the default Kabanero application stacks and in many cases might work as is for new application stacks you might create.  However there are cases where you might want to update the tasks or pipelines or create new ones.  This guide will go over the steps to make those updates and how you can update your kabanero CR to use your new pipeline release.
+Kabanero ships a default set of tasks and pipelines that illustrate a variety of CI/CD functions.  Some of the functions include validating the application stack is active on the cluster, building applications stacks using appsody, pushing the built image to an image repository, deploying the application to the cluster, amongst other things.  These tasks and pipelines  work with the default Kabanero application stacks and in many cases might work as is for new application stacks you might create.  However there are cases where you might want to update the tasks or pipelines or create new ones.  This guide will go over the steps to make those updates and how you can update your kabanero CR to use your new pipeline release.
 
 # Creating and updating new tasks or pipelines in your pipelines repo
 
@@ -18,11 +18,11 @@ Kabanero ships a default set of tasks and pipelines that illustrate a variety of
 
 # Creating a pipelines release from your pipelines repo
 
-The Kabanero operator expects all the pipelines artifacts to be packaged in an archive file.  The archive file should also include a manifest file that lists out each file in the archive along with it's sha256 hash.  The kabanero-pipelines repo  contains a set of artifacts under the `ci` directory that lets you create and publish a release of your pipelines easily.  
+The Kabanero operator expects all the pipelines artifacts to be packaged in an archive file.  The archive file should also include a manifest file that lists out each file in the archive along with its sha256 hash.  The kabanero-pipelines repo  contains a set of artifacts under the `ci` directory that lets you create and publish a release of your pipelines easily.  
 
 ## Creating the pipelines release artifacts locally 
 
-You can build your pipeline repo locally and generate the necessary pipeline archive to use in the Kabanero CR.  The archive file can then be hosted someplace of your chooseing and used in the Kabanero CR.  To generate the archive file locally
+You can build your pipeline repo locally and generate the necessary pipeline archive to use in the Kabanero CR.  The archive file can then be hosted someplace of your choosing and used in the Kabanero CR.  To generate the archive file locally
 
 1. Run the following command from the root directory of your local copy of the pipelines repo:
 
@@ -138,7 +138,7 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
 
 Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step.  You will also have to generate the digest of the pipelines archive contained at this URL and specify it in the Kabanero CR.   Typically a command like sha256sum is used to obtain the digest.
 
-An example is shown below, where the pipelines pulished in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are assocaited with each of the stacks that exist in the stack repository.
+An example is shown below, where the pipelines pulished in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
 
 ```
 apiVersion: kabanero.io/v1alpha1
@@ -159,4 +159,4 @@ spec:
         url: https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz
 ```
 
-Alternatively, you can specify the pipelines under the stacks section also.  This will result in the the pipelines in the archive getting associated with all the application stacks in all the repositories listed under stacks.
+Alternatively, you can specify the pipelines archive under individual stack section(s).  This will result in the the pipelines in the archive getting associated with these application stack(s).
