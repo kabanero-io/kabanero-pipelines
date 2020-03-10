@@ -8,7 +8,7 @@ Kabanero delivers a default set of tasks and pipelines that perform a variety of
    git clone https://github.com/kabanero-io/kabanero-pipelines.git
    ```
 
-1. The default pipelines and tasks are under the `pipelines/incubator` repository.
+1. Notice that the default pipelines and tasks are under the `pipelines/incubator` repository.
 
     ```shell
     cd pipelines/incubator
@@ -18,11 +18,11 @@ Kabanero delivers a default set of tasks and pipelines that perform a variety of
 
 # Creating a pipelines release from your pipelines repo
 
-The Kabanero operator expects all the pipelines artifacts to be packaged in an archive file.  The archive file should also include a manifest file that lists out each file in the archive along with its sha256 hash.  The kabanero-pipelines repo  contains a set of artifacts under the `ci` directory that lets you create and publish a release of your pipelines easily.  
+The Kabanero operator expects all the pipeline's artifacts to be packaged in an archive file.  The archive file must include a manifest file that lists each file in the archive along with its sha256 hash.  The kabanero-pipelines repo contains a set of artifacts under the `ci` directory that easily allows you to create and publish a release of your pipelines.  
 
 ## Creating the pipelines release artifacts locally 
 
-You can build your pipeline repo locally and generate the necessary pipeline archive to use in the Kabanero CR.  The archive file can then be hosted someplace of your choosing and used in the Kabanero CR.  To generate the archive file locally
+You can build your pipeline repo locally and generate the necessary pipeline archive that is used in the Kabanero CR.  The archive file can then be hosted some place of your choosing and used in the Kabanero CR.  To generate the archive file locally
 
 1. Run the following command from the root directory of your local copy of the pipelines repo:
 
@@ -36,13 +36,13 @@ You can build your pipeline repo locally and generate the necessary pipeline arc
 
 ## Creating the pipelines release artifacts from your public Github pipelines repo using travis
 
-If your pipelines are hosted on a public github repo, you can setup a Travis build against a release of your pipelines repo.   This will generate the archive file and attach it to your release.  The kabanro-piplelines repo provides a sample `.travis.yml` file.
+If your pipelines are hosted on a public github repo, you can set up a travis build against a release of your pipelines repo,   which generates the archive file and attaches it to your release.  The kabanro-piplelines repo provides a sample `.travis.yml` file.
 
 Use the location of the archive file under the release in the Kabanero CR as described in the next section. 
 
 ## Creating the pipelines release artifacts from your GHE pipelines repo using a tekton pipeline on the OpenShift cluster
 
-Use these steps below to trigger a Tekton pipeline build of your pipelines repository. The pipeline will build the pipelines and deploy a `pipelines-index` container into your cluster.  The `pipelines-index` container will host the Kabanero pipeline archive on a NGINX server.
+Follow these steps below to trigger a Tekton pipeline build of your pipelines repository. The pipeline will build the pipelines and deploy a `pipelines-index` container into your cluster.  The `pipelines-index` container will host the Kabanero pipeline archive on a NGINX server.
 
 1. Login to your OpenShift cluster.
 
@@ -62,7 +62,7 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
     oc -n kabanero adm policy add-scc-to-user privileged -z pipelines-index
     ```
 
-1. Create `pipelines-build-git-resource.yaml` file with the following contents. Modify `revision` and `url` properties as needed to point to your pipelines repository and revision you want to build.
+1. Create the `pipelines-build-git-resource.yaml` file with the following contents. Modify `revision` and `url` properties as needed to point to your pipelines repository and the revision you want to build.
 
     ```
     apiVersion: tekton.dev/v1alpha1
@@ -123,7 +123,7 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
     oc -n kabanero logs $(oc -n kabanero get pod -o name -l tekton.dev/task=pipelines-build-task) --all-containers -f 
     ```
 
-   After the build completes successfully, a `pipelines-index-latest` container is deployed into your cluster.
+   When the build completes successfully, a `pipelines-index-latest` container is deployed into your cluster.
 
 1. Get the route for the `pipelines-index-latest` pod.
 
@@ -136,9 +136,9 @@ Use these steps below to trigger a Tekton pipeline build of your pipelines repos
 
 ## Update the Kabanero CR to use the new release
 
-Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step.  You will also have to generate the digest of the pipelines archive contained at this URL and specify it in the Kabanero CR.   Typically a command like sha256sum is used to obtain the digest.
+Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step.  Then generate the digest of the pipelines archive contained at this URL and specify it in the Kabanero CR.   Typically, you can use  a command like `sha256sum` to obtain the digest.
 
-An example is shown below, where the pipelines pulished in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
+See the example below, where the pipelines that are published in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
 
 ```
 apiVersion: kabanero.io/v1alpha1
@@ -159,4 +159,4 @@ spec:
         url: https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz
 ```
 
-Alternatively, you can specify the pipelines archive under individual stack section(s).  This will result in the the pipelines in the archive getting associated with these application stack(s).
+As an alternative, you can specify the pipelines archive under individual stack section(s).  Doing this results in the pipelines in the archive being associated with these application stack(s).
