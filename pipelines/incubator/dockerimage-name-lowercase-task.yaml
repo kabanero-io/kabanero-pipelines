@@ -78,9 +78,9 @@ spec:
         
         #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
         if [[ ! -z "$docker_imagetag" ]]; then
-            DOCKER_IMAGE_URL=$docker_registry_url/$docker_imagename_lowercase:$docker_imagetag
+            DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
         else
-            DOCKER_IMAGE_URL=$docker_registry_url/$docker_imagename_lowercase
+            DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
         fi
         echo "$DOCKER_IMAGE_URL"
           
