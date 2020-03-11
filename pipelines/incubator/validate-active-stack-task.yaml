@@ -75,7 +75,9 @@ spec:
             fi
         else  
             if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
-                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  They should be in sync.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
+                echo ""
+                RECONCILED_REGISTRY="TRUE"
+                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
             fi
         fi
 
@@ -147,15 +149,26 @@ spec:
               fi    
        
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
-                 echo "The application stack, $STACK, in $APPSODY_CONFIG is active on this cluster and can be built."
-                 exit 0
+                if [ "$RECONCILED_REGISTRY" == "TRUE" ]; then
+                  echo ""
+                  echo "WARNING - A config map has been created on the cluster with the stack image registry information. The registry of the application stack, $STACK, specified in $APPSODY_CONFIG will be overridden by the registry configured in the config map, stack-image-registry-map."
+                  echo "Validation is performed using the image located in the $IMAGE_REGISTRY_HOST registry that was configured in the config map."
+                fi
+                echo ""  
+                echo "The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
+                exit 0
               else
                  echo "Cluster stack version: $STACK_VERSION, Cluster stack digest: $CURRENT_DIGEST"
                  echo "Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
               fi
            done
-        
-           echo "WARNING: A compatible version of the application stack, "$STACK", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+           if [ "$RECONCILED_REGISTRY" == "TRUE" ]; then
+             echo ""           
+             echo "WARNING - A config map has been created on the cluster with the stack image registry information. The registry of the application stack, $STACK, specified in $APPSODY_CONFIG will be overridden by the registry configured in the config map, stack-image-registry-map."  
+             echo "Validation is performed using the image located in the $IMAGE_REGISTRY_HOST registry that was configured in the config map."
+           fi  
+           echo "" 
+           echo "WARNING - A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
            exit 0
     env:
     - name: gitsource
