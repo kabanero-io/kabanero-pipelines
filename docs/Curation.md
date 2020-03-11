@@ -138,7 +138,7 @@ Follow these steps below to trigger a Tekton pipeline build of your pipelines re
 
 Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/general/configuration/kabanero-cr-config.html) documentation to configure or deploy a Kabanero instance with the pipeline archive URL obtained in the previous step.  Then generate the digest of the pipelines archive contained at this URL and specify it in the Kabanero CR.   Typically, you can use  a command like `sha256sum` to obtain the digest.
 
-See the example below, where the pipelines that are published in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
+See the following example where the pipelines that are published in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
 
 ```
 apiVersion: kabanero.io/v1alpha1
