@@ -42,7 +42,7 @@ Use the location of the archive file under the release in the Kabanero CR as des
 
 ## Creating the pipelines release artifacts from your GHE pipelines repo using a tekton pipeline on the OpenShift cluster
 
-Follow these steps below to trigger a Tekton pipeline build of your pipelines repository. The pipeline will build the pipelines and deploy a `pipelines-index` container into your cluster.  The `pipelines-index` container will host the Kabanero pipeline archive on a NGINX server.
+Use the following steps to trigger a Tekton pipeline build of your pipelines repository. The pipeline will build the pipelines and deploy a `pipelines-index` container into your cluster.  The `pipelines-index` container will host the Kabanero pipeline archive on a NGINX server.
 
 1. Login to your OpenShift cluster.
 
