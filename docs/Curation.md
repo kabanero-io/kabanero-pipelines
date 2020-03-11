@@ -141,7 +141,7 @@ Follow the [configuring a Kabanero CR instance](https://kabanero.io/docs/ref/gen
 See the following example where the pipelines that are published in the `https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.6.0/default-kabanero-pipelines.tar.gz` archive are associated with each of the stacks that exist in the stack repository.
 
 ```
-apiVersion: kabanero.io/v1alpha1
+apiVersion: kabanero.io/v1alpha2
 kind: Kabanero
 metadata:
   name: kabanero
