@@ -61,11 +61,11 @@ DOCKER_IMAGE=$dockerImage
 # Appsody project GitHub repository given as input to the script#
 APP_REPO=$appGitRepo
 
-PIPELINE_RESOURCE_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/manual-pipeline-runs/pipeline-resources-template.yaml
+PIPELINE_RESOURCE_FILE=pipeline-resources-template.yaml
 pipeline_resource_dockerimage_template_text="index.docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
-PIPELINE_RUN_MANUAL_FILE=https://raw.githubusercontent.com/kabanero-io/kabanero-pipelines/master/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-template.yaml
+PIPELINE_RUN_MANUAL_FILE=manual-pipeline-run-template.yaml
 pipeline_run_collections_name_template_text="<collection-name>"
 
 echo "Printing all the inputs"
@@ -80,13 +80,12 @@ echo "PIPELINE_RUN_MANUAL_FILE=$PIPELINE_RUN_MANUAL_FILE"
 namespace=kabanero
 
 # Pipeline Resources: Source repo and destination container image
-curl -L ${PIPELINE_RESOURCE_FILE} \
-  | sed "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|" \
-  | sed "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|" \
-  | oc apply -n ${namespace} --filename -
+sed -i "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|g" ${PIPELINE_RESOURCE_FILE}
+sed -i "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|g" ${PIPELINE_RESOURCE_FILE}
+oc apply -n ${namespace} -f ${PIPELINE_RESOURCE_FILE}
 
 # Manual Pipeline Run
-curl -L ${PIPELINE_RUN_MANUAL_FILE} \
-  | sed "s|${pipeline_run_collections_name_template_text}|${collectionsName}|" \
-  | oc apply -n ${namespace} --filename -
+sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${PIPELINE_RUN_MANUAL_FILE}
+oc apply -n ${namespace} -f ${PIPELINE_RUN_MANUAL_FILE}
+
 echo "done updating pipelinerun template"
