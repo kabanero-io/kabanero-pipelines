@@ -29,7 +29,7 @@ oc apply -f pv.yaml -n kabanero
 
 ### Create secrets to pull from git repo and push to docker registry
 
-This has to be created in the `kabanero` namespace and associated with the `kabanero-operator` service account.  The secrets can be created in a few different ways.  The simplest option is to go configure this with the Tekton Dashboard under the secrets section as illustrated [here](https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md#create-credentials-git).  
+This has to be created in the `kabanero` namespace and associated with the `kabanero-pipeline` service account.  The secrets can be created in a few different ways.  The simplest option is to go configure this with the Tekton Dashboard under the secrets section as illustrated [here](https://github.com/tektoncd/experimental/blob/master/webhooks-extension/docs/GettingStarted.md#create-credentials-git).  
 Alternatively you can configure this in the OKD console or you can setup the secrets using the OKD CLI. 
 
 
