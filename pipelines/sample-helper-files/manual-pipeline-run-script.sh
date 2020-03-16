@@ -62,12 +62,12 @@ DOCKER_IMAGE=$dockerImage
 APP_REPO=$appGitRepo
 
 PIPELINE_RESOURCE_FILE=pipeline-resources-template.yaml
-CUSTOMIZED_PIPELINE_RESOURCE_FILE=${collectionsName}-${PIPELINE_RESOURCE_FILE}
+CUSTOMIZED_PIPELINE_RESOURCE_FILE=${stackName}-${PIPELINE_RESOURCE_FILE}
 pipeline_resource_dockerimage_template_text="docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
 PIPELINE_RUN_MANUAL_FILE=manual-pipeline-run-template.yaml
-CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE=${collectionsName}-${PIPELINE_RUN_MANUAL_FILE}
+CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE=${stackName}-${PIPELINE_RUN_MANUAL_FILE}
 pipeline_run_stack_name_template_text="<stack-name>"
 
 echo "Printing all the inputs"
@@ -91,7 +91,7 @@ rm -rf ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 
 # Manual Pipeline Run
 cp -f ${PIPELINE_RUN_MANUAL_FILE} ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
-sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
+sed -i "s|${pipeline_run_stack_name_template_text}|${stackName}|g" ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 rm -rf ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 
