@@ -82,13 +82,13 @@ echo "PIPELINE_RUN_MANUAL_FILE=$PIPELINE_RUN_MANUAL_FILE"
 namespace=kabanero
 
 # Pipeline Resources: Source repo and destination container image
-cp ${PIPELINE_RESOURCE_FILE} ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
+cp -f ${PIPELINE_RESOURCE_FILE} ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 sed -i "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 sed -i "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 
 # Manual Pipeline Run
-cp ${PIPELINE_RUN_MANUAL_FILE} ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
+cp -f ${PIPELINE_RUN_MANUAL_FILE} ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 
