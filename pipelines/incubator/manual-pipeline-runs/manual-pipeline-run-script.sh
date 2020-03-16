@@ -62,10 +62,12 @@ DOCKER_IMAGE=$dockerImage
 APP_REPO=$appGitRepo
 
 PIPELINE_RESOURCE_FILE=pipeline-resources-template.yaml
+CUSTOMIZED_PIPELINE_RESOURCE_FILE=${collectionsName}-${PIPELINE_RESOURCE_FILE}
 pipeline_resource_dockerimage_template_text="index.docker.io/<docker_id>/<docker_image_name>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
 PIPELINE_RUN_MANUAL_FILE=manual-pipeline-run-template.yaml
+CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE=${collectionsName}-${PIPELINE_RUN_MANUAL_FILE}
 pipeline_run_collections_name_template_text="<collection-name>"
 
 echo "Printing all the inputs"
@@ -80,12 +82,14 @@ echo "PIPELINE_RUN_MANUAL_FILE=$PIPELINE_RUN_MANUAL_FILE"
 namespace=kabanero
 
 # Pipeline Resources: Source repo and destination container image
-sed -i "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|g" ${PIPELINE_RESOURCE_FILE}
-sed -i "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|g" ${PIPELINE_RESOURCE_FILE}
-oc apply -n ${namespace} -f ${PIPELINE_RESOURCE_FILE}
+cp ${PIPELINE_RESOURCE_FILE} ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
+sed -i "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
+sed -i "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
+oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 
 # Manual Pipeline Run
-sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${PIPELINE_RUN_MANUAL_FILE}
-oc apply -n ${namespace} -f ${PIPELINE_RUN_MANUAL_FILE}
+cp ${PIPELINE_RUN_MANUAL_FILE} ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
+sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
+oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 
 echo "done updating pipelinerun template"
