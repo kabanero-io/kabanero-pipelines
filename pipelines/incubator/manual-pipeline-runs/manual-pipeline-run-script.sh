@@ -86,10 +86,12 @@ cp -f ${PIPELINE_RESOURCE_FILE} ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 sed -i "s|${pipeline_resource_dockerimage_template_text}|${DOCKER_IMAGE}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 sed -i "s|${pipeline_resource_git_resource_template_text}|${APP_REPO}|g" ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
+rm -rf ${CUSTOMIZED_PIPELINE_RESOURCE_FILE}
 
 # Manual Pipeline Run
 cp -f ${PIPELINE_RUN_MANUAL_FILE} ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 sed -i "s|${pipeline_run_collections_name_template_text}|${collectionsName}|g" ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 oc apply -n ${namespace} -f ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
+rm -rf ${CUSTOMIZED_PIPELINE_RUN_MANUAL_FILE}
 
 echo "done updating pipelinerun template"
