@@ -70,11 +70,17 @@ spec:
            fi
         fi
 
-          #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
+        #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
+        #Check if trailing '/' exists for docker registry url, it not add it.
+        if [[ $docker_registry_url != */ ]];then
+              docker_registry_url=$docker_registry_url/
+        fi
+        
+        #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
         if [[ ! -z "$docker_imagetag" ]]; then
-            DOCKER_IMAGE_URL=$docker_registry_url/$docker_imagename_lowercase:$docker_imagetag
+            DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
         else
-            DOCKER_IMAGE_URL=$docker_registry_url/$docker_imagename_lowercase
+            DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
         fi
         echo "$DOCKER_IMAGE_URL"
           
