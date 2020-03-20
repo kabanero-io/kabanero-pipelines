@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: java-mp-validate-stack-task
+  name: StackId-validate-stack-task
 spec:
   inputs:
     resources:
