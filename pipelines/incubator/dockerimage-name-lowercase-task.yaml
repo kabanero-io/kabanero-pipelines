@@ -22,6 +22,39 @@ spec:
     - name: git-source
       type: git
   steps:
+  - name: insecure-registry-setup
+    securityContext:
+      privileged: true
+    image: docker.io/aadeshpa/appsody-buildah:0.5.8-buildah1.9.0-kubectl
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo "script for setting internal registry as insecure registry in registries.conf file "
+
+        internal_stack_registry_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
+        if [[ ! -z "$internal_stack_registry_string" ]]; then
+           echo "The internal image registry hostname found"
+
+           cat <<- EOF > insecure_registry_setup.sh
+           INSECURE_REGISTRTY='\x27${internal_stack_registry_string}\x27'
+           ORIGINAL_STRING='\[registries\.insecure\]\nregistries = \[\]'
+           REPLACE_STRING='\[registries\.insecure\]\nregistries = \['"\$INSECURE_REGISTRTY"'\]'
+
+           sed -i -e ':a;N;\$!ba;s|'"\$ORIGINAL_STRING"'|'"\$REPLACE_STRING"'|' /etc/containers/registries.conf
+
+        EOF
+           chmod +x insecure_registry_setup.sh
+
+           echo "copying the script insecure_registry_setup.sh to output path"
+           cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
   - name: imagename-lowercase
     securityContext:
       privileged: true

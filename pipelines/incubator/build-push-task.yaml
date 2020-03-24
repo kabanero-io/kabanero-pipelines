@@ -18,11 +18,17 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    image: docker.io/aadeshpa/appsody-buildah:0.5.8-buildah1.9.0-kubectl
     command: ["/bin/bash"]
     args:
       - -c
       - |
+
+         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+        
         echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
 
         if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
@@ -63,7 +69,23 @@ spec:
             STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
         fi
         
-        echo "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL."
+        external_route_internal_registry=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.externalRegistryHostnames[0]}")
+        if [[ ! -z "$external_route_internal_registry" ]]; then
+            if [[ $external_route_internal_registry == $STACK_IMAGE_REGISTRY_URL ]]
+            then
+               internal_route_internal_registry=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
+               if [[ ! -z "$internal_route_internal_registry" ]]; then
+                  echo "The STACK_IMAGE_REGISTRY_URL=$STACK_IMAGE_REGISTRY_URL is the internal registry external route so using internal registry internal hostname as stack registry"
+                  STACK_IMAGE_REGISTRY_URL=$internal_route_internal_registry
+               else
+                  echo "Error: Internal image registry is not found, and you are trying to use the internal image registry external route as your stack registry."
+                  echo "Hint : kubectl get image.config.openshift.io/cluster -o yaml --output=\"jsonpath={.status.internalRegistryHostname}\" "
+                  exit 1
+               fi
+            fi
+        fi
+
+        echo  "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL"
 
         if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
         then
@@ -112,8 +134,6 @@ spec:
     env:
     - name: gitsource
       value: git-source
-    - name: internal_stack_registry_string
-      value: image-registry.openshift-image-registry.svc:5000
     - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
       valueFrom:
         configMapKeyRef:
