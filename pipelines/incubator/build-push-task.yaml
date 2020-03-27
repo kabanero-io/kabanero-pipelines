@@ -23,8 +23,7 @@ spec:
     args:
       - -c
       - |
-
-         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
         if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
            /workspace/$gitsource/insecure_registry_setup.sh
         fi
