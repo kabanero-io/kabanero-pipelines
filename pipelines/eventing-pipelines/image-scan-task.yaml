@@ -1,0 +1,133 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+# This task scans the docker image using the specified command and arguments.
+# It requires an image that contains the scanner to be used to scan the docker-image image input.
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: image-scan-task-Digest
+spec:
+  inputs:
+    resources:
+      - name: git-source
+        type: git
+      - name: docker-image
+        type: image
+    params:
+      - name: command
+        description: The scanner command
+        default: oscap-chroot
+      - name: module
+        description: Specifies the type of SCAP content to use. For example, oval or xccdf.
+        default: oval
+      - name: options-and-arguments
+        description: Specifies the module operation options and arguments
+        default: ""
+      - name: scansDir
+        description: The relative directory to save the scan outputs to
+        default: kabanero/scans
+      - name: pathToInputFile
+        description: The scanner's XCCDF or OVAL file 
+        default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
+  steps:
+    - name: mount-image          
+      securityContext:
+        privileged: true
+      image: appsody/appsody-buildah:0.5.0-buildah1.9.0
+# Temporarily make copy of mounted image since the mounted image will be unmounted when the container for this task ends.
+# TODO: Determine another way to persist the mounted container image across containers
+      command: ['/bin/bash']
+      args:
+        - -c
+        - |
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh )
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+             exit $retVal
+          fi
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+ 
+          echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+          buildah from --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+          echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
+          mountDir=$(cat /var/lib/containers/rootfs.txt)
+          echo ""
+          echo "Mounted image to $mountDir with contents:"
+          ls -la $mountDir
+          cp -a $mountDir /var/lib/containers
+          echo ""
+          imageDir=/var/lib/containers/merged
+          imageIdFileName=/var/lib/containers/imageid.txt
+          echo "Copied mounted image to $imageDir:"
+          ls -la $imageDir
+          echo $(buildah images -q) > $imageIdFileName
+          echo ""
+          echo "Image ID of the image to scan: $(cat $imageIdFileName)"
+      env:
+        - name: gitsource
+          value: git-source
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+    - name: scan-image
+      securityContext:
+        privileged: true
+      image: kabanero/scanner:1.3.1
+      command: ['/bin/bash']
+      args:
+        - -c
+        - |
+          imageid=$(cat /var/lib/containers/imageid.txt)
+          imageDir=/var/lib/containers/merged
+
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh )
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+             exit $retVal
+          fi
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+          outputDir=/workspace/scans/$(inputs.params.scansDir)/$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE/$imageid
+          mkdir -p $outputDir
+          optionsAndArgs="$(inputs.params.options-and-arguments) --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
+          scanCommand="$(inputs.params.command) $imageDir $(inputs.params.module) eval $optionsAndArgs"
+
+          echo "Scanning copy of image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir with contents:"
+          cd $imageDir
+          ls -la
+          echo ""
+          echo "Scanning image with command:"
+          echo $scanCommand
+          $scanCommand
+          echo ""
+          echo "Scanning of copy of image $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir complete"
+          echo ""
+
+          #Display contents of the results.xml and report.html files
+          echo "Displaying contents of $outputDir/results.xml"
+          echo "********** START OF results.xml **********"
+          cat $outputDir/results.xml
+          echo "********** END OF results.xml ************"
+          echo ""
+          echo "Displaying contents of $outputDir/report.html"
+          echo "********** START OF report.html **********"
+          cat $outputDir/report.html
+          echo "********** END OF report.html ************"
+      env:
+        - name: gitsource
+          value: git-source
+      volumeMounts:
+        - name: host-save-dir
+          mountPath: /workspace/scans
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+  volumes:
+    # The host directory to mount where the scansDir will be created and the the scan outputs will be saved to.
+    - name: host-save-dir
+      hostPath:
+        path: /var/lib
+    - name: varlibcontainers
+      emptyDir: {}
