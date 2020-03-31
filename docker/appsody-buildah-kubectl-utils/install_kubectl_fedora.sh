@@ -16,4 +16,5 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cl
 EOF
 
 yum install -y kubectl
+yum install -y jq
 echo "Installing and setting up kubectl completed"
