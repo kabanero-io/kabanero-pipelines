@@ -24,11 +24,33 @@ spec:
         IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
         IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
 
+        # Get stack policy
+        STACK_POLICY=$( kubectl get kabanero kabanero -o json | jq -r '.spec.governancePolicy.stackPolicy' )
+        # Default to value "activeDigest" - if the CR lacks a value, the default is to be used
+        if [ -z "$STACK_POLICY" ]; then
+           STACK_POLICY="activeDigest"
+        fi
+        
+        if [ "$STACK_POLICY" == "none" ]; then
+           echo "'stackPolicy' under 'governancePolicy' is set to 'none', skipping stack validation."
+           exit 0
+        fi
+       
+        echo "Enforcing 'stackPolicy' of '$STACK_POLICY'."
+
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
            echo $APPSODY_CONFIG" is not found in the root of the source directory. Unable to validate if the stack is active."
            exit 1
         fi
+        
+
+
+
+
+        #########################################################################################
+        # Read project, stack image, docker host and stack name from .appsody-config.yaml
+        #########################################################################################
 
         # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
         declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
@@ -81,6 +103,14 @@ spec:
             fi
         fi
 
+
+
+
+
+        #########################################################################################
+        # Validate stack name & project are present, active
+        #########################################################################################
+
         echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         echo ""
 
@@ -119,16 +149,40 @@ spec:
             exit 1
         fi
 
-        # TODO add registry validation logic here.  Implictly handled by digest check.
-        # But can give a better error message with just a name check
+
+
+
+        #########################################################################################
+        #  Main validation between operator and registry
+        #########################################################################################
+
+        # ??? TODO add registry validation logic here.  Implictly handled by digest check.
+        # ??? But can give a better error message with just a name check
+        
+        
+        
+        # 1. Parse .appsody-config for user, repo, STACKNAME, VERSION 2 digit)
+        # 2. Issue oc get stack , get 3 digit version number(s) for active STACKNAME
+        # 3. Query image registry to get sha256 for tag "VERSION"
+        # 4. Query ****NEW* OPERATOR**** to get sha256 for version(s) tag(s) from step 2
+        # 5. The sha256 obtained in step 3 must be included in the sha256 list obtained in step 4 for the build to proceed
 
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
+        #######  2.
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         echo "VERSIONS = $CLUSTER_STACK_VERSIONS"
         echo ""
+        
+        
+        ###### new
+        CLUSTER_STACK_DIGESTS=$( kubectl get stack java-microprofile -o json | jq -r '.status.versions[].images[].digest.activation?' )
+        
+        
+        
 
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
+        #######  3.
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
            TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
@@ -140,36 +194,47 @@ spec:
            exit 1
         fi
 
-        for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
-           do
-              if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
-              else
-                 CURRENT_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$STACK_VERSION" | jq '.Digest' )
-              fi
 
+        ####### 5. loop
+        for CURRENT_DIGEST in ${CLUSTER_STACK_DIGESTS}
+           do
+
+              ####### 4. 
+              
+              # 0.8.0 Update, don't use image registry, get it from the operator
+              # TODO: What to do if the operator doesn't have it? Did they handle the error case? DM Slack out to Tim and Ed Monday night
+              
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
-                if [ "$RECONCILED_REGISTRY" == "TRUE" ]; then
-                  echo ""
-                  echo "WARNING - A config map has been created on the cluster with the stack image registry information. The registry of the application stack, $STACK, specified in $APPSODY_CONFIG will be overridden by the registry configured in the config map, stack-image-registry-map."
-                  echo "Validation is performed using the image located in the $IMAGE_REGISTRY_HOST registry that was configured in the config map."
-                fi
-                echo ""
+                echo 
                 echo "The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
                 exit 0
               else
-                 echo "Cluster stack version: $STACK_VERSION, Cluster stack digest: $CURRENT_DIGEST"
+                 # Not found, iterate to next and pring debug info
+                 echo "Cluster stack digest: $CURRENT_DIGEST"
                  echo "Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
               fi
            done
-           if [ "$RECONCILED_REGISTRY" == "TRUE" ]; then
-             echo ""
-             echo "WARNING - A config map has been created on the cluster with the stack image registry information. The registry of the application stack, $STACK, specified in $APPSODY_CONFIG will be overridden by the registry configured in the config map, stack-image-registry-map."
-             echo "Validation is performed using the image located in the $IMAGE_REGISTRY_HOST registry that was configured in the config map."
-           fi
-           echo ""
-           echo "WARNING - A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
-           exit 0
+        echo 
+        
+        
+        if [ "$STACK_POLICY" == "strictDigest" ]; then
+               echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+               exit 1
+        elif [ "$STACK_POLICY" == "activeDigest" ]; then
+  
+        # TODO : substitutes (in .appsody-config) the last version the given MAJOR.MINOR automatically
+        #  Do this by sorting the MAJOR.M
+        
+        fi
+        
+        
+        exit 0
+           
+           
+           
+           
+         
+   
     env:
     - name: gitsource
       value: git-source

@@ -2,7 +2,7 @@
 
 # Parameters
 # [github url] [docker url]
-# ./test.sh https://github.com/smcclem index.docker.io/smcclem
+# ./test_active_collections.sh  https://github.com/smcclem index.docker.io/smcclem
 
 
 # Prerequisites
@@ -71,9 +71,11 @@ do
    echo
    echo "Starting pipeline run for collection: "$collection
    echo
-   command="./kabanero-pipelines/pipelines/sample-helper-files/manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/$collection -c $collection"
+   cd ./kabanero-pipelines/pipelines/sample-helper-files/
+   command="./manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/ -c $collection"
    echo $command
    eval $command 
+   cd -
    
    # Sample commands used during test
    # retry 10 "oc get pod $pod && [[ \$(oc get pipelinerun $collection"-manual-pipeline-run"--no-headers 2>&1 | grep -c -v -E -q '(Running|Completed|Terminating)') -eq 0 ]]"
@@ -104,7 +106,8 @@ do
       echo
       echo "Pipeline run for collection "$collection" succeeded."    
       echo         
-   fi  
+   fi 
+
    # Delete the pipeline run and application
    oc delete pipelineruns --all
    oc delete appsodyapplications  --all
