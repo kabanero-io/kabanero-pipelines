@@ -35,11 +35,13 @@ spec:
         fi
         
         if [ "$STACK_POLICY" == "none" ]; then
-           echo "'stackPolicy' under 'governancePolicy' is set to 'none', skipping stack validation."
+           echo
+           echo "'INFO: stackPolicy' under 'governancePolicy' is set to 'none', skipping stack validation."
            exit 0
         fi
-       
-        echo "Enforcing 'stackPolicy' of '$STACK_POLICY'."
+        echo
+        echo "INFO: Enforcing 'stackPolicy' of '$STACK_POLICY'."
+        echo
 
         cd /workspace/$GITSOURCE
         if [ ! -f "$APPSODY_CONFIG" ]; then
@@ -180,19 +182,7 @@ spec:
         ###### new - At activeate digests are gathered directly from the Kabanero CR  
         CLUSTER_STACK_DIGESTS=$( kubectl get stack java-microprofile -o json | jq -r '.status.versions[].images[].digest.activation?' )
         
-        # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
-        #######  3.
-        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
-        if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
-        else
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
-        fi
 
-        if [ -z "$TARGET_DIGEST" ]; then
-           echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and cannot be built."
-           exit 1
-        fi
 
 
 
@@ -236,7 +226,20 @@ spec:
 
         
 
-   
+        # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
+        #######  3.
+        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        else
+           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        fi
+
+        if [ -z "$TARGET_DIGEST" ]; then
+           echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and cannot be built."
+           exit 1
+        fi
+           
 
 
         ####### 5. loop
@@ -249,7 +252,7 @@ spec:
               # 0.8.0 Update, don't use image registry, get it from the operator
               # TODO: What to do if the operator doesn't have it? Did they handle the error case? DM Slack out to Tim and Ed Monday night
               
-              if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
+              if [ "$TARGET_DIGEST" =  "\"sha256:$CURRENT_DIGEST\"" ]; then
                 echo 
                 echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
                 exit 0
@@ -265,7 +268,9 @@ spec:
         if [ "$STACK_POLICY" == "strictDigest" ]; then
            echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
            exit 1
-        elif [ "$STACK_POLICY" == "activeDigest" ]; then
+        fi
+        
+        if [ "$STACK_POLICY" == "activeDigest" ]; then
            # TODO : substitutes (in .appsody-config) the last version the given MAJOR.MINOR automatically
            #  Do this by sorting the MAJOR.M
         fi
