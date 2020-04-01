@@ -25,6 +25,9 @@ spec:
         IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
 
         # Get stack policy
+        # Values: strictDigest, activeDigest (default if blank), ignoreDigest and none
+        # https://github.com/kabanero-io/kabanero-foundation/blob/master/design/digest.md
+
         STACK_POLICY=$( kubectl get kabanero kabanero -o json | jq -r '.spec.governancePolicy.stackPolicy' )
         # Default to value "activeDigest" - if the CR lacks a value, the default is to be used
         if [ -z "$STACK_POLICY" ]; then
@@ -44,8 +47,7 @@ spec:
            exit 1
         fi
         
-
-
+ 
 
 
         #########################################################################################
@@ -99,7 +101,7 @@ spec:
             if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
                 echo ""
                 RECONCILED_REGISTRY="TRUE"
-                echo "WARNING - $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
+                echo "WARNING: $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
             fi
         fi
 
@@ -108,11 +110,11 @@ spec:
 
 
         #########################################################################################
-        # Validate stack name & project are present, active
+        # Validate stack name & project are present, active in the Kabanero CR
         #########################################################################################
 
-        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
-        echo ""
+
+        echo
 
         # Check to make sure the stack is active by name first
         kubectl get stack $STACK_NAME -o json > /dev/null 2>&1
@@ -170,19 +172,17 @@ spec:
         # Get the 3 digit stack values
         # Assumed the version(s) are in the metadata
         #######  2.
+        # Will now be used for ignoreDigests (always)  &  activeDigest (if failure for autopatch)
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         echo "VERSIONS = $CLUSTER_STACK_VERSIONS"
         echo ""
         
-        
-        ###### new
+        ###### new - At activeate digests are gathered directly from the Kabanero CR  
         CLUSTER_STACK_DIGESTS=$( kubectl get stack java-microprofile -o json | jq -r '.status.versions[].images[].digest.activation?' )
         
-        
-        
-
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         #######  3.
+        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
            TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
@@ -195,7 +195,52 @@ spec:
         fi
 
 
+
+       # SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CLUSTER_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
+
+
         ####### 5. loop
+        # OLD loop for stack versions - ignoreDigests
+        #
+        # ignoreDigests
+        #
+        
+        # If the version was "latest", sort all the installed versions to find the latest
+        if [ "$VERSION" == "latest" ] && [ ! -z CLUSTER_STACK_VERSIONS ]; then
+           echo 
+           echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
+           exit 0  
+        fi
+           
+        
+        for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
+           do
+              # Two things
+              #   1.  Does the version from the .appsody-cofig match?  Exactly? DONE   StartsWith? Yes? Sort all sorts with     NO?  Fail. 
+              #   Weird case -  "latest"  - Sort all - use absolute latest tag.   
+
+          
+              # If the stack version starts with same pattern, we are done
+              if [[ "$STACK_VERSION" == $VERSION* ]]; then
+                 echo 
+                 echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
+                 exit 0  
+              fi  
+           done  
+           
+       # SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
+        
+       echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+       exit 1
+        
+
+        
+
+   
+
+
+        ####### 5. loop
+        # NEW loop for digests - strictDigest & activeDigest
         for CURRENT_DIGEST in ${CLUSTER_STACK_DIGESTS}
            do
 
@@ -206,25 +251,23 @@ spec:
               
               if [ "$TARGET_DIGEST" =  "$CURRENT_DIGEST" ]; then
                 echo 
-                echo "The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
+                echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
                 exit 0
               else
                  # Not found, iterate to next and pring debug info
-                 echo "Cluster stack digest: $CURRENT_DIGEST"
-                 echo "Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
+                 echo "INFO: Cluster stack digest: $CURRENT_DIGEST"
+                 echo "INFO: Project stack version: $VERSION, Project stack digest: $TARGET_DIGEST"
               fi
            done
         echo 
         
         
         if [ "$STACK_POLICY" == "strictDigest" ]; then
-               echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
-               exit 1
+           echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+           exit 1
         elif [ "$STACK_POLICY" == "activeDigest" ]; then
-  
-        # TODO : substitutes (in .appsody-config) the last version the given MAJOR.MINOR automatically
-        #  Do this by sorting the MAJOR.M
-        
+           # TODO : substitutes (in .appsody-config) the last version the given MAJOR.MINOR automatically
+           #  Do this by sorting the MAJOR.M
         fi
         
         
