@@ -1,0 +1,39 @@
+#Kabanero! on activate substitute Digest for text 'Digest'
+apiVersion: tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: listener-Digest
+  namespace: kabanero
+spec:
+  serviceAccountName: tekton-webhooks-extension-eventlistener
+  triggers:
+  - bindings:
+    name: kabanero-push-event
+    template:
+      apiversion: v1alpha1
+      name: build-deploy-pl-Digest-template
+    - apiversion: v1alpha1
+      name: build-deploy-pl-Digest-push-binding
+    - interceptor:
+      - cel:
+          filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "push" '
+  - bindings:
+    name: kabanero-pullrequest-event
+    - apiversion: v1alpha1
+      name: build-deploy-pl-Digest-pullrequest-binding
+    template:
+      apiversion: v1alpha1
+      name: build-deploy-pl-Digest-template
+    interceptors:
+      - cel:
+          filter: 'has(body.webhooks-event-type) && body.webhooks-event-type == "pull_request" '
+  - bindings:
+    name: kabanero-monitor-task-event
+    - apiversion: v1alpha1
+      name: monitor-task-github-Digest-binding
+    template:
+     apiversion: v1alpha1
+     name: monitor-task-Digest-template
+     interceptors:
+      - cel:
+          filter: 'has(body.webhooks-tekton-monitor) && body.webhooks-tekton-monitor" '
