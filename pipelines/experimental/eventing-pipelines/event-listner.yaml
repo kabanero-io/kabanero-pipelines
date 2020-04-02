@@ -8,32 +8,32 @@ spec:
   serviceAccountName: tekton-webhooks-extension-eventlistener
   triggers:
   - bindings:
+    - apiversion: v1alpha1
+      name: build-deploy-pl-Digest-push-binding
+    interceptors:
+    - cel:
+        filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "push" '
     name: kabanero-push-event
     template:
       apiversion: v1alpha1
       name: build-deploy-pl-Digest-template
-    - apiversion: v1alpha1
-      name: build-deploy-pl-Digest-push-binding
-    - interceptor:
-      - cel:
-          filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "push" '
   - bindings:
-    name: kabanero-pullrequest-event
     - apiversion: v1alpha1
       name: build-deploy-pl-Digest-pullrequest-binding
+    interceptors:
+    - cel:
+        filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "pull_request" '
+    name: kabanero-pullrequest-event
     template:
       apiversion: v1alpha1
       name: build-deploy-pl-Digest-template
-    interceptors:
-      - cel:
-          filter: 'has(body.webhooks-event-type) && body.webhooks-event-type == "pull_request" '
   - bindings:
-    name: kabanero-monitor-task-event
     - apiversion: v1alpha1
       name: monitor-task-github-Digest-binding
     template:
      apiversion: v1alpha1
      name: monitor-task-Digest-template
-     interceptors:
+    name: kabanero-monitor-task-event
+    interceptors:
       - cel:
           filter: 'has(body.webhooks-tekton-monitor) && body.webhooks-tekton-monitor" '
