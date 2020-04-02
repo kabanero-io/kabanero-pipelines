@@ -66,7 +66,7 @@ spec:
 
         EOF
            chmod +x insecure_registry_setup.sh
-           echo "Printing the content of script insecure_registry_setup.sh"
+           echo "The following script has been copied to the workspace: insecure_registry_setup.sh"
            cat insecure_registry_setup.sh
 
            echo "copying the script insecure_registry_setup.sh to output path"
@@ -123,7 +123,7 @@ spec:
         EOF
         
         chmod +x ca_certs_setup.sh
-        echo "printing the content of ca_certs_setup.sh"
+        echo "The following script has been copied to the workspace: ca_certs_setup.sh"
         cat ca_certs_setup.sh
 
         echo "copying the script ca_certs_setup.sh to output path"
@@ -194,7 +194,7 @@ spec:
         EOF
         chmod 755 imageurl_imagename_lowercase.sh
 
-        echo "imageurl_imagename_lowercase.sh content you built..."
+        echo "The following script has been copied to the workspace:imageurl_imagename_lowercase.sh "
         cat imageurl_imagename_lowercase.sh
         
         #Copy of all the content of git-source from input resources to output resources, so it could be passed to next task.
