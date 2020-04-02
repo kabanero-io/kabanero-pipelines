@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: StackId-imagename-lowercase-task
+  name: StackId-utilities-task
 spec:
   inputs:
     resources:
@@ -25,18 +25,20 @@ spec:
   - name: insecure-registry-setup
     securityContext:
       privileged: true
-    image: docker.io/aadeshpa/appsody-buildah:0.5.8-buildah1.9.0-kubectl-jq
+    image: kabanero/kabanero-utils:0.8.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
-        echo "script for setting internal registry as insecure registry in registries.conf file "
+         # This step is fetching the values of 'registries.insecure' from the 'image.config.openshift.io/cluster' resource
+         # and generating a script insecure_registry_setup.sh that will be used by the tasks for setting the
+         # 'registries.insecure' in /etc/containers/registries.conf file of the contianer.  
+          
+        echo "preparing script for setting internal registry as insecure registry in /etc/containers/registries.conf file "
 
-        #insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
-        #insecure_registries_string='hyc-wassvt-team-image-registry-docker-local.artifactory.swg-devops.com abc.com pqr.com'
         insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.registrySources.insecureRegistries[*]}")
         if [[ ! -z "$insecure_registries_string" ]]; then
-           echo "The internal image registry hostname found"
+           echo "The insecure image registry list found"
  
            IFS=' ' # space is set as delimiter
            read -ra ADDR <<< ''"$insecure_registries_string"'' # str is read into an array as tokens separated by IFS
@@ -47,18 +49,25 @@ spec:
                INSECURE_REGISTRTY=''"'"''"$i"''"'"''
              fi
            done
-           echo 'INSECURE_REGISTRTY='"$INSECURE_REGISTRTY"''
-           # INSECURE_REGISTRTY='hyc-wassvt-team-image-registry-docker-local.artifactory.swg-devops.com', 'abc.com', 'pqr.com'
 
            cat <<- EOF > insecure_registry_setup.sh
-
+           
+           #example original string : 
+           #[registries.insecure]
+           #registries = []
            ORIGINAL_STRING='\[registries\.insecure\]\nregistries = \[\]'
+           
+           #example replace string
+           #[registries.insecure]
+           #registries = ['pqr.com', 'abc.com']
            REPLACE_STRING='\[registries\.insecure\]\nregistries = \['"$INSECURE_REGISTRTY"'\]'
 
            sed -i -e ':a;N;\$!ba;s|'"\$ORIGINAL_STRING"'|'"\$REPLACE_STRING"'|' /etc/containers/registries.conf
 
         EOF
            chmod +x insecure_registry_setup.sh
+           echo "Printing the content of script insecure_registry_setup.sh"
+           cat insecure_registry_setup.sh
 
            echo "copying the script insecure_registry_setup.sh to output path"
            cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
@@ -72,37 +81,47 @@ spec:
   - name: trusted-ca-certs-setup
     securityContext:
       privileged: true
-    image: docker.io/aadeshpa/appsody-buildah:0.5.8-buildah1.9.0-kubectl-jq
+    image: kabanero/kabanero-utils:0.8.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
-        echo "script for setting additionalTrustedCA as 'ca.rt' from the configmap configured in 'image.config.openshift.io/cluster' resource"
-        additonal_trusted_CA=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.additionalTrustedCA.name}")
+        # This step is generating a script 'ca_certs_setup.sh' that will be used in later tasks to fetch the trusted cs certificates configured 
+        # in a configmap and set in the 'image.config.openshift.io/cluster' resource by the user, and we will copy the certificate values as '/etc/docker/certs.d/<hostname>/ca.crt' for each certificate on the container.
+        
+        echo "script for setting additionalTrustedCA as 'ca.crt' from the configmap configured in 'image.config.openshift.io/cluster' resource"
 
-        echo "additonal_trusted_CA=$additonal_trusted_CA"
+        cat <<- "EOF" > ca_certs_setup.sh
+
+        additonal_trusted_CA=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.additionalTrustedCA.name}")
+        echo "additonal_trusted_CA=$additonal_trusted_CA found in the image.config.openshift.io/cluster resource, setting up the certificates in /etc/docker/certs.d/ location"
         if [[ ! -z "$additonal_trusted_CA" ]]; then
-           echo "Additional trusted CA configmap found"
-           config_map_key_count=$(kubectl get configmap artifactory-dummy-registry-cas -n openshift-config -o json | jq '.data' | jq 'keys | length')
-           echo "Total number of certificates in configmap=$config_map_key_count"
+           config_map_key_count=$(kubectl get configmap $additonal_trusted_CA -n openshift-config -o json | jq '.data' | jq 'keys | length')
 
            for ((i=0;i<config_map_key_count;i++));do
-              echo "i=$i"
-              key=$(kubectl get configmap artifactory-dummy-registry-cas -n openshift-config -o json | jq '.data' | jq 'keys['"$i"']')
-              echo "key=$key"
+              key=$(kubectl get configmap $additonal_trusted_CA -n openshift-config -o json | jq '.data' | jq 'keys['"$i"']')
 
               #sed command to remove double quotes from beginning and the end of the above key(example key="abc.pqr.com") variable value
               key=$(sed -e 's/^"//' -e 's/"$//' <<<$key)
-              echo "key after the removal of double quotes=$key"
-              #sed command to replace '.' with '\.' to escape it while using ahead to fetch that key's value from the map
-              key=$(sed -e 's/\./\\./g' <<< "$key")
-              echo "key after the replacing dots with \dot =$key"
 
-              cert_value=$(kubectl get configmap artifactory-dummy-registry-cas -n openshift-config --output="jsonpath={.data.$key}")
-              echo "cert_value=$cert_value"
+              #sed command to replace '.' with '\.' to escape it while using ahead to fetch that key's value from the map
+              key_hostname_with_escaped_dot=$(sed -e 's/\./\\./g' <<< "$key")
+
+              cert_value=$(kubectl get configmap $additonal_trusted_CA -n openshift-config --output="jsonpath={.data.$key_hostname_with_escaped_dot}")
+              mkdir -p /etc/docker/certs.d/$key
+              echo "$cert_value" | sudo tee -a /etc/docker/certs.d/$key/ca.crt
            done
 
+          chmod +x ca_certs_setup.sh
+          echo "printing the content of ca_certs_setup.sh"
+          cat ca_certs_setup.sh
+
+          echo "copying the script ca_certs_setup.sh to output path"
+          cp ca_certs_setup.sh $(outputs.resources.git-source.path)
         fi
+
+        EOF
+
     env:
     - name: gitsource
       value: git-source
@@ -112,7 +131,7 @@ spec:
   - name: imagename-lowercase
     securityContext:
       privileged: true
-    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    image: kabanero/kabanero-utils:0.8.0
     command: ["/bin/bash"]
     args:
       - -c

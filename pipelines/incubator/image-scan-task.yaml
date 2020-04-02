@@ -48,8 +48,20 @@ spec:
           fi
           echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
  
+          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+          if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+             echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+             /workspace/$gitsource/insecure_registry_setup.sh
+          fi
+
+          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+          if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+             echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+             /workspace/$gitsource/ca_certs_setup.sh
+          fi
+        
           echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-          buildah from --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+          buildah from --tls-verify=true docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
           echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
           mountDir=$(cat /var/lib/containers/rootfs.txt)
           echo ""

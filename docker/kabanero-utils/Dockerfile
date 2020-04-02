@@ -1,12 +1,6 @@
-FROM registry.access.redhat.com/ubi8:latest
+FROM appsody/appsody-buildah:0.5.8-buildah1.9.0
 
-# Create repo file for yum to pull kubectl from
-RUN echo "[kubernetes]" > /etc/yum.repos.d/kubernetes.repo
-RUN echo "baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64" >> /etc/yum.repos.d/kubernetes.repo
-RUN echo "enabled=1"  >> /etc/yum.repos.d/kubernetes.repo
-RUN echo "gpgcheck=1" >> /etc/yum.repos.d/kubernetes.repo
-RUN echo "repo_gpgcheck=1" >> /etc/yum.repos.d/kubernetes.repo
-RUN echo "gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/kubernetes.repo
-
-# Install kubectl
-RUN yum install -y kubectl
+#Running the kubectl installation script in above base image
+COPY /install_kubectl_fedora.sh /root/
+RUN chmod +x /root/install_kubectl_fedora.sh
+RUN /root/install_kubectl_fedora.sh

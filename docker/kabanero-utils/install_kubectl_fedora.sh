@@ -17,4 +17,5 @@ EOF
 
 yum install -y kubectl
 yum install -y jq
-echo "Installing and setting up kubectl completed"
+yum install -y skopeo
+echo "Installing and setting up kubectl,jq and skopeo tool completed"
