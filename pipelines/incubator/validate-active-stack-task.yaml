@@ -16,7 +16,97 @@ spec:
     command: ["/bin/bash"]
     args:
       - -c
-      - |
+      - 
+        #############
+        # Functions #
+        #############
+        
+        
+        #################
+        # ignoreDigests #
+        #################
+        ignore_digests () {
+        
+           echo "SCOTT: enter ignore digest"
+        
+           ####### 5. loop
+           # OLD loop for stack versions - ignoreDigests
+           #
+           # ignoreDigests
+           #
+           # If the version was "latest", sort all the installed versions to find the latest
+           if [ "$VERSION" == "latest" ] && [ ! -z CLUSTER_STACK_VERSIONS ]; then
+              echo 
+              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
+              exit 0  
+           fi
+           for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}; do
+              # Two things
+              #   1.  Does the version from the .appsody-cofig match?  Exactly? DONE   StartsWith? Yes? Sort all sorts with     NO?  Fail. 
+              #   Weird case -  "latest"  - Sort all - use absolute latest tag.             
+              # If the stack version starts with same pattern, we are done
+              if [[ "$STACK_VERSION" == $VERSION* ]]; then
+                 echo 
+                 echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
+                 exit 0  
+              fi  
+           done  
+           echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+           echo "ERROR: Stack fails stackPolicy validation." 
+           exit 1
+        }
+        
+        
+        #################
+        # activeDigests #
+        #################
+        active_digests () {
+           echo "SCOTT: enter active digest"
+           # Find matching versions
+           for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
+              do
+                 if [[ "$STACK_VERSION" == $VERSION* ]]; then
+                    CANDIDATE_STACK_VERSIONS+=$STACK_VERSION" "
+                 fi
+              done
+           # Sort matching versions
+           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
+           if [ -z "$SORTED_CLUSTER_STACK_VERSIONS" ]; then
+              echo
+              echo "ERROR: $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
+              exit 1
+           else
+              # PATCH APPSODY-CONFIG
+              LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
+              PATCHED=${STACK//$VERSION/$LATEST}
+              sed -i -e "s|$STACK|$PATCHED|g" /workspace/$GITSOURCE/$APPSODY_CONFIG
+              echo "WARN: .appsody-config.yaml, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
+              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and fails stackPolcy validation."
+              exit 0
+           fi
+        }
+        
+        
+        #################
+        # strictDigests #
+        #################
+        strict_digests () {
+           echo "SCOTT: enter strict digest"
+           if [ "$STACK_POLICY" == "strictDigest" ]; then
+              echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
+              exit 1
+           else
+              # TODO: Clarify message, copied
+              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
+              exit 0
+           fi 
+        }
+       
+       
+       
+       ###  MAIN #####
+       
+        
         # env var gitsource
         GITSOURCE=$gitsource
         APPSODY_CONFIG=".appsody-config.yaml"
@@ -30,13 +120,13 @@ spec:
 
         STACK_POLICY=$( kubectl get kabanero kabanero -o json | jq -r '.spec.governancePolicy.stackPolicy' )
         # Default to value "activeDigest" - if the CR lacks a value, the default is to be used
-        if [ -z "$STACK_POLICY" ]; then
+        if [ -z "$STACK_POLICY" ] || [ "$STACK_POLICY" == "null" ]; then
            STACK_POLICY="activeDigest"
         fi
         
         if [ "$STACK_POLICY" == "none" ]; then
            echo
-           echo "'INFO: stackPolicy' under 'governancePolicy' is set to 'none', skipping stack validation."
+           echo "INFO: stackPolicy' under 'governancePolicy' is set to 'none', skipping stack validation."
            exit 0
         fi
         echo
@@ -69,7 +159,6 @@ spec:
 
         # For version get everything after last `:`
         VERSION="${STACK##*:}"
-        echo
         echo "INFO: Git project config in $APPSODY_CONFIG... "
         echo "INFO: VERSION = $VERSION"
 
@@ -101,7 +190,6 @@ spec:
             fi
         else
             if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
-                echo ""
                 RECONCILED_REGISTRY="TRUE"
                 echo "WARNING: $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
             fi
@@ -123,16 +211,12 @@ spec:
            echo "ERROR: Stack messages = $?"
            exit 1
         fi
-
         # Check if the project names in the cfg file and active stack match
         CLUSTER_STACK_IMAGE=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].images[].image?' )
-        echo
         echo "INFO: In the cluster..."
         echo "INFO: STACK_IMAGE = $CLUSTER_STACK_IMAGE"
-
         # The stack name could be after the 2nd or 3rd `/` based on appsody version. Check after 3rd first
         THIRD_ENTRY="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f3 )"
-
         if [ -z "$THIRD_ENTRY" ]; then
             CLUSTER_PROJECT="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f1)"
             CLUSTER_STACK="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2)"
@@ -141,12 +225,9 @@ spec:
             CLUSTER_PROJECT="$( echo $CLUSTER_STACK_IMAGE | cut -d'/' -f2 )"
             CLUSTER_STACK="$(echo $CLUSTER_STACK_IMAGE | cut -d'/' -f3)"
         fi
-
-        echo
         echo "INFO: STACK_IMAGE_REGISTRY = $CLUSTER_STACK_REGISTRY"
         echo "INFO: PROJECT = $CLUSTER_PROJECT"
         echo "INFO: STACK_NAME = $CLUSTER_STACK"
-
         if [ "$CLUSTER_PROJECT" != "$PROJECT" ]; then
             echo "ERROR: Project name, $CLUSTER_PROJECT, of active stack in cluster and project name in the stack in $APPSODY_CONFIG, $PROJECT, do not match."
             echo "ERROR: stackPolicy validation failed."
@@ -179,43 +260,11 @@ spec:
         echo "INFO: DIGESTS  = $CLUSTER_STACK_DIGESTS"   
         
 
-       
 
-        ####### 5. loop
-        # OLD loop for stack versions - ignoreDigests
-        #
-        # ignoreDigests
-        #
-        
-        # If the version was "latest", sort all the installed versions to find the latest
-        if [ "$VERSION" == "latest" ] && [ ! -z CLUSTER_STACK_VERSIONS ]; then
-           echo 
-           echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
-           exit 0  
+        if [ "$STACK_POLICY" == "ignoreDigest" ]; then
+           ignore_digests
         fi
-           
-        
-        for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
-           do
-              # Two things
-              #   1.  Does the version from the .appsody-cofig match?  Exactly? DONE   StartsWith? Yes? Sort all sorts with     NO?  Fail. 
-              #   Weird case -  "latest"  - Sort all - use absolute latest tag.   
 
-          
-              # If the stack version starts with same pattern, we are done
-              if [[ "$STACK_VERSION" == $VERSION* ]]; then
-                 echo 
-                 echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
-                 exit 0  
-              fi  
-           done  
-           
-       # SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
-       echo 
-       echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
-       echo "ERROR: Stack fails stackPolicy validation." 
-       exit 1
-        
 
 
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
@@ -228,10 +277,11 @@ spec:
         fi
 
         if [ -z "$TARGET_DIGEST" ]; then
-           echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and cannot be built."
+           echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and fails stackPolicy validation."
            exit 1
         fi
-           
+ 
+       
 
 
         ####### 5. loop
@@ -246,7 +296,7 @@ spec:
               
               if [ "$TARGET_DIGEST" =  "\"sha256:$CURRENT_DIGEST\"" ]; then
                 echo 
-                echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
+                echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
                 exit 0
               else
                  # Not found, iterate to next and pring debug info
@@ -258,41 +308,16 @@ spec:
         
         
         if [ "$STACK_POLICY" == "strictDigest" ]; then
-           echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
-           exit 1
-        fi
-
-
-
-        # This is block to attempt to patch .appsody-config.yaml stack version,if a compatible version exists
+           strict_digests
+        fi   
+        
         if [ "$STACK_POLICY" == "activeDigest" ]; then
-           # Find matching versions
-           for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
-              do
-                 if [[ "$STACK_VERSION" == $VERSION* ]]; then
-                    CANDIDATE_STACK_VERSIONS+=$STACK_VERSION" "
-                 fi
-              done
-           # Sort matching versions
-           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
-           if [ -z "$SORTED_CLUSTER_STACK_VERSIONS" ]; then
-              echo
-              echo "ERROR: $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
-              exit 1
-           else
-              # PATCH APPSODY-CONFIG
-              LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
-              PATCHED=${STACK//$VERSION/$LATEST}
-              sed -i -e "s|$STACK|$PATCHED|g" /workspace/$GITSOURCE/$APPSODY_CONFIG
-              echo "WARN: .appsody-config.yaml, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
-              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and can be built."
-              exit 0
-           fi
+           active_digests
+        fi   
 
-        fi
-        
-        
-        exit 0
+        # All early exits, we should not get here
+        echo "ERROR: stackPolicy of not $STACK_POLICY not recognized"
+        exit 1
            
            
            
