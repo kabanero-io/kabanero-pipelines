@@ -30,9 +30,9 @@ spec:
     args:
       - -c
       - |
-         # This step is fetching the values of 'registries.insecure' from the 'image.config.openshift.io/cluster' resource
-         # and generating a script insecure_registry_setup.sh that will be used by the tasks for setting the
-         # 'registries.insecure' in /etc/containers/registries.conf file of the contianer.  
+        # This step is fetching the values of 'registries.insecure' from the 'image.config.openshift.io/cluster' resource
+        # and generating a script insecure_registry_setup.sh that will be used by the tasks for setting the
+        # 'registries.insecure' in /etc/containers/registries.conf file of the contianer.  
           
         echo "preparing script for setting internal registry as insecure registry in /etc/containers/registries.conf file "
 
