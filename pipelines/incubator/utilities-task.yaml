@@ -121,6 +121,13 @@ spec:
         fi
 
         EOF
+        
+        chmod +x ca_certs_setup.sh
+        echo "printing the content of ca_certs_setup.sh"
+        cat ca_certs_setup.sh
+
+        echo "copying the script ca_certs_setup.sh to output path"
+        cp ca_certs_setup.sh $(outputs.resources.git-source.path)
 
     env:
     - name: gitsource
