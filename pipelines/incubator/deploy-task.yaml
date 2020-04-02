@@ -17,7 +17,7 @@ spec:
       default: app-deploy.yaml
   steps:
   - name: deploy-image
-    image: kabanero/kabanero-utils:0.8.0
+    image: kabanero/kabanero-utils:0.3.0
     command: ['/bin/sh']
     args: ['-c', 'find /workspace/$gitsource -name ${YAMLFILE} -type f|xargs kubectl apply -f']
     env:
