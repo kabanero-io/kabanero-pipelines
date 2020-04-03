@@ -22,7 +22,7 @@ spec:
     - name: git-source
       type: git
   steps:
-  - name: insecure-registry-setup
+  - name: registry-connection-setup
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils:0.8.0
