@@ -21,17 +21,9 @@ spec:
   - name: docker-image
     type: image
   tasks:
-  - name: validate-stack-task
-    taskRef:
-      name: StackId-validate-stack-task
-    resources:
-      inputs:
-      - name: git-source
-        resource: git-source
   - name: utilities-task
     taskRef:
       name: StackId-utilities-task
-    runAfter: [validate-stack-task]
     params:
       - name: docker-imagename
         value: "$(params.docker-imagename)"

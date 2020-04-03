@@ -15,6 +15,44 @@ spec:
     - name: git-source
       type: git
   steps:
+  - name: enforce-stack-policy-pre-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.8.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /workspace/$gitsource/enforce_stack_policy.sh
+        
+    env:
+    - name: gitsource
+      value: git-source
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: stack-image-registry-map
+         key: default-stack-image-registry-url
+         optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: username
+          optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: password
+          optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: config-volume
+      mountPath: /config
+    - name: secret-volume
+      mountPath: /etc/secret-volume        
   - name: build
     securityContext:
       privileged: true
@@ -132,6 +170,44 @@ spec:
       mountPath: /config
     - name: secret-volume
       mountPath: /etc/secret-volume
+  - name: enforce-stack-policy-post-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.8.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /workspace/$gitsource/enforce_stack_policy.sh
+        
+    env:
+    - name: gitsource
+      value: git-source
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: stack-image-registry-map
+         key: default-stack-image-registry-url
+         optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: username
+          optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: password
+          optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: config-volume
+      mountPath: /config
+    - name: secret-volume
+      mountPath: /etc/secret-volume       
   - name: push
     securityContext:
       privileged: true
@@ -180,4 +256,3 @@ spec:
     secret:
       secretName: default-stack-image-registry-secret
       optional: true
-

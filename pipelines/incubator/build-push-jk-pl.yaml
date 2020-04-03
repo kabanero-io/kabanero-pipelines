@@ -15,7 +15,7 @@ spec:
     - name: docker-image
       type: image
   tasks:
-    - name: validate-stack-task
+    - name: enforce-stack-policy-task
       taskRef:
         name: StackId-validate-stack-task
       resources:
@@ -25,7 +25,7 @@ spec:
     - name: utilities-task
       taskRef:
         name: StackId-utilities-task
-      runAfter: [validate-stack-task]
+      runAfter: [enforce-stack-policy-task]
       params:
         - name: docker-imagename
           value: "$(params.docker-imagename)"
