@@ -16,7 +16,7 @@ spec:
     command: ["/bin/bash"]
     args:
       - -c
-      - 
+      - |
         #############
         # Functions #
         #############
