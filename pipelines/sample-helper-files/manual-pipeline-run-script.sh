@@ -63,7 +63,7 @@ APP_REPO=$appGitRepo
 
 PIPELINE_RESOURCE_FILE=pipeline-resources-template.yaml
 CUSTOMIZED_PIPELINE_RESOURCE_FILE=${stackName}-${PIPELINE_RESOURCE_FILE}
-pipeline_resource_dockerimage_template_text="docker.io/<docker_id>/<docker_image_name>"
+pipeline_resource_dockerimage_template_text="docker.io/<docker_id>"
 pipeline_resource_git_resource_template_text="https://github.com/<git_id>/<git_repo_name>"
 
 PIPELINE_RUN_MANUAL_FILE=manual-pipeline-run-template.yaml
