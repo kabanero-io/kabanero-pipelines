@@ -1,0 +1,178 @@
+#Kabanero! on activate substitute Digest for text 'Digest'
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: build-push-task-Digest
+spec:
+  inputs:
+    resources:
+    - name: git-source
+      type: git
+  outputs:
+    resources:
+    - name: docker-image
+      type: image
+    - name: git-source
+      type: git
+  steps:
+  - name: build
+    securityContext:
+      privileged: true
+    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
+
+        if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
+        then
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_URL not configured in a config map.  Look for the stack registry info in the .appsody-cfg file."
+            APPSODY_CONFIG=".appsody-config.yaml"
+            
+            # Default the stack registry to docker.io
+            STACK_IMAGE_REGISTRY_URL="docker.io"
+
+            cd /workspace/$gitsource
+            
+            if [ ! -f "$APPSODY_CONFIG" ]; then
+                echo "$APPSODY_CONFIG is not found in the root of the source directory."
+            else
+                # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
+                declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
+                if [ -z "$STACK" ]; then
+                  echo "$APPSODY_CONFIG does not contain a stack definition."
+                fi
+            fi
+
+            # The stack registry may or may not be in the appsody-cfg.yaml file
+            # If it's there the format should be like registry/project/name:version
+            # It could also just be project/name:version.
+            # Try to determine if the registry is there and if it is, parse it out
+            NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${STACK}")
+            if [ "$NUM_SLASHES" = 1 ]; then
+                echo "No stack registry specified in $APPSODY_CONFIG. Using docker.io as the stack registry."
+            elif [ "$NUM_SLASHES" = 2 ]; then
+                STACK_IMAGE_REGISTRY_URL="$(echo $STACK | cut -d'/' -f1)"
+                echo "Stack registry specified in $APPSODY_CONFIG as $STACK_IMAGE_REGISTRY_URL.  Using this as the stack registry."
+            else
+                echo "Unexpeted format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
+            fi
+        else
+            echo "Using stack image registry url setup by user in configmap as $DEFAULT_STACK_IMAGE_REGISTRY_URL"
+            STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL
+        fi
+        
+        echo "Looking for stack registry at $STACK_IMAGE_REGISTRY_URL."
+
+        if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
+        then
+            echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty.  Assumption is authentication to the registry is not required."
+
+            if [[ "$STACK_IMAGE_REGISTRY_URL" == *"$internal_stack_registry_string"*  ]];then
+               echo "Creating the certificate for STACK_IMAGE_REGISTRY_URL=$STACK_IMAGE_REGISTRY_URL"
+               #Creating a cert for the internal image registry url
+               echo "The STACK_IMAGE_REGISTRY_URL is internal registry =$STACK_IMAGE_REGISTRY_URL"
+               echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
+               echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
+               echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
+
+               chmod 755 cert-creation.sh
+               ./cert-creation.sh
+            fi
+        else
+            echo "Secrets are provided to login to stack registry"
+            echo "Creating the certificate for STACK_IMAGE_REGISTRY_URL=$STACK_IMAGE_REGISTRY_URL"
+            #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
+            echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
+            echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
+            echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
+            echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
+            
+            echo "Creating certificates and logging into the registry."
+            chmod 755 cert-creation.sh
+            ./cert-creation.sh
+        fi
+
+        cd /workspace/$gitsource
+ 
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
+        echo "Copying the generated app-deploy.yaml file from input to the output to pass the file to the next task when this task is used in deploy pipeline"
+        cp app-deploy.yaml $(outputs.resources.git-source.path)
+    env:
+    - name: gitsource
+      value: git-source
+    - name: internal_stack_registry_string
+      value: image-registry.openshift-image-registry.svc:5000
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: stack-image-registry-map
+         key: default-stack-image-registry-url
+         optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: username
+          optional: true
+    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: default-stack-image-registry-secret
+          key: password
+          optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: config-volume
+      mountPath: /config
+    - name: secret-volume
+      mountPath: /etc/secret-volume
+  - name: push
+    securityContext:
+      privileged: true
+    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh)
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+  
+        buildah push --tls-verify=false "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+  - name: config-volume
+    configMap:
+      name: stack-image-registry-map
+      optional: true
+  - name: secret-volume
+    secret:
+      secretName: default-stack-image-registry-secret
+      optional: true
+
