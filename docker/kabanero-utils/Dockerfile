@@ -1,4 +1,4 @@
-FROM appsody/appsody-buildah:0.5.8-buildah1.9.0
+FROM appsody/appsody-buildah:0.6.0-buildah1.9.0
 
 #Running the kubectl installation script in above base image
 COPY /install_utilities.sh /root/

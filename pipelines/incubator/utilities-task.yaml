@@ -22,7 +22,7 @@ spec:
     - name: git-source
       type: git
   steps:
-  - name: insecure-registry-setup
+  - name: registry-connection-setup
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils:0.8.0
@@ -36,6 +36,7 @@ spec:
           
         echo "preparing script for setting internal registry as insecure registry in /etc/containers/registries.conf file "
 
+        internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
         insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.registrySources.insecureRegistries[*]}")
         if [[ ! -z "$insecure_registries_string" ]]; then
            echo "The insecure image registry list found"
@@ -49,14 +50,24 @@ spec:
                INSECURE_REGISTRTY=''"'"''"$i"''"'"''
              fi
            done
-
-           cat <<- EOF > insecure_registry_setup.sh
            
-           #example original string : 
+           if [[ ! -z "internal_registry_internal_url" ]]; then
+             INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
+           fi
+
+        else
+           if [[ ! -z "internal_registry_internal_url" ]]; then
+             INSECURE_REGISTRTY=''"'"''"$internal_registry_internal_url"''"'"''
+           fi 
+        fi
+      
+        cat <<- EOF > insecure_registry_setup.sh
+
+           #example original string :
            #[registries.insecure]
            #registries = []
            ORIGINAL_STRING='\[registries\.insecure\]\nregistries = \[\]'
-           
+
            #example replace string
            #[registries.insecure]
            #registries = ['pqr.com', 'abc.com']
@@ -66,12 +77,11 @@ spec:
 
         EOF
            chmod +x insecure_registry_setup.sh
-           echo "The following script has been copied to the workspace: insecure_registry_setup.sh"
+           echo "Printing the content of script insecure_registry_setup.sh"
            cat insecure_registry_setup.sh
 
            echo "copying the script insecure_registry_setup.sh to output path"
            cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
-        fi
     env:
     - name: gitsource
       value: git-source
