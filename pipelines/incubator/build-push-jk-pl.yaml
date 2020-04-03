@@ -15,17 +15,17 @@ spec:
     - name: docker-image
       type: image
   tasks:
-    - name: validate-stack-task
+    - name: enforce-stack-policy-task
       taskRef:
         name: StackId-validate-stack-task
       resources:
         inputs:
         - name: git-source
           resource: git-source
-    - name: imagename-lowercase-task
+    - name: utilities-task
       taskRef:
-        name: StackId-imagename-lowercase-task
-      runAfter: [validate-stack-task]
+        name: StackId-utilities-task
+      runAfter: [enforce-stack-policy-task]
       params:
         - name: docker-imagename
           value: "$(params.docker-imagename)"
@@ -43,12 +43,12 @@ spec:
     - name: build-push-task
       taskRef:
         name: StackId-build-push-jk-task
-      runAfter: [imagename-lowercase-task]
+      runAfter: [utilities-task]
       resources:
         inputs:
         - name: git-source
           resource: git-source
-          from: [imagename-lowercase-task]
+          from: [utilities-task]
         outputs:
         - name: docker-image
           resource: docker-image
@@ -62,6 +62,6 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-          from: [imagename-lowercase-task]
+          from: [utilities-task]
         - name: docker-image
           resource: docker-image
