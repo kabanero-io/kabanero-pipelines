@@ -21,29 +21,18 @@ spec:
         # Functions #
         #############
         
-        
         #################
         # ignoreDigests #
         #################
         ignore_digests () {
         
-           echo "SCOTT: enter ignore digest"
-        
-           ####### 5. loop
-           # OLD loop for stack versions - ignoreDigests
-           #
-           # ignoreDigests
-           #
            # If the version was "latest", sort all the installed versions to find the latest
            if [ "$VERSION" == "latest" ] && [ ! -z CLUSTER_STACK_VERSIONS ]; then
               echo 
               echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
               exit 0  
            fi
-           for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}; do
-              # Two things
-              #   1.  Does the version from the .appsody-cofig match?  Exactly? DONE   StartsWith? Yes? Sort all sorts with     NO?  Fail. 
-              #   Weird case -  "latest"  - Sort all - use absolute latest tag.             
+           for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}; do            
               # If the stack version starts with same pattern, we are done
               if [[ "$STACK_VERSION" == $VERSION* ]]; then
                  echo 
@@ -61,7 +50,7 @@ spec:
         # activeDigests #
         #################
         active_digests () {
-           echo "SCOTT: enter active digest"
+ 
            # Find matching versions
            for STACK_VERSION in ${CLUSTER_STACK_VERSIONS}
               do
@@ -91,7 +80,7 @@ spec:
         # strictDigests #
         #################
         strict_digests () {
-           echo "SCOTT: enter strict digest"
+
            if [ "$STACK_POLICY" == "strictDigest" ]; then
               echo "ERROR: A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
               exit 1
@@ -102,11 +91,8 @@ spec:
            fi 
         }
        
+        ###  MAIN ###
        
-       
-       ###  MAIN #####
-       
-        
         # env var gitsource
         GITSOURCE=$gitsource
         APPSODY_CONFIG=".appsody-config.yaml"
@@ -201,7 +187,6 @@ spec:
         #########################################################################################
         # Validate stack name & project are present, active in the Kabanero CR
         #########################################################################################
-
         echo
         echo "INFO: Validate stack name & project are present, active in the Kabanero CR"
         # Check to make sure the stack is active by name first
@@ -235,41 +220,22 @@ spec:
         fi
         echo "INFO: Sucessfully validated stack name & project are present, active in the Kabanero CR"
 
-
         #########################################################################################
         #  Main validation between operator and registry
         #########################################################################################
-
-        # ??? TODO add registry validation logic here.  Implictly handled by digest check.
-        # ??? But can give a better error message with just a name check
-         
-        # 1. Parse .appsody-config for user, repo, STACKNAME, VERSION 2 digit)
-        # 2. Issue oc get stack , get 3 digit version number(s) for active STACKNAME
-        # 3. Query image registry to get sha256 for tag "VERSION"
-        # 4. Query ****NEW* OPERATOR**** to get sha256 for version(s) tag(s) from step 2
-        # 5. The sha256 obtained in step 3 must be included in the sha256 list obtained in step 4 for the build to proceed
-
-        # Get the 3 digit stack values
-        # Assumed the version(s) are in the metadata
-        #######  2.
-        # Will now be used for ignoreDigests (always)  &  activeDigest (if failure for autopatch)
+        # IgnoreDigests (always)  &  activeDigest (if failure for autopatch)
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         CLUSTER_STACK_DIGESTS=$( kubectl get stack java-microprofile -o json | jq -r '.status.versions[].images[].digest.activation?' )
         echo
         echo "INFO: VERSIONS = $CLUSTER_STACK_VERSIONS"
         echo "INFO: DIGESTS  = $CLUSTER_STACK_DIGESTS"   
         
-
-
         if [ "$STACK_POLICY" == "ignoreDigest" ]; then
            ignore_digests
         fi
 
-
-
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
-        #######  3.
-        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo "INFO: RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
            TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
@@ -281,19 +247,9 @@ spec:
            exit 1
         fi
  
-       
-
-
-        ####### 5. loop
-        # NEW loop for digests - strictDigest & activeDigest
+        # Loop for digests - strictDigest & activeDigest
         for CURRENT_DIGEST in ${CLUSTER_STACK_DIGESTS}
-           do
-
-              ####### 4. 
-              
-              # 0.8.0 Update, don't use image registry, get it from the operator
-              # TODO: What to do if the operator doesn't have it? Did they handle the error case? DM Slack out to Tim and Ed Monday night
-              
+           do              
               if [ "$TARGET_DIGEST" =  "\"sha256:$CURRENT_DIGEST\"" ]; then
                 echo 
                 echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
@@ -318,10 +274,6 @@ spec:
         # All early exits, we should not get here
         echo "ERROR: stackPolicy of not $STACK_POLICY not recognized"
         exit 1
-           
-           
-           
-           
          
    
     env:
