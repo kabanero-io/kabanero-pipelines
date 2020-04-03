@@ -24,7 +24,7 @@ spec:
           resource: git-source
     - name: utilities-task
       taskRef:
-        name: StackId-iutilities-task
+        name: StackId-utilities-task
       runAfter: [enforce-stack-policy-task]
       params:
         - name: docker-imagename
