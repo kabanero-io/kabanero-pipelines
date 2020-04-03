@@ -19,11 +19,23 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: appsody/appsody-buildah:0.5.8-buildah1.9.0
+    image: kabanero/kabanero-utils:0.8.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
+        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
+        fi
+        
         echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
 
         if [ -z "$DEFAULT_STACK_IMAGE_REGISTRY_URL" ]
@@ -69,29 +81,9 @@ spec:
         if [[ ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME" ) || ( -z "$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD" ) ]]
         then
             echo "DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME or DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD is empty.  Assumption is authentication to the registry is not required."
-            if [[ "$STACK_IMAGE_REGISTRY_URL" == *"$internal_stack_registry_string"*  ]];then
-               echo "Creating the certificate for STACK_IMAGE_REGISTRY_URL=$STACK_IMAGE_REGISTRY_URL"
-               #Creating a cert for the internal image registry url
-               echo "The STACK_IMAGE_REGISTRY_URL is internal registry =$STACK_IMAGE_REGISTRY_URL"
-               echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
-               echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
-               echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
-
-               chmod 755 cert-creation.sh
-               ./cert-creation.sh
-            fi        
         else
             echo "Secrets are provided to login to stack registry"
-            echo "Creating the certificate for STACK_IMAGE_REGISTRY_URL=$STACK_IMAGE_REGISTRY_URL"
-            #Creating a cert for authentication of buildah login of the DEFAULT_STACK_IMAGE_REGISTRY_URL registry url
-            echo "HOST=$STACK_IMAGE_REGISTRY_URL" > cert-creation.sh
-            echo "sudo mkdir -p /etc/docker/certs.d/\${HOST}" >> cert-creation.sh
-            echo "openssl s_client -connect \${HOST} -servername \${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/\${HOST}/ca.crt" >> cert-creation.sh
             echo "buildah login -u $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME -p $DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD \${HOST}" >> cert-creation.sh
-            
-            echo "Creating certificates and logging into the registry."
-            chmod 755 cert-creation.sh
-            ./cert-creation.sh
         fi
 
         cd /workspace/$gitsource
@@ -105,6 +97,18 @@ spec:
         fi
         echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
+        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
+        fi
+        
         appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
     env:
     - name: gitsource

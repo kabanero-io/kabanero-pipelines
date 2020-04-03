@@ -22,9 +22,9 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-    - name: imagename-lowercase-task
+    - name: utilities-task
       taskRef:
-        name: StackId-imagename-lowercase-task
+        name: StackId-utilities-task
       runAfter: [validate-stack-task]
       params:
         - name: docker-imagename
@@ -43,12 +43,12 @@ spec:
     - name: build-task
       taskRef:
         name: StackId-build-task
-      runAfter: [imagename-lowercase-task]
+      runAfter: [utilities-task]
       resources:
         inputs:
         - name: git-source
           resource: git-source
-          from: [imagename-lowercase-task]
+          from: [utilities-task]
         outputs:
         - name: docker-image
           resource: docker-image
