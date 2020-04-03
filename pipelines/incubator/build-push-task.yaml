@@ -35,8 +35,6 @@ spec:
         if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
            echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
            /workspace/$gitsource/ca_certs_setup.sh
-           echo "printing the content /etc/docker/certs.d/"
-           ls -ltr /etc/docker/certs.d/
         fi
         
         echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
