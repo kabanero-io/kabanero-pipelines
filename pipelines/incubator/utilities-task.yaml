@@ -327,7 +327,7 @@ spec:
         fi
 
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
-        echo "RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        echo "INFO: RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
            TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
