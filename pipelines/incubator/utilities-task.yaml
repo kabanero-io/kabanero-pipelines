@@ -51,14 +51,6 @@ spec:
              fi
            done
            
-           if [[ ! -z "internal_registry_internal_url" ]]; then
-             INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
-           fi
-
-        else
-           if [[ ! -z "internal_registry_internal_url" ]]; then
-             INSECURE_REGISTRTY=''"'"''"$internal_registry_internal_url"''"'"''
-           fi 
         fi
         
     
