@@ -3,7 +3,6 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: build-deploy-pl-Digest-pullrequest-binding
-  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -23,7 +22,6 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: build-deploy-pl-Digest-push-binding
-  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -45,7 +43,6 @@ apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: build-deploy-pl-Digest-template
-  namespace: tekton-pipelines
 spec:
   params:
   - name: event-ref
