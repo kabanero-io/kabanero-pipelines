@@ -51,14 +51,6 @@ spec:
              fi
            done
            
-           if [[ ! -z "internal_registry_internal_url" ]]; then
-             INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
-           fi
-
-        else
-           if [[ ! -z "internal_registry_internal_url" ]]; then
-             INSECURE_REGISTRTY=''"'"''"$internal_registry_internal_url"''"'"''
-           fi 
         fi
       
         cat <<- EOF > insecure_registry_setup.sh
@@ -103,9 +95,25 @@ spec:
 
         cat <<- "EOF" > ca_certs_setup.sh
 
+        #First we generate internal registry internal route url ca.crt certficate allowing internal registry
+        #internal route to access the registry to avoid X509 certificate error.
+        internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
+        if [[ ! -z "internal_registry_internal_url"  ]];then
+               echo "Creating the certificate for internal_registry_internal_url=$internal_registry_internal_url"
+               #Creating a cert for the internal image registry url
+
+               HOST=$internal_registry_internal_url
+               sudo mkdir -p /etc/docker/certs.d/${HOST}
+               openssl s_client -connect ${HOST} -servername ${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/${HOST}/ca.crt
+        fi
+
+        #Secondly we find if cluster resource image.config.openshift.io/cluster has any additional_trusted_ca setup by user
+        #If yes we pull the certificate values from the configmap setup there and create ca.crt files for each hostname with 
+        #the certificate value given by the user
+        
         additonal_trusted_CA=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.additionalTrustedCA.name}")
-        echo "additonal_trusted_CA=$additonal_trusted_CA found in the image.config.openshift.io/cluster resource, setting up the certificates in /etc/docker/certs.d/ location"
         if [[ ! -z "$additonal_trusted_CA" ]]; then
+           echo "additonal_trusted_CA=$additonal_trusted_CA found in the image.config.openshift.io/cluster resource, setting up the certificates in /etc/docker/certs.d/ location"        
            config_map_key_count=$(kubectl get configmap $additonal_trusted_CA -n openshift-config -o json | jq '.data' | jq 'keys | length')
 
            for ((i=0;i<config_map_key_count;i++));do
@@ -122,12 +130,6 @@ spec:
               echo "$cert_value" | sudo tee -a /etc/docker/certs.d/$key/ca.crt
            done
 
-          chmod +x ca_certs_setup.sh
-          echo "printing the content of ca_certs_setup.sh"
-          cat ca_certs_setup.sh
-
-          echo "copying the script ca_certs_setup.sh to output path"
-          cp ca_certs_setup.sh $(outputs.resources.git-source.path)
         fi
 
         EOF
@@ -138,7 +140,6 @@ spec:
 
         echo "copying the script ca_certs_setup.sh to output path"
         cp ca_certs_setup.sh $(outputs.resources.git-source.path)
-
     env:
     - name: gitsource
       value: git-source
