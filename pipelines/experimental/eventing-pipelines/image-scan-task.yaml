@@ -1,4 +1,4 @@
-#Kabanero! on activate substitute StackId for text 'StackId'
+#Kabanero! on activate substitute Digest for text 'Digest'
 # This task scans the docker image using the specified command and arguments.
 # It requires an image that contains the scanner to be used to scan the docker-image image input.
 apiVersion: tekton.dev/v1alpha1
@@ -32,7 +32,7 @@ spec:
     - name: mount-image          
       securityContext:
         privileged: true
-      image: appsody/appsody-buildah:0.5.0-buildah1.9.0
+      image: kabanero/kabanero-utils:0.8.0
 # Temporarily make copy of mounted image since the mounted image will be unmounted when the container for this task ends.
 # TODO: Determine another way to persist the mounted container image across containers
       command: ['/bin/bash']
@@ -48,8 +48,20 @@ spec:
           fi
           echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
  
+          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+          if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+             echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+             /workspace/$gitsource/insecure_registry_setup.sh
+          fi
+
+          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+          if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+             echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+             /workspace/$gitsource/ca_certs_setup.sh
+          fi
+        
           echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-          buildah from --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+          buildah from --tls-verify=true docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
           echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
           mountDir=$(cat /var/lib/containers/rootfs.txt)
           echo ""

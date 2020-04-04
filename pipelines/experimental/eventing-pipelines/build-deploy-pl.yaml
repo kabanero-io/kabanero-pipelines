@@ -21,17 +21,9 @@ spec:
   - name: docker-image
     type: image
   tasks:
-  - name: validate-stack-task
+  - name: utilities-task
     taskRef:
-      name: validate-stack-task-Digest
-    resources:
-      inputs:
-      - name: git-source
-        resource: git-source
-  - name: imagename-lowercase-task
-    taskRef:
-      name: imagename-lowercase-task-Digest
-    runAfter: [validate-stack-task]
+      name: utilities-task-Digest
     params:
       - name: docker-imagename
         value: "$(params.docker-imagename)"
@@ -49,12 +41,12 @@ spec:
   - name: build-push-task
     taskRef:
       name: build-push-task-Digest
-    runAfter: [imagename-lowercase-task]
+    runAfter: [utilities-task]
     resources:
       inputs:
       - name: git-source
         resource: git-source
-        from: [imagename-lowercase-task]
+        from: [utilities-task]
       outputs:
       - name: docker-image
         resource: docker-image
@@ -68,7 +60,7 @@ spec:
       inputs:
       - name: git-source
         resource: git-source
-        from: [imagename-lowercase-task]
+        from: [utilities-task]
       - name: docker-image
         resource: docker-image
   - name: deploy-task
