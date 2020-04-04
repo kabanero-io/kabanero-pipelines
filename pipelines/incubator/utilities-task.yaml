@@ -51,8 +51,7 @@ spec:
              fi
            done
            
-        fi
-      
+           
         cat <<- EOF > insecure_registry_setup.sh
 
            #example original string :
@@ -69,11 +68,15 @@ spec:
 
         EOF
            chmod +x insecure_registry_setup.sh
-           echo "Printing the content of script insecure_registry_setup.sh"
+           echo "The following script has been copied to the workspace: insecure_registry_setup.sh"
            cat insecure_registry_setup.sh
 
            echo "copying the script insecure_registry_setup.sh to output path"
            cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
+           
+        fi
+      
+
     env:
     - name: gitsource
       value: git-source
