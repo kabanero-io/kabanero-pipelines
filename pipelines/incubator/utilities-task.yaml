@@ -509,7 +509,35 @@ spec:
       value: git-source
     volumeMounts:
     - mountPath: /var/lib/containers
-      name: varlibcontainers      
+      name: varlibcontainers
+  - name: enforce-deploy-stack-policy
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.8.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        cat <<- "EOF" > enforce_deploy_stack_policy.sh
+        echo "WORKS!"
+
+        EOF
+        
+        echo "Wrote enforce_deploy_stack_policy.sh to workspace:"
+        cat enforce_deploy_stack_policy.sh
+        
+        chmod 755 enforce_deploy_stack_policy.sh
+        
+        #Copy of all the content of git-source from input resources to output resources, so it could be passed to next task.
+        cp -r $(inputs.resources.git-source.path)/. $(outputs.resources.git-source.path)
+        #Copy the script 'enforce_stack_policy.sh' generated here to output git-source resource.
+        cp enforce_deploy_stack_policy.sh $(outputs.resources.git-source.path)
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers                  
   volumes:
   - name: varlibcontainers
     emptyDir: {}

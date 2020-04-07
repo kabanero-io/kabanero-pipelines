@@ -16,6 +16,17 @@ spec:
     - name: app-deploy-file-name
       default: app-deploy.yaml
   steps:
+  - name: enforce-stack-policy-post-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.8.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /workspace/$gitsource/enforce_deploy_stack_policy.sh
+        
+    env:  
   - name: deploy-image
     image: kabanero/kabanero-utils:0.3.0
     command: ['/bin/sh']
