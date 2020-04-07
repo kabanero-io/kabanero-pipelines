@@ -27,8 +27,8 @@ spec:
         /workspace/$gitsource/enforce_deploy_stack_policy.sh
         
     env:  
-  - name: gitsource
-    value: git-source
+    - name: gitsource
+      value: git-source
   - name: deploy-image
     image: kabanero/kabanero-utils:0.3.0
     command: ['/bin/sh']
