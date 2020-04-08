@@ -534,6 +534,7 @@ spec:
         cp enforce_deploy_stack_policy.sh $(outputs.resources.git-source.path)
         ls -la enforce_deploy_stack_policy.sh
         ls -la $(outputs.resources.git-source.path)
+        echo $(outputs.resources.git-source.path)
     env:
     - name: gitsource
       value: git-source
