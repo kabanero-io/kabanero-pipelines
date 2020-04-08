@@ -532,6 +532,8 @@ spec:
         cp -r $(inputs.resources.git-source.path)/. $(outputs.resources.git-source.path)
         #Copy the script 'enforce_stack_policy.sh' generated here to output git-source resource.
         cp enforce_deploy_stack_policy.sh $(outputs.resources.git-source.path)
+        ls -la enforce_deploy_stack_policy.sh
+        ls -la $(outputs.resources.git-source.path)
     env:
     - name: gitsource
       value: git-source
