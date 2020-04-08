@@ -25,7 +25,7 @@ spec:
       - -c
       - |
         echo "ls -LR /"
-        ls -LR / 
+        ls -LR /workspace 
         echo "ls -la /workspace"
         ls -la /workspace
         echo "ls -la /workspace/$gitsource"
