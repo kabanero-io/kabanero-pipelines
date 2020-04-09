@@ -1,38 +1,38 @@
-#Kabanero! on activate substitute Digest for text 'Digest'
+#Kabanero! on activate substitute @Digest@ for text 'Digest'
 apiVersion: tekton.dev/v1alpha1
 kind: EventListener
 metadata:
-  name: listener-Digest
+  name: listener-@Digest@
   namespace: kabanero
 spec:
   serviceAccountName: tekton-webhooks-extension-eventlistener
   triggers:
   - bindings:
     - apiversion: v1alpha1
-      name: build-deploy-pl-Digest-push-binding
+      name: build-deploy-pl-@Digest@-push-binding
     interceptors:
     - cel:
         filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "push" '
     name: kabanero-push-event
     template:
       apiversion: v1alpha1
-      name: build-deploy-pl-Digest-template
+      name: build-deploy-pl-@Digest@-template
   - bindings:
     - apiversion: v1alpha1
-      name: build-deploy-pl-Digest-pullrequest-binding
+      name: build-deploy-pl-@Digest@-pullrequest-binding
     interceptors:
     - cel:
         filter: 'has(body.wehbooks-event-type) && body.webhooks-event-type == "pull_request" '
     name: kabanero-pullrequest-event
     template:
       apiversion: v1alpha1
-      name: build-deploy-pl-Digest-template
+      name: build-deploy-pl-@Digest@-template
   - bindings:
     - apiversion: v1alpha1
-      name: monitor-task-github-Digest-binding
+      name: monitor-task-github-@Digest@-binding
     template:
      apiversion: v1alpha1
-     name: monitor-task-Digest-template
+     name: monitor-task-@Digest@-template
     name: kabanero-monitor-task-event
     interceptors:
       - cel:

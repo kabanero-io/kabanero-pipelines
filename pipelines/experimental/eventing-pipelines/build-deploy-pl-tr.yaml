@@ -1,8 +1,9 @@
-#Kabanero! on activate substitute Digest for text 'Digest'
+#Kabanero! on activate substitute @Digest@ for text 'Digest'
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-deploy-pl-Digest-pullrequest-binding
+  name: build-deploy-pl-@Digest@-pullrequest-binding
+  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -21,7 +22,8 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-deploy-pl-Digest-push-binding
+  name: build-deploy-pl-@Digest@-push-binding
+  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -42,7 +44,8 @@ spec:
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: build-deploy-pl-Digest-template
+  name: build-deploy-pl-@Digest@-template
+  namespace: tekton-pipelines
 spec:
   params:
   - name: event-ref
@@ -97,7 +100,7 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: build-deploy-pl-Digest-run-
+      generateName: build-deploy-pl-@Digest@-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -107,7 +110,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: build-deploy-pl-Digest
+        name: build-deploy-pl-@Digest@
       params:
       - name: event-type
         value: $(params.event-type)

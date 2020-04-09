@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute Digest for text 'Digest'
+#Kabanero! on activate substitute @Digest@ for text 'Digest'
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: build-deploy-pl-Digest
+  name: build-deploy-pl-@Digest@
 spec:
   params:
   - name: event-type
@@ -23,7 +23,7 @@ spec:
   tasks:
   - name: utilities-task
     taskRef:
-      name: utilities-task-Digest
+      name: utilities-task-@Digest@
     params:
       - name: docker-imagename
         value: "$(params.docker-imagename)"
@@ -40,7 +40,7 @@ spec:
         resource: git-source
   - name: build-push-task
     taskRef:
-      name: build-push-task-Digest
+      name: build-push-task-@Digest@
     runAfter: [utilities-task]
     resources:
       inputs:
@@ -54,7 +54,7 @@ spec:
         resource: git-source
   - name: image-scan-task
     taskRef:
-      name: image-scan-task-Digest
+      name: image-scan-task-@Digest@
     runAfter: [build-push-task]
     resources:
       inputs:
@@ -65,14 +65,14 @@ spec:
         resource: docker-image
   - name: deploy-task
     conditions:
-    - conditionRef: deployment-condition-Digest
+    - conditionRef: deployment-condition-@Digest@
       params:
       - name: event-type
         value: $(params.event-type)
       - name: event-ref
         value: $(params.event-ref)
     taskRef:
-      name: deploy-task-Digest
+      name: deploy-task-@Digest@
     runAfter: [image-scan-task]
     resources:
       inputs:

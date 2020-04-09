@@ -1,8 +1,8 @@
-#Kabanero! on activate substitute Digest for text 'Digest'
+#Kabanero! on activate substitute @Digest@ for text 'Digest'
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
-  name: utilities-task-Digest
+  name: utilities-task-@Digest@
 spec:
   inputs:
     resources:
