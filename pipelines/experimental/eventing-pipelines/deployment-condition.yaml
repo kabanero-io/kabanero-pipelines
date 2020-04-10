@@ -1,4 +1,4 @@
-#Kabanero! on activate substitute @Digest@ for text 'Digest'
+#Kabanero! on activate substitute Digest for text '@Digest@'
 apiVersion: tekton.dev/v1alpha1
 kind: Condition
 metadata:
