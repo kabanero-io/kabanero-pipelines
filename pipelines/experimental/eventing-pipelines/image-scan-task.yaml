@@ -1,4 +1,4 @@
-#Kabanero! on activate substitute @Digest@ for text 'Digest'
+#Kabanero! on activate substitute Digest for text '@Digest@'
 # This task scans the docker image using the specified command and arguments.
 # It requires an image that contains the scanner to be used to scan the docker-image image input.
 apiVersion: tekton.dev/v1alpha1
