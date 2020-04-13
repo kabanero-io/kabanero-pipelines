@@ -24,12 +24,6 @@ spec:
     args:
       - -c
       - |
-        echo "ls -LR /"
-        ls -LR /workspace 
-        echo "ls -la /workspace"
-        ls -la /workspace
-        echo "ls -la /workspace/$gitsource"
-        ls -la /workspace/$gitsource
         /workspace/$gitsource/enforce_deploy_stack_policy.sh
         
     env:  
