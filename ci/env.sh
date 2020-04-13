@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 if [ ! -z "$assets_dir" ]
 then
     # we've been here before
