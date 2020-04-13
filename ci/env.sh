@@ -159,7 +159,8 @@ image_build() {
         cmd="buildah bud"
     fi
 
-    if ! logged "${log}" ${cmd} $@
+#    if ! logged "${log}" ${cmd} $@
+    if ! ${cmd} $@
     then
       echo "Failed building image"
       exit 1
