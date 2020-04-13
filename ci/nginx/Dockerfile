@@ -9,7 +9,7 @@ LABEL name="pipelies-index" \
 
 COPY nginx/nginx.repo  /etc/yum.repos.d/nginx.repo
 
-RUN microdnf install nginx findutils \
+RUN microdnf install nginx \
     && mkdir /var/cache/nginx \
     && chown -R nginx:0 /var/log/nginx/ /var/cache/nginx /usr/share/nginx \
     && chmod -R g=u /var/log/nginx/ /var/cache/nginx /usr/share/nginx \
