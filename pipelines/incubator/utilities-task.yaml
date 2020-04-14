@@ -444,7 +444,7 @@ spec:
         #########################################################################################
         # IgnoreDigests (always)  &  activeDigest (if failure for autopatch)
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
-        CLUSTER_STACK_DIGESTS=$( kubectl get stack java-microprofile -o json | jq -r '.status.versions[].images[].digest.activation?' )
+        CLUSTER_STACK_DIGESTS=$( kubectl get stack $STACK_NAME -o json | jq -r '.status.versions[].images[].digest.activation?' )
         echo
         echo "INFO: VERSIONS = $CLUSTER_STACK_VERSIONS"
         echo "INFO: DIGESTS  = $CLUSTER_STACK_DIGESTS"   
