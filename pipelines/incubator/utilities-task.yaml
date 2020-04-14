@@ -304,7 +304,6 @@ spec:
               echo "$ERROR A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
               exit 1
            else
-              # TODO: Clarify message, copied
               echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
               exit 0
            fi 
@@ -580,7 +579,7 @@ spec:
         }
         
         
-        #### MAIN ###
+        ### MAIN ###
         
         INFO="[INFO]"
         WARNING="[WARNING]"
@@ -627,8 +626,6 @@ spec:
         cp -r $(inputs.resources.git-source.path)/. $(outputs.resources.git-source.path)
         #Copy the script 'enforce_stack_policy.sh' generated here to output git-source resource.
         cp enforce_deploy_stack_policy.sh $(outputs.resources.git-source.path)
-        ls -la enforce_deploy_stack_policy.sh
-        ls -la $(outputs.resources.git-source.path)
         echo $(outputs.resources.git-source.path)
     env:
     - name: gitsource
