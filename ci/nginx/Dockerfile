@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.0
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL name="pipelies-index" \
       vendor="Kabanero" \
