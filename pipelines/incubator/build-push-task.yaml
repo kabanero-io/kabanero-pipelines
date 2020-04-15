@@ -23,7 +23,7 @@ spec:
     args:
       - -c
       - |
-        /workspace/$gitsource/enforce_stack_policy.sh
+        /workspace/$gitsource/enforce_stack_policy.sh pre-build
         
     env:
     - name: gitsource
@@ -179,7 +179,7 @@ spec:
     args:
       - -c
       - |
-        /workspace/$gitsource/enforce_stack_policy.sh
+        /workspace/$gitsource/enforce_stack_policy.sh post-build
         
     env:
     - name: gitsource
