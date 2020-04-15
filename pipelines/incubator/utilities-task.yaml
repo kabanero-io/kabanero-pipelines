@@ -536,7 +536,7 @@ spec:
            # Retrieve the version from the application image
            STACK_VERSION=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
            # Retrieve all the version of the stack
-           CLUSTER_STACK_VERSIONS=$( oc get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
+           CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         
            for VERSION in ${CLUSTER_STACK_VERSIONS}; do            
               # If the stack version starts with same pattern, we are done
@@ -612,6 +612,7 @@ spec:
         fi    
         echo "$ERROR Unrecognized stackPolicy specified: '$STACK_POLICY'."     
         exit 1
+
         EOF
         
         echo "Wrote enforce_deploy_stack_policy.sh to workspace:"
