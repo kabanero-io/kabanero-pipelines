@@ -532,11 +532,11 @@ spec:
         ignore_digest () {
         
            # Retrieve the stack id/name from the application image       
-           STACK_NAME=$( skopeo inspect --tls-verify=false docker://docker.io/smcclem/scott-image:latest  | jq -r '.Labels."dev.appsody.stack.id"' ) 
+           STACK_NAME=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
            # Retrieve the version from the application image
-           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://docker.io/smcclem/scott-image:latest  | jq -r '.Labels."dev.appsody.stack.version"' ) 
+           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
            # Retrieve all the version of the stack
-           CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
+           CLUSTER_STACK_VERSIONS=$( oc get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         
            for VERSION in ${CLUSTER_STACK_VERSIONS}; do            
               # If the stack version starts with same pattern, we are done
@@ -557,11 +557,11 @@ spec:
         active_strict_digest () {
  
            # Retrieve the stack id/name from the application image       
-           STACK_NAME=$( skopeo inspect --tls-verify=false docker://docker.io/smcclem/scott-image:latest  | jq -r '.Labels."dev.appsody.stack.id"' ) 
+           STACK_NAME=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
            # Retrieve the version from the application image
-           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://docker.io/smcclem/scott-image:latest  | jq -r '.Labels."dev.appsody.stack.version"' ) 
+           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
            # Retrieve the version from the application image
-           STACK_DIGEST=$( skopeo inspect --tls-verify=false docker://docker.io/smcclem/scott-image:latest  | jq -r '.Labels."dev.appsody.stack.digest"' ) 
+           STACK_DIGEST=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.digest"' ) 
            # Retrieve all the digests of the stack
            CLUSTER_STACK_DIGESTS=$( kubectl get stack $STACK_NAME -o json | jq -r '.status.versions[].images[].digest.activation?' )
         
@@ -579,7 +579,7 @@ spec:
         }
         
         
-        ### MAIN ###
+        #### MAIN ###
         
         INFO="[INFO]"
         WARNING="[WARNING]"
@@ -587,10 +587,7 @@ spec:
          
         # env var gitsource
         GITSOURCE=$gitsource
-        APPSODY_CONFIG=".appsody-config.yaml"
-        IMAGE_REGISTRY_HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL
-        IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
-        IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
+        INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$1
 
         # Get stack policy
         # Values: strictDigest, activeDigest (default if blank), ignoreDigest and none
