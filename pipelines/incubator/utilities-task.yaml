@@ -284,6 +284,11 @@ spec:
               echo "$ERROR $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
               exit 1
            else
+              # Check to see what enforcement phase we are in, if it's post-build, we can no longer patch the config, it's already been built
+              if [ "$PHASE" == "post-build" ]; then
+                  echo "$ERROR Failed stackPolicy enforcement, application image has already been built, but the stack configuration in $APPSODY_CONFIG became invalid during the build phase."
+                  exit 1
+              fi
               # PATCH APPSODY-CONFIG
               LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
               PATCHED=${STACK//$VERSION/$LATEST}
@@ -317,6 +322,7 @@ spec:
         ERROR="[ERROR]"
         # env var gitsource
         GITSOURCE=$gitsource
+        PHASE=$1
         APPSODY_CONFIG=".appsody-config.yaml"
         IMAGE_REGISTRY_HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL
         IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
