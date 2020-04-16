@@ -58,12 +58,10 @@ done
 tar -czf $assets_dir/default-kabanero-pipelines.tar.gz -C $pipelines_dir .
 touch $assets_dir/default-kabanero-pipelines-tar-gz-sha256
 tektonSHA=$(($sha256cmd $assets_dir/default-kabanero-pipelines.tar.gz) | awk '{print $1}')
-echo ${tektonSHA}
 echo ${tektonSHA}>> $assets_dir/default-kabanero-pipelines-tar-gz-sha256
 tar -czf $assets_dir/eventing-kabanero-pipelines.tar.gz -C $eventing_pipelines_dir .
 touch $assets_dir/eventing-kabanero-pipelines-tar-gz-sha256
 eventSHA=$(($sha256cmd $assets_dir/eventing-kabanero-pipelines.tar.gz) | awk '{print $1}')
-echo ${eventSHA}
 echo ${eventSHA} >> $assets_dir/eventing-kabanero-pipelines-tar-gz-sha256
 echo -e "--- Created pipeline artifacts"
 # expose an extension point for running after main 'package' processing
