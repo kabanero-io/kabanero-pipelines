@@ -26,7 +26,7 @@ spec:
       - |
         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
         if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "!!HOORAY!!"
+           echo "HIP! HIP! HOORAY!!"
            echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
            /workspace/$gitsource/insecure_registry_setup.sh
         fi
