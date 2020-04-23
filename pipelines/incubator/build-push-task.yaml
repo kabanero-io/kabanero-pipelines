@@ -239,7 +239,7 @@ spec:
            /workspace/$gitsource/ca_certs_setup.sh
         fi
 
-        buildah push --tls-verify=true "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
     env:
     - name: gitsource
       value: git-source
