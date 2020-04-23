@@ -61,7 +61,7 @@ spec:
           fi
         
           echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-          buildah from --tls-verify=true docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+          buildah from docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
           echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
           mountDir=$(cat /var/lib/containers/rootfs.txt)
           echo ""
