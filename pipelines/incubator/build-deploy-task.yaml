@@ -169,7 +169,7 @@ spec:
            echo "Signature will not be generated."
            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         else
-           echo "Sigstore will be generated."
+           echo "Signature will be generated."
            if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
               echo "The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
               exit 1
