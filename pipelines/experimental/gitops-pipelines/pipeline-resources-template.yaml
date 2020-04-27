@@ -1,0 +1,27 @@
+apiVersion: v1
+items:
+- apiVersion: tekton.dev/v1alpha1
+  kind: PipelineResource
+  metadata:
+    name: docker-image
+  spec:
+    params:
+    - name: url
+      value: docker.io/kvijai 
+    - name: tag
+      value: latest
+    type: image
+- apiVersion: tekton.dev/v1alpha1
+  kind: PipelineResource
+  metadata:
+    name: git-source
+  spec:
+    params:
+    - name: revision
+      value: master
+    - name: url
+      value: https://github.com/kvijai82/java-microprofile
+    - name: name
+      value: java-microprofile
+    type: git
+kind: List

@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: vk-manual-pipeline-run
+spec:
+  params:
+  - name: event-type
+    value: push
+  - name: event-ref
+    value: refs/heads/master
+  - name: docker-imagename
+    value: java-mp-image
+  - name: docker-imagetag
+    value: latest
+  - name: git-project
+    value: java-microprofile
+  serviceAccountName: kabanero-pipeline
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: build-push-promote-pl 
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source 
+    - name: docker-image
+      resourceRef:
+        name: docker-image

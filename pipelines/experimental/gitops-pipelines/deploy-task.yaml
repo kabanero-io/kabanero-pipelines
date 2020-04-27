@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: deploy-task
+spec:
+  inputs:
+    resources:
+    - name: git-source
+      type: git
+  steps:
+  - name: deploy
+    image: kabanero/kabanero-utils:0.8.0
+    script: |
+        #!/usr/bin/env sh
+        
+        # First check if a dryrun is successful
+        # kubectl apply -k /workspace/git-source/env/overlays --dryrun
+
+        # If it's good then run
+        # How are we determining what we are deploying here??
+        kubectl apply -k /workspace/git-source/env
+
+        # to support newer kustomize 
+        kustomize build /workspace/git-source/env | kubectl apply -k -
+    env:
+    - name: gitsource
+      value: git-source

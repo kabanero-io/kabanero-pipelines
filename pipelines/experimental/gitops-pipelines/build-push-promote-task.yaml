@@ -1,0 +1,124 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: build-push-promote-task
+spec:
+  inputs:
+    resources:
+    - name: git-source
+      type: git
+    params:
+    - name: git-project
+      type: string
+      default: "default-service-name"
+  outputs:
+    resources:
+    - name: docker-image
+      type: image
+    - name: git-source
+      type: git
+  steps:
+  - name: promote
+    securityContext:
+      privileged: true
+    image: quay.io/redhat-developer/gitops-cli
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo "Gitops repo url = $GITOPS_REPO_URL"
+        echo "Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
+        echo "Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+        echo "Gitops token = $GITHUB_TOKEN"
+
+        if [[ ! -z "$GITOPS_REPO_URL" ]]; then
+          # Find the app-deploy.yaml to the /config folder of the gitops repo
+          cd /workspace/$gitsource
+          mkdir config
+          mv app-deploy.yaml config
+
+          # TODO: Generate a kustomize.yaml file under config with list of resources
+          cd config 
+          KUSTOMIZATION_YAML="kustomization.yaml"
+          touch $KUSTOMIZATION_YAML
+          echo "---" >> $KUSTOMIZATION_YAML
+          echo "resources: " >> $KUSTOMIZATION_YAML
+
+          for asset_name in $(ls)
+          do
+              if [ $asset_name != $KUSTOMIZATION_YAML ]; then
+                echo "  - $asset_name" >> $KUSTOMIZATION_YAML
+              fi
+          done
+
+          cat $KUSTOMIZATION_YAML
+          
+          echo "List of files under config directory being promoted - "
+          ls
+
+          # Genreate the .gitconfig file used by service promote
+          cd $HOME
+          GITCONFIG=".gitconfig"
+          touch $GITCONFIG
+
+          if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
+            echo "gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
+            GITOPS_COMMIT_USER_NAME="kabanero"
+          fi
+
+          if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
+            echo "gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
+          fi
+
+          echo "[user]" >> $GITCONFIG
+          echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
+          echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
+          cat $HOME/.gitconfig
+
+          echo "service name = $(inputs.params.git-project)"
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project)  --debug
+        else
+          echo "No gitops repo configured.  service promote not executed."
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    - name: GITHUB_TOKEN
+      value: ccdea9b2f8b0db2ad77552bc8d98d4ca15e1d10a
+#    - name: GITHUB_TOKEN
+#      valueFrom:
+#        secretKeyRef:
+#          name: gitops-token-secret
+#          key: token
+#          optional: true
+    - name: GITOPS_REPO_URL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repo-url
+         optional: true
+    - name: GITOPS_COMMIT_USER_NAME
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-name
+         optional: true
+    - name: GITOPS_COMMIT_USER_EMAIL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-email
+         optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: gitops-map
+      mountPath: /config
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+  - name: gitops-map
+    configMap:
+      name: gitops-map
+      optional: true
