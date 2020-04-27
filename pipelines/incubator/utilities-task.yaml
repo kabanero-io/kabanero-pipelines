@@ -36,23 +36,32 @@ spec:
           
         echo "preparing script for setting internal registry as insecure registry in /etc/containers/registries.conf file "
 
+        cat <<- "EOF" > insecure_registry_setup.sh
+
         internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
         insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.registrySources.insecureRegistries[*]}")
         if [[ ! -z "$insecure_registries_string" ]]; then
            echo "The insecure image registry list found"
- 
+
            IFS=' ' # space is set as delimiter
            read -ra ADDR <<< ''"$insecure_registries_string"'' # str is read into an array as tokens separated by IFS
            for i in ''"${ADDR[@]}"''; do # access each element of array
              if [[ ! -z ''"$INSECURE_REGISTRTY"'' ]]; then
-               INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$i"''"'"''      
+               INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$i"''"'"''
              else
                INSECURE_REGISTRTY=''"'"''"$i"''"'"''
              fi
            done
-           
-           
-        cat <<- EOF > insecure_registry_setup.sh
+
+           if [[ (! -z "internal_registry_internal_url" ) && ( "$INSECURE_REGISTRTY" != *"$internal_registry_internal_url"* ) ]]; then
+             INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
+           fi
+        fi
+
+        if [[ ! -z "internal_registry_internal_url" ]]; then
+             INSECURE_REGISTRTY=''"'"''"$internal_registry_internal_url"''"'"''
+        fi
+
 
            #example original string :
            #[registries.insecure]
@@ -64,7 +73,7 @@ spec:
            #registries = ['pqr.com', 'abc.com']
            REPLACE_STRING='\[registries\.insecure\]\nregistries = \['"$INSECURE_REGISTRTY"'\]'
 
-           sed -i -e ':a;N;\$!ba;s|'"\$ORIGINAL_STRING"'|'"\$REPLACE_STRING"'|' /etc/containers/registries.conf
+           sed -i -e ':a;N;$!ba;s|'"$ORIGINAL_STRING"'|'"$REPLACE_STRING"'|' /etc/containers/registries.conf
 
         EOF
            chmod +x insecure_registry_setup.sh
@@ -75,8 +84,6 @@ spec:
            cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
            
         fi
-      
-
     env:
     - name: gitsource
       value: git-source
@@ -101,14 +108,6 @@ spec:
         #First we generate internal registry internal route url ca.crt certficate allowing internal registry
         #internal route to access the registry to avoid X509 certificate error.
         internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
-        if [[ ! -z "internal_registry_internal_url"  ]];then
-               echo "Creating the certificate for internal_registry_internal_url=$internal_registry_internal_url"
-               #Creating a cert for the internal image registry url
-
-               HOST=$internal_registry_internal_url
-               sudo mkdir -p /etc/docker/certs.d/${HOST}
-               openssl s_client -connect ${HOST} -servername ${HOST} 2>/dev/null </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/docker/certs.d/${HOST}/ca.crt
-        fi
 
         #Secondly we find if cluster resource image.config.openshift.io/cluster has any additional_trusted_ca setup by user
         #If yes we pull the certificate values from the configmap setup there and create ca.crt files for each hostname with 
