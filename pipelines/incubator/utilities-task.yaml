@@ -52,7 +52,7 @@ spec:
                INSECURE_REGISTRTY=''"'"''"$i"''"'"''
              fi
            done
-           
+              
            if [[ (! -z "internal_registry_internal_url" ) && ( "$INSECURE_REGISTRTY" != *"$internal_registry_internal_url"* ) ]]; then
              INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
            fi
