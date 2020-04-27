@@ -320,6 +320,21 @@ spec:
         INFO="[INFO]"
         WARNING="[WARNING]"
         ERROR="[ERROR]"
+        
+        #Setting insecure image registries
+        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+
+        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
+        fi
+        
         # env var gitsource
         GITSOURCE=$gitsource
         PHASE=$1
@@ -465,9 +480,9 @@ spec:
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         echo "$INFO RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         fi
 
         if [ -z "$TARGET_DIGEST" ]; then
@@ -538,9 +553,9 @@ spec:
         ignore_digest () {
         
            # Retrieve the stack id/name from the application image       
-           STACK_NAME=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
+           STACK_NAME=$( skopeo inspect docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
            # Retrieve the version from the application image
-           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
+           STACK_VERSION=$( skopeo inspect docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
            # Retrieve all the version of the stack
            CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         
@@ -563,11 +578,11 @@ spec:
         active_strict_digest () {
  
            # Retrieve the stack id/name from the application image       
-           STACK_NAME=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
+           STACK_NAME=$( skopeo inspect docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.id"' ) 
            # Retrieve the version from the application image
-           STACK_VERSION=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
+           STACK_VERSION=$( skopeo inspect docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.version"' ) 
            # Retrieve the version from the application image
-           STACK_DIGEST=$( skopeo inspect --tls-verify=false docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.digest"' ) 
+           STACK_DIGEST=$( skopeo inspect docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE  | jq -r '.Labels."dev.appsody.stack.digest"' ) 
            # TODO: Temporary until Appsody is able to correctly set this label
            if [ -z "$STACK_DIGEST" ] || [ "$STACK_DIGEST" == "null" ]; then\
               echo "$WARNING The image label 'dev.appsody.stack.digest' has not been set for image: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE, unable to enforce stackPolicy"
@@ -596,6 +611,20 @@ spec:
         WARNING="[WARNING]"
         ERROR="[ERROR]"
          
+        #Setting insecure image registries
+        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+
+        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
+        fi
+        
         # env var gitsource
         GITSOURCE=$gitsource
         INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$1

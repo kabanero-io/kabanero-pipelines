@@ -92,6 +92,21 @@ spec:
         }
        
         ###  MAIN ###
+        
+        
+        #Setting insecure image registries
+        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "INFO: Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
+        fi
+
+        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "INFO: Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
+        fi
        
         # env var gitsource
         GITSOURCE=$gitsource
@@ -237,9 +252,9 @@ spec:
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
         echo "INFO: RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
         if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         else
-           TARGET_DIGEST=$( skopeo inspect --tls-verify=false --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+           TARGET_DIGEST=$( skopeo inspect --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
         fi
 
         if [ -z "$TARGET_DIGEST" ]; then
