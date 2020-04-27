@@ -236,7 +236,8 @@ spec:
            /workspace/$gitsource/ca_certs_setup.sh
         fi
 
-        REPO=`cat /etc/imagesigning.conf/registry`
+        #if /image-signing-config/registry does not exist, a container image signature is not generated.
+        REPO=`cat /image-signing-config/registry`
         if [[ -z $REPO ]]
         then
            echo "Signature will not be generated."
@@ -244,40 +245,24 @@ spec:
         else
            echo "Sigstore will be generated."
            if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-              echo "The specified signed image repository does not match the name of the repository in sign-secret-key secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+              echo "The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
               exit 1
            fi
-
-           SIGSTORE_URL=`cat /etc/imagesigning.conf/sigstore`
-           gpg --import /etc/imagesigning.conf/secret.asc
+           #importing RSA secret key, then extract an e-mail address from it.
+           gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
-           skopeo --debug copy --dest-tls-verify=true --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-
-           if [[ -z $SIGSTORE_URL ]]; then
+           skopeo copy --dest-tls-verify=true --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+           RESULT=$?
+           if [ $RESULT -ne 0 ]; then
+              echo "sign-image failed. exit code : $RESULT"
+              exit $RESULT
+           fi
+           if [[ -z `cat /image-signing-config/sigstore` ]]; then
               echo "Signature is stored in the image registry"
            else
-              LOCAL_SIGSTORE="/workspace/signtask/sigstore"
-              SPLITTED=(${REPO//// })
-              REPOSITE=${SPLITTED[0]}
-              NAMESPACE=`ls $LOCAL_SIGSTORE`
-              NAMESPACE=$NAMESPACE/`ls $LOCAL_SIGSTORE/$$NAMESPACE`
-              TOKEN=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
-              echo $REPOSITE
-              echo $NAMESPACE
-              echo $SIGSTORE_URL/staging/store.php
-              for d in $LOCAL_SIGSTORE/**/*; do
-                 for f in $d/*;do
-                    echo $f
-                    curl -H "Authorization: Bearer $TOKEN" -F "signature=@$f" -F "namespace=$NAMESPACE" -F "registry=$REPOSITE" -F "form_submitted=1" -k -s $SIGSTORE_URL/staging/store.php >> /workspace/result.txt
-                 done
-              done
-              cat /workspace/result.txt
-              if cat /workspace/result.txt | grep "^Result:Failure:"
-              then
-                 false
-              else
-                 cat /workspace/result.txt | grep "^Result:Success:"
-              fi
+              #invoking scripts for processing a generated signature.
+              echo "A signature is stored by scripts."
+              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
            fi
         fi
     env:
@@ -286,10 +271,13 @@ spec:
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
-    - mountPath: /etc/imagesigning.conf
+    - mountPath: /image-signing-config
       name: image-signing-config
     - mountPath: /etc/containers/registries.d
       name: registries-d
+    - mountPath: /sigstore-script
+      name: sigstore-script
+
   volumes:
   - name: varlibcontainers
     emptyDir: {}
@@ -300,6 +288,11 @@ spec:
   - name: registries-d
     configMap:
       name: registries-d
+      optional: true
+  - name: sigstore-script
+    configMap:
+      name: sigstore-script
+      defaultMode: 0555
       optional: true
   - name: secret-volume
     secret:
