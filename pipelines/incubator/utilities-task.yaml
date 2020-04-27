@@ -35,14 +35,14 @@ spec:
         # 'registries.insecure' in /etc/containers/registries.conf file of the contianer.  
           
         echo "preparing script for setting internal registry as insecure registry in /etc/containers/registries.conf file "
-
+        
         cat <<- "EOF" > insecure_registry_setup.sh
-
+        
         internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
         insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.registrySources.insecureRegistries[*]}")
         if [[ ! -z "$insecure_registries_string" ]]; then
            echo "The insecure image registry list found"
-
+        
            IFS=' ' # space is set as delimiter
            read -ra ADDR <<< ''"$insecure_registries_string"'' # str is read into an array as tokens separated by IFS
            for i in ''"${ADDR[@]}"''; do # access each element of array
@@ -52,38 +52,35 @@ spec:
                INSECURE_REGISTRTY=''"'"''"$i"''"'"''
              fi
            done
-
+          
            if [[ (! -z "internal_registry_internal_url" ) && ( "$INSECURE_REGISTRTY" != *"$internal_registry_internal_url"* ) ]]; then
              INSECURE_REGISTRTY=''"$INSECURE_REGISTRTY"', '"'"''"$internal_registry_internal_url"''"'"''
            fi
-        fi
-
-        if [[ ! -z "internal_registry_internal_url" ]]; then
+        else
+           if [[ ! -z "internal_registry_internal_url" ]]; then
              INSECURE_REGISTRTY=''"'"''"$internal_registry_internal_url"''"'"''
+           fi
         fi
-
-
            #example original string :
            #[registries.insecure]
            #registries = []
            ORIGINAL_STRING='\[registries\.insecure\]\nregistries = \[\]'
-
+        
            #example replace string
            #[registries.insecure]
            #registries = ['pqr.com', 'abc.com']
            REPLACE_STRING='\[registries\.insecure\]\nregistries = \['"$INSECURE_REGISTRTY"'\]'
-
+         
            sed -i -e ':a;N;$!ba;s|'"$ORIGINAL_STRING"'|'"$REPLACE_STRING"'|' /etc/containers/registries.conf
-
+         
         EOF
+           
            chmod +x insecure_registry_setup.sh
            echo "The following script has been copied to the workspace: insecure_registry_setup.sh"
            cat insecure_registry_setup.sh
 
            echo "copying the script insecure_registry_setup.sh to output path"
            cp insecure_registry_setup.sh $(outputs.resources.git-source.path)
-           
-        fi
     env:
     - name: gitsource
       value: git-source
@@ -105,11 +102,7 @@ spec:
 
         cat <<- "EOF" > ca_certs_setup.sh
 
-        #First we generate internal registry internal route url ca.crt certficate allowing internal registry
-        #internal route to access the registry to avoid X509 certificate error.
-        internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
-
-        #Secondly we find if cluster resource image.config.openshift.io/cluster has any additional_trusted_ca setup by user
+        #We find if cluster resource image.config.openshift.io/cluster has any additional_trusted_ca setup by user
         #If yes we pull the certificate values from the configmap setup there and create ca.crt files for each hostname with 
         #the certificate value given by the user
         
@@ -123,12 +116,15 @@ spec:
 
               #sed command to remove double quotes from beginning and the end of the above key(example key="abc.pqr.com") variable value
               key=$(sed -e 's/^"//' -e 's/"$//' <<<$key)
+              #sed command to update the configmap key to replace '..' with ':' example 'image-registry.openshift-image-registry.svc..5000' to image-registry.openshift-image-registry.svc:5000
+              key=$(sed -e 's/\.\./:/g' <<< "$key")
+              mkdir -p /etc/docker/certs.d/$key
 
               #sed command to replace '.' with '\.' to escape it while using ahead to fetch that key's value from the map
               key_hostname_with_escaped_dot=$(sed -e 's/\./\\./g' <<< "$key")
 
               cert_value=$(kubectl get configmap $additonal_trusted_CA -n openshift-config --output="jsonpath={.data.$key_hostname_with_escaped_dot}")
-              mkdir -p /etc/docker/certs.d/$key
+              
               echo "$cert_value" | sudo tee -a /etc/docker/certs.d/$key/ca.crt
            done
 
