@@ -116,15 +116,16 @@ spec:
 
               #sed command to remove double quotes from beginning and the end of the above key(example key="abc.pqr.com") variable value
               key=$(sed -e 's/^"//' -e 's/"$//' <<<$key)
-              #sed command to update the configmap key to replace '..' with ':' example 'image-registry.openshift-image-registry.svc..5000' to image-registry.openshift-image-registry.svc:5000
-              key=$(sed -e 's/\.\./:/g' <<< "$key")
-              mkdir -p /etc/docker/certs.d/$key
+
 
               #sed command to replace '.' with '\.' to escape it while using ahead to fetch that key's value from the map
               key_hostname_with_escaped_dot=$(sed -e 's/\./\\./g' <<< "$key")
 
               cert_value=$(kubectl get configmap $additonal_trusted_CA -n openshift-config --output="jsonpath={.data.$key_hostname_with_escaped_dot}")
-              
+
+              #sed command to update the configmap key to replace '..' with ':' example 'image-registry.openshift-image-registry.svc..5000' to image-registry.openshift-image-registry.svc:5000
+              key=$(sed -e 's/\.\./:/g' <<< "$key")
+              mkdir -p /etc/docker/certs.d/$key
               echo "$cert_value" | sudo tee -a /etc/docker/certs.d/$key/ca.crt
            done
 
