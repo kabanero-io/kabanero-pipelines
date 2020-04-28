@@ -1,26 +1,25 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-utilities-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: docker-image
       type: image
     - name: git-source
       type: git
-    params:
-    - name: docker-imagename
-      type: string
-      default: ""
-    - name: docker-imagetag
-      type: string
-      default: ""
-  outputs:
-    resources:
+    outputs:
     - name: git-source
       type: git
+  params:
+  - name: docker-imagename
+    type: string
+    default: ""
+  - name: docker-imagetag
+    type: string
+    default: ""
   steps:
   - name: registry-connection-setup
     securityContext:

@@ -1,33 +1,33 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
 # This task scans the docker image using the specified command and arguments.
 # It requires an image that contains the scanner to be used to scan the docker-image image input.
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-image-scan-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
       - name: git-source
         type: git
       - name: docker-image
         type: image
-    params:
-      - name: command
-        description: The scanner command
-        default: oscap-chroot
-      - name: module
-        description: Specifies the type of SCAP content to use. For example, oval or xccdf.
-        default: oval
-      - name: options-and-arguments
-        description: Specifies the module operation options and arguments
-        default: ""
-      - name: scansDir
-        description: The relative directory to save the scan outputs to
-        default: kabanero/scans
-      - name: pathToInputFile
-        description: The scanner's XCCDF or OVAL file 
-        default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
+  params:
+  - name: command
+    description: The scanner command
+    default: oscap-chroot
+  - name: module
+    description: Specifies the type of SCAP content to use. For example, oval or xccdf.
+    default: oval
+  - name: options-and-arguments
+    description: Specifies the module operation options and arguments
+    default: ""
+  - name: scansDir
+    description: The relative directory to save the scan outputs to
+    default: kabanero/scans
+  - name: pathToInputFile
+    description: The scanner's XCCDF or OVAL file
+    default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
   steps:
     - name: mount-image          
       securityContext:
