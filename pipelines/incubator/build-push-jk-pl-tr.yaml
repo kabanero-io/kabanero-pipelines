@@ -95,7 +95,7 @@ spec:
       params:
       - name: url
         value: $(params.webhooks-tekton-docker-registry)
-  - apiVersion: triggers.tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
       generateName: StackId-build-push-jk-pl-run-
