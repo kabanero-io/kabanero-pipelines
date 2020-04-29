@@ -19,3 +19,5 @@ kubectl () {
    exit 1
 }
 
+. eval $@
+

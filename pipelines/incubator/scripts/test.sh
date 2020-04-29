@@ -809,10 +809,9 @@ EOF
 
 
 export gitsource=.
-. ./mock.sh
-. ./enforce_stack_policy.sh pre-build
-. ./enforce_stack_policy.sh post-build
-. ./enforce_deploy_stack_policy.sh 
+./mock.sh ./enforce_stack_policy.sh pre-build
+./mock.sh ./enforce_stack_policy.sh post-build
+./mock.sh ./enforce_deploy_stack_policy.sh 
 
 
 
