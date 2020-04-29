@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: deploy-kustomize-pl
+spec:
+  resources:
+    - name: git-source
+      type: git
+  tasks:
+    - name: deploy-kustomize-task
+      taskRef:
+        name: deploy-kustomize-task
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
