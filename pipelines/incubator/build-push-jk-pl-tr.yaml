@@ -73,7 +73,7 @@ spec:
   - name: webhooks-tekton-target-namespace
     description: The namespace in which to create this TriggerTemplate's resources
   resourcetemplates:
-  - apiVersion: triggers.tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
       name: git-source-$(uid)
@@ -85,7 +85,7 @@ spec:
         value: $(params.gitrevision)
       - name: url
         value: $(params.gitrepositoryurl)
-  - apiVersion: triggers.tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
       name: docker-image-$(uid)
