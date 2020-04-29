@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitops-token
+  annotations:
+    tekton.dev/git-0: https://github.com
+  namespace: kabanero
+type: kubernetes.io/basic-auth
+stringData:
+  username: <gitops_repo_username>
+  password: <gitops_repo_access_token>
