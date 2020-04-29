@@ -1,8 +1,0 @@
-kind: ConfigMap 
-apiVersion: v1 
-metadata:
-  name: gitops-map
-data:
-  gitops-repo-url: https://github.com/kvijai82/gitops-example-dev
-  gitops-commit-user-name: kabanero2
-  gitops-commit-user-email: kabanero2@kabanero.io
