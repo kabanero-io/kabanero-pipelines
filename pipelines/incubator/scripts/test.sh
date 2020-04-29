@@ -516,6 +516,10 @@ cat <<- "EOF" > skopeo.txt
 }
 EOF
 
+cat <<- "EOF" > .appsody-config.yaml
+stack: kabanerobeta/java-microprofile:0.2
+EOF
+
 
 export gitsource=.
 . ./mock.sh
