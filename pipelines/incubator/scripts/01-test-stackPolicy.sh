@@ -756,7 +756,7 @@ cat <<- "EOF" > skopeo.txt
         "dev.appsody.stack.description": "Eclipse MicroProfile on Open Liberty \u0026 OpenJ9 using Maven",
         "dev.appsody.stack.documentation": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/README.md",
         "dev.appsody.stack.id": "java-microprofile",
-        "dev.appsody.stack.digest": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f"
+        "dev.appsody.stack.digest": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f",
         "dev.appsody.stack.licenses": "Apache-2.0",
         "dev.appsody.stack.revision": "27a3254c80e6c5367a76e6099c2e18b393d15841",
         "dev.appsody.stack.source": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/image",
