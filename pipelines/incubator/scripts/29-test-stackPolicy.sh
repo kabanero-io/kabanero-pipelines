@@ -850,7 +850,7 @@ if [ "$RC" != "0" ]; then
    log $ERROR "[$VARIATION]: Failed."
    exit 1           
 fi   
-grep -q "Enforcing 'stackPolicy' of 'activeDigest'" enforce_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."          
 else
@@ -870,7 +870,7 @@ if [ "$RC" != "0" ]; then
    log $ERROR "[$VARIATION]: Failed."
    exit 1           
 fi   
-grep -q "Enforcing 'stackPolicy' of 'activeDigest'" enforce_deploy_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_deploy_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."         
 else
