@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#01"
+VARIATION="Variation#09"
 
 # Source logging constants and functions
 . ./log.sh
@@ -812,7 +812,7 @@ EOF
 
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
-stack: kabanerobeta/java-microprofile:0.2
+stack: kabanerobeta/java-microprofile:latest
 EOF
 
 export gitsource=.

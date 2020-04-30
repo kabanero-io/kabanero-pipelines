@@ -44,26 +44,28 @@
                     CANDIDATE_STACK_VERSIONS+=$STACK_VERSION" "
                  fi
               done
-           # Sort matching versions
-           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
-           if [ -z "$SORTED_CLUSTER_STACK_VERSIONS" ]; then
+           
+           if [ -z "$CANDIDATE_STACK_VERSION" ]; then
               echo
               echo "$ERROR $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
               exit 1
-           else
-              # Check to see what enforcement phase we are in, if it's post-build, we can no longer patch the config, it's already been built
-              if [ "$PHASE" == "post-build" ]; then
-                  echo "$ERROR Failed stackPolicy enforcement, application image has already been built, but the stack configuration in $APPSODY_CONFIG became invalid during the build phase."
-                  exit 1
-              fi
-              # PATCH APPSODY-CONFIG
-              LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
-              PATCHED=${STACK//$VERSION/$LATEST}
-              sed -i -e "s|$STACK|$PATCHED|g" $APPSODY_CONFIG
-              echo "$WARNING $APPSODY_CONFIG, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
-              echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolcy validation."
-              exit 0
+           fi      
+           
+           # Check to see what enforcement phase we are in, if it's post-build, we can no longer patch the config, it's already been built
+           if [ "$PHASE" == "post-build" ]; then
+              echo "$ERROR Failed stackPolicy enforcement, application image has already been built, but the stack configuration in $APPSODY_CONFIG became invalid during the build phase."
+              exit 1
            fi
+           # Sort matching candidate versions
+           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
+           # PATCH APPSODY-CONFIG
+           LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
+           PATCHED=${STACK//$VERSION/$LATEST}
+           sed -i -e "s|$STACK|$PATCHED|g" $APPSODY_CONFIG
+           echo "$WARNING $APPSODY_CONFIG, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
+           echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolcy validation."
+           exit 0
+   
         }
         
         
