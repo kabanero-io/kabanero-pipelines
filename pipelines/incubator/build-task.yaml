@@ -1,20 +1,19 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-build-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: git-source
       type: git
-    params:
-    - name: stack-image-registry-url
-      default: docker.io
-  outputs:
-    resources:
+    outputs:
     - name: docker-image
       type: image
+  params:
+  - name: stack-image-registry-url
+    default: docker.io
   steps:
   - name: build
     securityContext:
@@ -26,6 +25,7 @@ spec:
       - |
         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
         if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "HIP! HIP! HOORAY!!"
            echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
            /workspace/$gitsource/insecure_registry_setup.sh
         fi

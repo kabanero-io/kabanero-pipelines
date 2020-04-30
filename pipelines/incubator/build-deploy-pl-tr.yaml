@@ -1,5 +1,5 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: StackId-build-deploy-pl-pullrequest-binding
@@ -19,7 +19,7 @@ spec:
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: StackId-build-deploy-pl-push-binding
@@ -41,7 +41,7 @@ spec:
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: StackId-build-deploy-pl-template
@@ -97,7 +97,7 @@ spec:
       params:
       - name: url
         value: $(params.webhooks-tekton-docker-registry)
-  - apiVersion: tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
       generateName: StackId-build-deploy-pl-run-
