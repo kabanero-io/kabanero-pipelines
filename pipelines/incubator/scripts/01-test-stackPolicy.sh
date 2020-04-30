@@ -1,8 +1,11 @@
 #!/bin/bash 
 
-# Variation 01
-# No stackPolicy specified
+VARIATION="Variation#1"
 
+# Source logging constants and functions
+. ./log.sh
+
+# Write mock data from kabanero operator
 cat <<- "EOF" > kubectl_kabanero.txt
 {
     "apiVersion": "kabanero.io/v1alpha2",
@@ -113,6 +116,7 @@ cat <<- "EOF" > kubectl_kabanero.txt
 }
 EOF
 
+# Write mock data from kabanero operator get stack
 cat <<- "EOF" > kubectl_stack.txt
 {
     "apiVersion": "kabanero.io/v1alpha2",
@@ -806,13 +810,64 @@ cat <<- "EOF" > skopeo.txt
 }
 EOF
 
+# Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.2
 EOF
 
 export gitsource=.
-./mock.sh ./enforce_stack_policy.sh pre-build 
-./mock.sh ./enforce_stack_policy.sh post-build
-./mock.sh ./enforce_deploy_stack_policy.sh 
 
+# Pre-build stackPolicy enforcement
+log $INFO "[$VARATION]: Test pre-build stackPolicy enforcement"
+./mock.sh ./enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
+RC=$?
+cat enforce_stack_policy.out
+echo $RC
+if [ "$RC" != "0" ]; then
+   echo "$VARIATION failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'activeDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   echo "stackPolicy is valid."         
+else
+   echo "$VARIATION failed. Expected stackPolicy not found."
+   exit 1
+fi
+rm enforce_stack_policy.out
 
+# Post-build stackPolicy enforcement
+log $INFO "[$VARATION]: Test post-build stackPolicy enforcement"
+./mock.sh ./enforce_stack_policy.sh post-build > enforce_stack_policy.out 2>&1
+RC=$?
+cat enforce_stack_policy.out
+if [ "$RC" != "0" ]; then
+   echo "$VARIATION failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'activeDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   echo "stackPolicy is valid."         
+else
+   echo "$VARIATION failed. Expected stackPolicy not found."
+   exit 1
+fi
+rm enforce_stack_policy.out
+
+# Deploy stackPolicy enforcement
+log $INFO "[$VARATION]: Test pre-deploy stackPolicy enforcement"
+./mock.sh ./enforce_deploy_stack_policy.sh > enforce_deploy_stack_policy.out 2>&1
+RC=$?
+cat enforce_deploy_stack_policy.out
+if [ "$RC" != "0" ]; then
+   echo "$VARIATION failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'activeDigest'" enforce_deploy_stack_policy.out 
+if [ "$?" == "0" ]; then
+   echo "stackPolicy is valid."         
+else
+   echo "$VARIATION failed. Expected stackPolicy not found."
+   exit 1
+fi
+rm enforce_deploy_stack_policy.out
