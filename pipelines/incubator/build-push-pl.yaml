@@ -22,9 +22,9 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-    - name: utilities-task
+    - name: build-push-task
       taskRef:
-        name: StackId-utilities-task
+        name: StackId-build-push-task
       runAfter: [enforce-stack-policy-task]
       params:
         - name: docker-imagename
@@ -35,20 +35,6 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-        - name: docker-image
-          resource: docker-image
-        outputs:
-        - name: git-source
-          resource: git-source
-    - name: build-push-task
-      taskRef:
-        name: StackId-build-push-task
-      runAfter: [utilities-task]
-      resources:
-        inputs:
-        - name: git-source
-          resource: git-source
-          from: [utilities-task]
         outputs:
         - name: docker-image
           resource: docker-image
@@ -58,10 +44,14 @@ spec:
       taskRef:
         name: StackId-image-scan-task
       runAfter: [build-push-task]
+      params:
+        - name: docker-imagename
+          value: "$(params.docker-imagename)"
+        - name: docker-imagetag
+          value: "$(params.docker-imagetag)"
       resources:
         inputs:
         - name: git-source
           resource: git-source
-          from: [utilities-task]
         - name: docker-image
           resource: docker-image

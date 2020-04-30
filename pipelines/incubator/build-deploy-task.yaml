@@ -8,6 +8,8 @@ spec:
     inputs:
     - name: git-source
       type: git
+    - name: docker-image
+      type: image
     outputs:
     - name: docker-image
       type: image
@@ -20,21 +22,22 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.8.0
+    image: kabanero/kabanero-utils:0.9.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
-           /workspace/$gitsource/insecure_registry_setup.sh
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "HIP! HIP! HOORAY!!"
+           echo "Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
         fi
 
         #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
-           echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
-           /workspace/$gitsource/ca_certs_setup.sh
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
         fi
 
         echo "Configmap value for DEFAULT_STACK_IMAGE_REGISTRY_URL=$DEFAULT_STACK_IMAGE_REGISTRY_URL"
@@ -89,11 +92,11 @@ spec:
 
         cd /workspace/$gitsource
  
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
            exit $retVal
         fi
         echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
@@ -132,34 +135,34 @@ spec:
   - name: push
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.8.0
+    image: kabanero/kabanero-utils:0.9.0
     command: ["/bin/bash"]
     args:
       - -c
       - |
 
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /workspace/$gitsource/imageurl_imagename_lowercase.sh )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/workspace/$gitsource/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
            exit $retVal
         fi
         echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
         #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
-           /workspace/$gitsource/insecure_registry_setup.sh
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
         fi
 
         #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
-           echo "Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
-           /workspace/$gitsource/ca_certs_setup.sh
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
         fi
         
-        buildah push --tls-verify=true "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
     env:
     - name: gitsource
       value: git-source

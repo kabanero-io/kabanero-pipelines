@@ -96,16 +96,16 @@ spec:
         
         #Setting insecure image registries
         #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
-        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "INFO: Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
-           /workspace/$gitsource/insecure_registry_setup.sh
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "INFO: Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
         fi
 
         #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
         #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
-           echo "INFO: Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
-           /workspace/$gitsource/ca_certs_setup.sh
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "INFO: Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
         fi
        
         # env var gitsource
