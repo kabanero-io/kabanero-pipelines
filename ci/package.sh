@@ -61,8 +61,8 @@ tektonSHA=$(($sha256cmd $assets_dir/default-kabanero-pipelines.tar.gz) | awk '{p
 echo ${tektonSHA}>> $assets_dir/default-kabanero-pipelines-tar-gz-sha256
 
 # build archive of event pipelines
-tar -czf $assets_dir/eventing-kabanero-pipelines.tar.gz -C $eventing_pipelines_dir .
-touch $assets_dir/eventing-kabanero-pipelines-tar-gz-sha256
+tar -czf $assets_dir/kabanero-events-pipelines.tar.gz -C $eventing_pipelines_dir .
+touch $assets_dir/kabanero-events-pipelines-tar-gz-sha256
 eventSHA=$(($sha256cmd $assets_dir/kabanero-events-pipelines.tar.gz) | awk '{print $1}')
 echo ${eventSHA} >> $assets_dir/kabanero-events-pipelines-tar-gz-sha256
 
