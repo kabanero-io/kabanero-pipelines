@@ -1,0 +1,63 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: build-push-promote-pl
+spec:
+  params:
+    - name: git-project
+      type: string
+    - name: docker-imagename
+      type: string
+    - name: docker-imagetag
+      type: string
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: utilities-task
+      taskRef:
+        name: utilities-task
+      params:
+        - name: docker-imagename
+          value: "$(params.docker-imagename)"
+        - name: docker-imagetag
+          value: "$(params.docker-imagetag)"
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image
+        outputs:
+        - name: git-source
+          resource: git-source
+    - name: build-push-promote-task
+      taskRef:
+        name: build-push-promote-task
+      runAfter: [utilities-task]
+      params:
+        - name: git-project
+          value: "$(params.git-project)"
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+          from: [utilities-task]
+        outputs:
+        - name: docker-image
+          resource: docker-image
+        - name: git-source
+          resource: git-source
+    - name: image-scan-task
+      taskRef:
+        name: image-scan-task
+      runAfter: [build-push-promote-task]
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+          from: [utilities-task]
+        - name: docker-image
+          resource: docker-image
