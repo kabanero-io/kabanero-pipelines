@@ -1,10 +1,8 @@
 #!/bin/bash 
 
-
 skopeo () {
   cat skopeo.txt
 }
-
 
 kubectl () {
    if [[ "$2" == "stack" ]]; then
@@ -19,5 +17,5 @@ kubectl () {
    exit 1
 }
 
-. eval $@
+eval . $@
 
