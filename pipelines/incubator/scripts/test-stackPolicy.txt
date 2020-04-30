@@ -1,0 +1,15 @@
+
+
+
+Kabanero CR activated stacks
+--------------------------------------------------------------------------------------------------------
+stack: java-microprofile
+version: 0.2.26,  digest at activation: 37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f
+version: 0.2.25,  digest at activation: 9e69ab0182cf6301867f5b597828b35a72d15791aafe54fd8396ff2d7b0b9acb
+
+
+
+
+Variation	stackPolicy		appsody-config							Docker Digest														Notes	
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+01			blank			kabanerobeta/java-microprofile:0.2		37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f	Check that blank is automatically defaulted to activeDigest		 

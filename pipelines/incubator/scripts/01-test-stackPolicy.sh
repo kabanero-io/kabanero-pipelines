@@ -721,10 +721,13 @@ cat <<- "EOF" > kubectl_stack.txt
 }
 EOF
 
+
+# This response does double duty, it looks like both a stack image and an application image
+# this is so that we don't have to mock up two different reponses 
 cat <<- "EOF" > skopeo.txt
 {
-    "Name": "docker.io/smcclem/scott-image",
-    "Digest": "sha256:1491c5b6768effa85dbd095360477675e2bf942d4901749d1940c7d5696199e3",
+    "Name": "docker.io/kabanerbeta/java-microprofile",
+    "Digest": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f",
     "RepoTags": [
         "latest"
     ],
@@ -753,6 +756,7 @@ cat <<- "EOF" > skopeo.txt
         "dev.appsody.stack.description": "Eclipse MicroProfile on Open Liberty \u0026 OpenJ9 using Maven",
         "dev.appsody.stack.documentation": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/README.md",
         "dev.appsody.stack.id": "java-microprofile",
+        "dev.appsody.stack.version": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f",
         "dev.appsody.stack.licenses": "Apache-2.0",
         "dev.appsody.stack.revision": "27a3254c80e6c5367a76e6099c2e18b393d15841",
         "dev.appsody.stack.source": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/image",
@@ -807,7 +811,7 @@ stack: kabanerobeta/java-microprofile:0.2
 EOF
 
 export gitsource=.
-./mock.sh ./enforce_stack_policy.sh pre-build
+./mock.sh ./enforce_stack_policy.sh pre-build 
 ./mock.sh ./enforce_stack_policy.sh post-build
 ./mock.sh ./enforce_deploy_stack_policy.sh 
 
