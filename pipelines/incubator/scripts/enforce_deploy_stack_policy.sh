@@ -50,11 +50,11 @@
         
            for DIGEST in ${CLUSTER_STACK_DIGESTS}; do            
               # If the stack version starts with same pattern, we are done
-              if [[ "$DIGEST" == "$STACK_DIGEST" ]]; then
+              if [[ "shad256:$DIGEST" == "$STACK_DIGEST" ]]; then
                  echo "$INFO The application stack '$STACK_NAME', version: $STACK_VERSION is active and passes stackPolicy enforcement."
                  exit 0  
               fi  
-              echo "$DIGEST : $STACK_DIGEST"
+              echo "$INFO $DIGEST : $STACK_DIGEST"
            done          
            echo "$ERROR The application stack '$STACK_NAME', version: $STACK_VERSION is not active and fails stackPolicy enforcement."
            exit 0  
