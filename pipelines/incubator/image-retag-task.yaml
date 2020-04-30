@@ -22,16 +22,48 @@ spec:
     - name: buildah-pull
       securityContext:
         privileged: true
-      image: appsody/appsody-buildah:0.5.8-buildah1.9.0
-      command: ['buildah', 'pull', '--tls-verify=false', '$(inputs.resources.docker-src-image.url)']
+      image: kabanero/kabanero-utils:0.9.0
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+             echo "Running the script /scripts/insecure_registry_setup.sh ...."
+             /scripts/insecure_registry_setup.sh
+          fi
+
+          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+          if [ -f "/scripts/ca_certs_setup.sh" ]; then
+             echo "Running the script /scripts/ca_certs_setup.sh ...."
+             /scripts/ca_certs_setup.sh
+          fi
+          
+          buildah pull $(inputs.resources.docker-src-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
     - name: buildah-tag
       securityContext:
         privileged: true
-      image: appsody/appsody-buildah:0.5.8-buildah1.9.0
-      command: ['buildah', 'tag', '$(inputs.resources.docker-src-image.url)', '$(inputs.resources.docker-dest-image.url)']
+      image: kabanero/kabanero-utils:0.9.0
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+             echo "Running the script /scripts/insecure_registry_setup.sh ...."
+             /scripts/insecure_registry_setup.sh
+          fi
+
+          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+          if [ -f "/scripts/ca_certs_setup.sh" ]; then
+             echo "Running the script /scripts/ca_certs_setup.sh ...."
+             /scripts/ca_certs_setup.sh
+          fi
+          
+          buildah tag $(inputs.resources.docker-src-image.url) $(inputs.resources.docker-dest-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
@@ -39,7 +71,23 @@ spec:
       securityContext:
         privileged: true
       image: appsody/appsody-buildah:0.5.8-buildah1.9.0
-      command: ['buildah', 'push', '--tls-verify=false', '$(outputs.resources.docker-dest-image.url)', 'docker://$(outputs.resources.docker-dest-image.url)']
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+             echo "Running the script /scripts/insecure_registry_setup.sh ...."
+             /scripts/insecure_registry_setup.sh
+          fi
+
+          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+          if [ -f "/scripts/ca_certs_setup.sh" ]; then
+             echo "Running the script /scripts/ca_certs_setup.sh ...."
+             /scripts/ca_certs_setup.sh
+          fi
+          
+          buildah push $(outputs.resources.docker-dest-image.url) docker://$(outputs.resources.docker-dest-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers

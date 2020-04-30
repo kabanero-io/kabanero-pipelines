@@ -1,4 +1,4 @@
-#Kabanero! on activate substitute StackId for text 'StackId'
+	#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -22,9 +22,9 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-    - name: utilities-task
+    - name: build-task
       taskRef:
-        name: StackId-utilities-task
+        name: StackId-build-task
       runAfter: [enforce-stack-policy-task]
       params:
         - name: docker-imagename
@@ -37,18 +37,6 @@ spec:
           resource: git-source
         - name: docker-image
           resource: docker-image
-        outputs:
-        - name: git-source
-          resource: git-source
-    - name: build-task
-      taskRef:
-        name: StackId-build-task
-      runAfter: [utilities-task]
-      resources:
-        inputs:
-        - name: git-source
-          resource: git-source
-          from: [utilities-task]
         outputs:
         - name: docker-image
           resource: docker-image
