@@ -1,22 +1,21 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-build-deploy-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: git-source
       type: git
-    params:
-    - name: app-deploy-file-name
-      default: app-deploy.yaml
-    - name: stack-image-registry-url
-      default: docker.io
-  outputs:
-    resources:
+    outputs:
     - name: docker-image
       type: image
+  params:
+  - name: app-deploy-file-name
+    default: app-deploy.yaml
+  - name: stack-image-registry-url
+    default: docker.io
   steps:
   - name: build
     securityContext:

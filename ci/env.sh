@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 if [ ! -z "$assets_dir" ]
 then
     # we've been here before
@@ -157,7 +159,8 @@ image_build() {
         cmd="buildah bud"
     fi
 
-    if ! logged "${log}" ${cmd} $@
+#    if ! logged "${log}" ${cmd} $@
+    if ! ${cmd} $@
     then
       echo "Failed building image"
       exit 1

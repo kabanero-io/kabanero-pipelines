@@ -1,15 +1,14 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-build-push-jk-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: git-source
       type: git
-  outputs:
-    resources:
+    outputs:
     - name: docker-image
       type: image
     - name: git-source

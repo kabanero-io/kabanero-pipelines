@@ -1,8 +1,7 @@
-#Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: StackId-build-pl-pullrequest-binding
+  name: deploy-kustomize-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -10,6 +9,8 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
@@ -19,10 +20,10 @@ spec:
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: StackId-build-pl-push-binding
+  name: deploy-kustomize-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -30,6 +31,8 @@ spec:
     value: $(body.head_commit.id)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
@@ -39,10 +42,10 @@ spec:
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: StackId-build-pl-template
+  name: deploy-kustomize-pl-template
   namespace: tekton-pipelines
 spec:
   params:
@@ -52,6 +55,8 @@ spec:
     description: The revision of your Git repository
   - name: gitrepositoryurl
     description: The url of your Git repository
+  - name: git-project
+    description: The name of your Git repository
   - name: webhooks-tekton-git-server
     description: The server name in the Git url
   - name: webhooks-tekton-git-org
@@ -95,10 +100,10 @@ spec:
       params:
       - name: url
         value: $(params.webhooks-tekton-docker-registry)
-  - apiVersion: tekton.dev/v1beta1
+  - apiVersion: tekton.dev/v1alpha1
     kind: PipelineRun
     metadata:
-      generateName: StackId-build-pl-run-
+      generateName: deploy-kustomize-pl-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -108,7 +113,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: StackId-build-pl
+        name: deploy-kustomize-pl
       params:
       - name: event-type
         value: $(params.event-type)
@@ -116,10 +121,14 @@ spec:
         value: $(params.docker-imagename)
       - name: docker-imagetag
         value: $(params.docker-imagetag)
+      - name: git-project
+        value: $(params.git-project)
       resources:
       - name: git-source
         resourceRef:
           name: git-source-$(uid)
       - name: docker-image
-        resourceRef:
+        resourceRef: 
           name: docker-image-$(uid)
+
+

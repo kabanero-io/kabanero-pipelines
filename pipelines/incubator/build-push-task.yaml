@@ -1,28 +1,27 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: StackId-build-push-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: git-source
       type: git
     - name: docker-image
       type: image
-    params:
-    - name: docker-imagename
-      type: string
-      default: ""
-    - name: docker-imagetag
-      type: string
-      default: ""
-  outputs:
-    resources:
+    outputs:
     - name: docker-image
       type: image
     - name: git-source
       type: git
+  params:
+  - name: docker-imagename
+    type: string
+    default: ""
+  - name: docker-imagetag
+    type: string
+    default: ""
   steps:
   - name: enforce-stack-policy-pre-build
     securityContext:
