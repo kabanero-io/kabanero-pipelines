@@ -40,7 +40,7 @@ cat <<- "EOF" > kubectl_kabanero.txt
         "events": {},
         "github": {},
         "governancePolicy": {
-            "stackPolicy": "activeDigest"
+            "stackPolicy": "ignoreDigest"
         },
         "landing": {},
         "sso": {},

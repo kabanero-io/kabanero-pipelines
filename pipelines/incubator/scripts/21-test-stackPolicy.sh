@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#09"
+VARIATION="Variation#21"
 
 # Source logging constants and functions
 . ./log.sh
@@ -40,7 +40,7 @@ cat <<- "EOF" > kubectl_kabanero.txt
         "events": {},
         "github": {},
         "governancePolicy": {
-            "stackPolicy": "activeDigest"
+            "stackPolicy": "ignoreDigest"
         },
         "landing": {},
         "sso": {},
@@ -814,7 +814,7 @@ EOF
 
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
-stack: kabanerobeta/java-microprofile:latest
+stack: kabanerobeta/java-microprofile:0.2
 EOF
 
 export gitsource=.

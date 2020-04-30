@@ -39,7 +39,9 @@ cat <<- "EOF" > kubectl_kabanero.txt
         "collectionController": {},
         "events": {},
         "github": {},
-        "governancePolicy": {},
+        "governancePolicy": {
+            "stackPolicy": "activeDigest"
+        },
         "landing": {},
         "sso": {},
         "stackController": {},

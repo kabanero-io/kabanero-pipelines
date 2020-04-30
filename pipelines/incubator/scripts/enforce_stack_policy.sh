@@ -45,7 +45,7 @@
                  fi
               done
            
-           if [ -z "$CANDIDATE_STACK_VERSION" ]; then
+           if [ -z "$CANDIDATE_STACK_VERSIONS" ]; then
               echo
               echo "$ERROR $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
               exit 1
