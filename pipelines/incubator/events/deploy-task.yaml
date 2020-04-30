@@ -1,0 +1,51 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-task-@Digest@
+spec:
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  params:
+  - name: app-deploy-file-name
+    default: app-deploy.yaml
+  - name: docker-imagename
+    type: string
+    default: ""
+  - name: docker-imagetag
+    type: string
+    default: ""
+  steps:
+  - name: enforce-stack-policy-post-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        retVal=$?
+        if [ $retVal -ne 0 ]; then
+             echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+             exit $retVal
+        fi
+        echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        /scripts/enforce_deploy_stack_policy.sh $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+        
+    env:  
+    - name: gitsource
+      value: git-source
+  - name: deploy-image
+    image: kabanero/kabanero-utils:0.3.0
+    command: ['/bin/sh']
+    args: ['-c', 'find /workspace/$gitsource -name ${YAMLFILE} -type f|xargs kubectl apply -f']
+    env:
+    - name: gitsource
+      value: git-source
+    - name: YAMLFILE
+      value: $(inputs.params.app-deploy-file-name)

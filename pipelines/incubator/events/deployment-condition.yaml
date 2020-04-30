@@ -1,0 +1,19 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+apiVersion: tekton.dev/v1alpha1
+kind: Condition
+metadata:
+  name: deployment-condition-@Digest@
+spec:
+  params:
+  - name: "webhooks-tekton-local-deploy"
+    type: string
+    description: "Determine if there should be a local deploy"
+  check:
+    name: deployment-condition
+    image: alpine
+    command: ["/bin/sh"]
+    args:
+      - -ce
+      - |
+        echo "webhooks-tekton-local-deploy = $(params.webhooks-tekton-local-deploy)"
+        [[ $(params.webhooks-tekton-local-deploy) == "true" ]]

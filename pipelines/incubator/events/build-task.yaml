@@ -1,0 +1,110 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-task-@Digest@
+spec:
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+    outputs:
+    - name: docker-image
+      type: image
+  params:
+  - name: docker-imagename
+    type: string
+    default: ""
+  - name: docker-imagetag
+    type: string
+    default: ""
+  steps:
+  - name: enforce-stack-policy-pre-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /scripts/enforce_stack_policy.sh pre-build
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        # The following scripts are used to setup secure or insecure access to the image registry based on the configuration 
+        # of the image.config.openshift.io/cluster resource.
+
+        # Executing the insecure_registry_setup.sh script to add internal registry to insecure registry list
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
+        else
+           echo 'Unable to find insecure_registry_setup.sh'
+           exit 1
+        fi
+
+        # Executing the ca_certs_setup.sh script to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
+        else
+           echo 'Unable to find insecure_registry_setup.sh'
+           exit 1
+        fi
+ 
+        # Lowercase the image name to honor the docker rule that you can't have upper case image names
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+
+        echo "Image registry URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        
+        # Run appsody build to build the source project
+        cd /workspace/$gitsource
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker"
+
+        if [ $? != 0 ]; then
+            echo "Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
+            exit 1
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: enforce-stack-policy-post-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /scripts/enforce_stack_policy.sh post-build
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
