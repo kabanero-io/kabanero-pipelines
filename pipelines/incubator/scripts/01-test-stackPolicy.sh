@@ -3,7 +3,6 @@
 # Variation 01
 # No stackPolicy specified
 
-
 cat <<- "EOF" > kubectl_kabanero.txt
 {
     "apiVersion": "kabanero.io/v1alpha2",
@@ -807,13 +806,9 @@ cat <<- "EOF" > .appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.2
 EOF
 
-
 export gitsource=.
 ./mock.sh ./enforce_stack_policy.sh pre-build
 ./mock.sh ./enforce_stack_policy.sh post-build
 ./mock.sh ./enforce_deploy_stack_policy.sh 
-
-
-
 
 
