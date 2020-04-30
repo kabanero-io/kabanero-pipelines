@@ -244,13 +244,48 @@ spec:
            /scripts/ca_certs_setup.sh
         fi
 
-        buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        #if /image-signing-config/registry does not exist, a container image signature is not generated.
+        REPO=`cat /image-signing-config/registry`
+        if [[ -z $REPO ]]
+        then
+           echo "Signature will not be generated."
+           buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        else
+           echo "Signature will be generated."
+           if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+              echo "The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+              exit 1
+           fi
+           #importing RSA secret key, then extract an e-mail address from it.
+           gpg --import /image-signing-config/secret.asc
+           SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
+           skopeo copy --dest-tls-verify=true --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+           RESULT=$?
+           if [ $RESULT -ne 0 ]; then
+              echo "sign-image failed. exit code : $RESULT"
+              exit $RESULT
+           fi
+           if [[ -z `cat /image-signing-config/sigstore` ]]; then
+              echo "Signature is stored in the image registry"
+           else
+              #invoking scripts for processing a generated signature.
+              echo "A signature is stored by scripts."
+              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
+           fi
+        fi
     env:
     - name: gitsource
       value: git-source
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
+    - mountPath: /image-signing-config
+      name: image-signing-config
+    - mountPath: /etc/containers/registries.d
+      name: registries-d
+    - mountPath: /sigstore-script
+      name: sigstore-script
+
   volumes:
   - name: varlibcontainers
     emptyDir: {}
@@ -258,7 +293,20 @@ spec:
     configMap:
       name: stack-image-registry-map
       optional: true
+  - name: registries-d
+    configMap:
+      name: registries-d
+      optional: true
+  - name: sigstore-script
+    configMap:
+      name: sigstore-script
+      defaultMode: 0555
+      optional: true
   - name: secret-volume
     secret:
       secretName: default-stack-image-registry-secret
+      optional: true
+  - name: image-signing-config
+    secret:
+      secretName: image-signing-config
       optional: true
