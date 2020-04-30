@@ -8,7 +8,7 @@ set -e
 exec_hooks $script_dir/ext/pre_package.d
 
 pipelines_dir=$base_dir/pipelines/incubator
-eventing_pipelines_dir=$base_dir/pipelines/experimental/eventing-pipelines
+eventing_pipelines_dir=$base_dir/pipelines/incubator/events
 
 # directory to store assets for test or release
 assets_dir=$base_dir/ci/assets
@@ -59,15 +59,12 @@ tar -czf $assets_dir/default-kabanero-pipelines.tar.gz -C $pipelines_dir .
 touch $assets_dir/default-kabanero-pipelines-tar-gz-sha256
 tektonSHA=$(($sha256cmd $assets_dir/default-kabanero-pipelines.tar.gz) | awk '{print $1}')
 echo ${tektonSHA}>> $assets_dir/default-kabanero-pipelines-tar-gz-sha256
-
 # build archive of event pipelines
-tar -czf $assets_dir/eventing-kabanero-pipelines.tar.gz -C $eventing_pipelines_dir .
-touch $assets_dir/eventing-kabanero-pipelines-tar-gz-sha256
-eventSHA=$(($sha256cmd $assets_dir/eventing-kabanero-pipelines.tar.gz) | awk '{print $1}')
-echo ${eventSHA} >> $assets_dir/eventing-kabanero-pipelines-tar-gz-sha256
-
+tar -czf $assets_dir/kabanero-events-pipelines.tar.gz -C $eventing_pipelines_dir .
+touch $assets_dir/kabanero-events-pipelines-tar-gz-sha256
+eventSHA=$(($sha256cmd $assets_dir/kabanero-events-pipelines.tar.gz) | awk '{print $1}')
+echo ${eventSHA} >> $assets_dir/kabanero-events-pipelines-tar-gz-sha256
 echo -e "--- Created pipeline artifacts"
-
 # expose an extension point for running after main 'package' processing
 exec_hooks $script_dir/ext/post_package.d
 nginx_arg=
