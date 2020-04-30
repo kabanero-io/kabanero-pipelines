@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: image-retag-pl-@Digest
+  name: image-retag-pl-@Digest@
 spec:
   resources:
     - name: docker-src-image
@@ -12,7 +12,7 @@ spec:
   tasks:
     - name: image-retag-task
       taskRef:
-        name: StackId-image-retag-task
+        name: image-retag-task-@Digest@
       resources:
         inputs:
         - name: docker-src-image

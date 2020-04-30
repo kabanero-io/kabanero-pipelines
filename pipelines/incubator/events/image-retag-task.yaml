@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: image-retag-task-@Digest
+  name: image-retag-task-@Digest@
 spec:
   resources:
     inputs:
@@ -13,11 +13,6 @@ spec:
     outputs:
       - name: docker-dest-image
         type: image
-  params:
-  - name: pathToDockerFile
-    default: /workspace/extracted/Dockerfile
-  - name: pathToContext
-    default: /workspace/extracted
   steps:
     - name: buildah-pull
       securityContext:
