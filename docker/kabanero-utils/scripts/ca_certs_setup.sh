@@ -1,5 +1,5 @@
 #!/bin/sh
-# This script is generating a script 'ca_certs_setup.sh' that will be used in later tasks to fetch the trusted cs certificates configured 
+# This script will be used in later tasks to fetch the trusted cs certificates configured 
 # in a configmap which is set in the 'image.config.openshift.io/cluster' resource by the user, and we will copy the certificate values and generate 'ca.crt' as '/etc/docker/certs.d/<hostname>/ca.crt' for each certificate on the container.
 
 
