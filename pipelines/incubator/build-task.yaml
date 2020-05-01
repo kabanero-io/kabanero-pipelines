@@ -14,8 +14,12 @@ spec:
     - name: docker-image
       type: image
   params:
-  - name: stack-image-registry-url
-    default: docker.io
+  - name: docker-imagename
+    type: string
+    default: ""
+  - name: docker-imagetag
+    type: string
+    default: ""
   steps:
   - name: build
     securityContext:
