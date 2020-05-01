@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: build-push-promote-pipeline-run
+spec:
+  params:
+  - name: docker-imagename
+    value: <image-name>
+  - name: docker-imagetag
+    value: <image-tag>
+  - name: git-project
+    value: <service-name>
+  serviceAccountName: kabanero-pipeline
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: build-push-promote-pl 
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source 
+    - name: docker-image
+      resourceRef:
+        name: docker-image
