@@ -11,8 +11,10 @@ spec:
     value: $(body.repository.clone_url)
   - name: docker-imagename
     value: $(body.repository.name)
-  - name: docker-imagetag
-    value: $(body.pull_request.head.sha)
+  - name: docker-src-tag
+    value: $(body.webhooks-tekton-sha)
+  - name: docker-dest-tag
+    value: $(body.webhooks-tekton-tag-version)
   - name: event-type
     value: $(header.X-Github-Event)
   - name: webhooks-tekton-git-branch
@@ -30,8 +32,10 @@ spec:
     value: $(body.repository.clone_url)
   - name: docker-imagename
     value: $(body.repository.name)
-  - name: docker-imagetag
-    value: $(body.head_commit.id)
+  - name: docker-src-tag
+    value: $(body.webhooks-tekton-sha)
+  - name: docker-dest-tag
+    value: $(body.webhooks-tekton-tag-version)
   - name: event-type
     value: $(header.X-Github-Event)
   - name: webhooks-tekton-git-branch
@@ -69,29 +73,31 @@ spec:
     description: The ServiceAccount that the PipelineRun will execute under
   - name: webhooks-tekton-target-namespace
     description: The namespace in which to create this TriggerTemplate's resources
+  - name: docker-src-tag
+    value: The source tag of the image
+  - name: docker-dest-tag
+    value: The tag to retag the image to
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
-      name: git-source-$(uid)
-      namespace: $(params.webhooks-tekton-target-namespace)
-    spec:
-      type: git
-      params:
-      - name: revision
-        value: $(params.gitrevision)
-      - name: url
-        value: $(params.gitrepositoryurl)
-  - apiVersion: tekton.dev/v1alpha1
-    kind: PipelineResource
-    metadata:
-      name: docker-image-$(uid)
+      name: docker-src-image-$(uid)
       namespace: $(params.webhooks-tekton-target-namespace)
     spec:
       type: image
       params:
       - name: url
-        value: $(params.webhooks-tekton-docker-registry)
+        value: $(params.webhooks-tekton-docker-registry)/$(params.docker-imagename):$(params.docker-src-tag)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: docker-dest-image-$(uid)
+      namespace: $(params.webhooks-tekton-target-namespace)
+    spec:
+      type: image
+      params:
+      - name: url
+        value: $(params.webhooks-tekton-docker-registry)/$(params.docker-imagename):$(params.docker-dest-tag)
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
@@ -106,17 +112,10 @@ spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
         name: image-retag-pl-@Digest@
-      params:
-      - name: event-type
-        value: $(params.event-type)
-      - name: docker-imagename
-        value: $(params.docker-imagename)
-      - name: docker-imagetag
-        value: $(params.docker-imagetag)
       resources:
-      - name: git-source
+      - name: docker-src-image
         resourceRef:
-          name: git-source-$(uid)
-      - name: docker-image
+          name: docker-src-image-$(uid)
+      - name: docker-dest-image
         resourceRef:
-          name: docker-image-$(uid)
+          name: docker-dest-image-$(uid)
