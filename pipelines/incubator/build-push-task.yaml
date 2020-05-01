@@ -36,24 +36,6 @@ spec:
     env:
     - name: gitsource
       value: git-source
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
-      valueFrom:
-        configMapKeyRef:
-         name: stack-image-registry-map
-         key: default-stack-image-registry-url
-         optional: true
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: default-stack-image-registry-secret
-          key: username
-          optional: true
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: default-stack-image-registry-secret
-          key: password
-          optional: true
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
@@ -131,24 +113,6 @@ spec:
     env:
     - name: gitsource
       value: git-source
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_URL
-      valueFrom:
-        configMapKeyRef:
-         name: stack-image-registry-map
-         key: default-stack-image-registry-url
-         optional: true
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: default-stack-image-registry-secret
-          key: username
-          optional: true
-    - name: DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: default-stack-image-registry-secret
-          key: password
-          optional: true
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
