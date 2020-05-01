@@ -1,0 +1,13 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: deploy-pipeline-run
+spec:
+  serviceAccountName: kabanero-pipeline
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: deploy-kustomize-pl 
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source-gitops

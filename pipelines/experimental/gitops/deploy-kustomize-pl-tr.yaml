@@ -1,8 +1,7 @@
-#Kabanero! on activate substitute Digest for text '@Digest@'
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-deploy-pl-@Digest@-pullrequest-binding
+  name: deploy-kustomize-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -10,6 +9,8 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
@@ -19,10 +20,10 @@ spec:
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-deploy-pl-@Digest@-push-binding
+  name: deploy-kustomize-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -30,21 +31,21 @@ spec:
     value: $(body.head_commit.id)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
-    value: $(body.head_commit.id)    
+    value: $(body.head_commit.id)
   - name: event-type
     value: $(header.X-Github-Event)
-  - name: event-ref
-    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: build-deploy-pl-@Digest@-template
+  name: deploy-kustomize-pl-template
   namespace: tekton-pipelines
 spec:
   params:
@@ -54,6 +55,8 @@ spec:
     description: The revision of your Git repository
   - name: gitrepositoryurl
     description: The url of your Git repository
+  - name: git-project
+    description: The name of your Git repository
   - name: webhooks-tekton-git-server
     description: The server name in the Git url
   - name: webhooks-tekton-git-org
@@ -87,20 +90,10 @@ spec:
         value: $(params.gitrevision)
       - name: url
         value: $(params.gitrepositoryurl)
-  - apiVersion: tekton.dev/v1alpha1
-    kind: PipelineResource
-    metadata:
-      name: docker-image-$(uid)
-      namespace: $(params.webhooks-tekton-target-namespace)
-    spec:
-      type: image
-      params:
-      - name: url
-        value: $(params.webhooks-tekton-docker-registry)
-  - apiVersion: tekton.dev/v1alpha1
+  - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: build-deploy-pl-@Digest@-run-
+      generateName: deploy-kustomize-pl-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -110,22 +103,8 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: build-deploy-pl-@Digest@
-      params:
-      - name: event-type
-        value: $(params.event-type)
-      - name: event-ref
-        value: $(params.event-ref)
-      - name: docker-imagename
-        value: $(params.docker-imagename)
-      - name: docker-imagetag
-        value: $(params.docker-imagetag)
+        name: deploy-kustomize-pl
       resources:
       - name: git-source
         resourceRef:
           name: git-source-$(uid)
-      - name: docker-image
-        resourceRef: 
-          name: docker-image-$(uid)
-
-

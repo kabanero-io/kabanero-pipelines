@@ -1,0 +1,303 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-push-promote-task
+spec:
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+    outputs:
+    - name: docker-image
+      type: image
+  params:
+  - name: git-project
+    type: string
+  - name: docker-imagename
+    type: string
+  - name: docker-imagetag
+    type: string
+  steps:
+  - name: enforce-stack-policy-pre-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /scripts/enforce_stack_policy.sh pre-build
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        cd /workspace/$gitsource
+
+        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
+           echo "printing the content /etc/containers/registries.conf"
+           cat /etc/containers/registries.conf
+        fi
+
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
+        fi
+
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+        cd /workspace/$gitsource
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker"
+        #echo "Copying the generated app-deploy.yaml file from input to the output to pass the file to the next task when this task is used in deploy pipeline"
+        #cp app-deploy.yaml $(outputs.resources.git-source.path)
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: enforce-stack-policy-post-build
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        /scripts/enforce_stack_policy.sh post-build
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+  - name: push
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils:0.9.0
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
+        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
+           echo "Running the script /scripts/insecure_registry_setup.sh ...."
+           /scripts/insecure_registry_setup.sh
+        fi
+
+        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
+        if [ -f "/scripts/ca_certs_setup.sh" ]; then
+           echo "Running the script /scripts/ca_certs_setup.sh ...."
+           /scripts/ca_certs_setup.sh
+        fi
+
+        #if /image-signing-config/registry does not exist, a container image signature is not generated.
+        REPO=`cat /image-signing-config/registry`
+        if [[ -z $REPO ]]
+        then
+           echo "Signature will not be generated."
+           buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        else
+           echo "Signature will be generated."
+           if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+              echo "The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+              exit 1
+           fi
+           #importing RSA secret key, then extract an e-mail address from it.
+           gpg --import /image-signing-config/secret.asc
+           SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
+           skopeo copy --dest-tls-verify=true --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+           RESULT=$?
+           if [ $RESULT -ne 0 ]; then
+              echo "sign-image failed. exit code : $RESULT"
+              exit $RESULT
+           fi
+           if [[ -z `cat /image-signing-config/sigstore` ]]; then
+              echo "Signature is stored in the image registry"
+           else
+              #invoking scripts for processing a generated signature.
+              echo "A signature is stored by scripts."
+              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
+           fi
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - mountPath: /image-signing-config
+      name: image-signing-config
+    - mountPath: /etc/containers/registries.d
+      name: registries-d
+    - mountPath: /sigstore-script
+      name: sigstore-script
+  - name: promote
+    securityContext:
+      privileged: true
+    image: quay.io/redhat-developer/gitops-cli:v0.1
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo " "
+        echo "Gitops repo url = $GITOPS_REPO_URL"
+        echo "Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
+        echo "Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+        echo " "
+
+        if [[ ! -z "$GITOPS_REPO_URL" ]]; then
+
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
+            exit 1
+          fi
+
+          # Move the app-deploy.yaml to the /config folder of the gitops repo
+          cd /workspace/$gitsource
+          mkdir config
+          mv app-deploy.yaml config
+
+          # Generate a kustomize.yaml file under config with list of resources
+          cd config 
+          KUSTOMIZATION_YAML="kustomization.yaml"
+          touch $KUSTOMIZATION_YAML
+          echo "---" >> $KUSTOMIZATION_YAML
+          echo "resources: " >> $KUSTOMIZATION_YAML
+
+          for asset_name in $(ls)
+          do
+              if [ $asset_name != $KUSTOMIZATION_YAML ]; then
+                echo "  - $asset_name" >> $KUSTOMIZATION_YAML
+              fi
+          done
+
+          echo "$KUSTOMIZATION_YAML contents - "
+          cat $KUSTOMIZATION_YAML
+          
+          echo " "
+          echo "List of files under config directory being promoted - "
+          ls
+
+          # Genreate the .gitconfig file used by service promote
+          cd $HOME
+          GITCONFIG=".gitconfig"
+          touch $GITCONFIG
+
+          if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
+            echo "[WARN] gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
+            GITOPS_COMMIT_USER_NAME="kabanero"
+          fi
+
+          if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
+            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
+          fi
+
+          echo "[user]" >> $GITCONFIG
+          echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
+          echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
+          cat $HOME/.gitconfig
+
+          echo " "
+          echo "service name = $(inputs.params.git-project)"
+          if [[ -z "$(inputs.params.git-project)" ]]; then
+            echo "[ERROR] Unable to retrieve service name from input params.  Unable to promote."
+            exit 1
+          fi
+
+          gitCommit=$(git rev-parse --short HEAD)
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug
+          
+          if [ $? != 0 ]; then
+            echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
+            exit 1
+          fi
+
+          echo " "
+        else
+          echo "[INFO] No gitops repo configured.  service promote not executed."
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    - name: GITHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: gitops-token
+          key: password
+          optional: true
+    - name: GITOPS_REPO_URL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repo-url
+         optional: true
+    - name: GITOPS_COMMIT_USER_NAME
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-name
+         optional: true
+    - name: GITOPS_COMMIT_USER_EMAIL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-email
+         optional: true
+    volumeMounts:
+    - mountPath: /var/lib/containers
+      name: varlibcontainers
+    - name: gitops-map
+      mountPath: /config
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+  - name: gitops-map
+    configMap:
+      name: gitops-map
+      optional: true
+  - name: registries-d
+    configMap:
+      name: registries-d
+      optional: true
+  - name: sigstore-script
+    configMap:
+      name: sigstore-script
+      defaultMode: 0555
+      optional: true
+  - name: image-signing-config
+    secret:
+      secretName: image-signing-config
+      optional: true

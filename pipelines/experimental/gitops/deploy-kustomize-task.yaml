@@ -1,15 +1,15 @@
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: deploy-kustomize-task
 spec:
-  inputs:
-    resources:
+  resources:
+    inputs:
     - name: git-source
       type: git
   steps:
   - name: deploy
-    image: kabanero/kabanero-utils:0.8.0
+    image: kabanero/kabanero-utils:0.9.0
     script: |
         #!/usr/bin/env sh
         
