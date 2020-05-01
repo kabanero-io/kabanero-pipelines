@@ -38,7 +38,7 @@ spec:
       name: image-retag-pl-@Digest@-template
   - bindings:
     - apiversion: v1alpha1
-      name: monitor-task-github-@Digest@-binding
+      name: monitor-task-@Digest@-github-binding
     template:
      apiversion: v1alpha1
      name: monitor-task-@Digest@-template
