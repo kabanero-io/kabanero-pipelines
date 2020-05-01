@@ -1,0 +1,67 @@
+Psuedo code for each stack policy:
+
+
+
+Notes:
+
+1. Tracing should always make clear which policy it is enforcing
+   -Do I need to look out for policy changes in monolithic build operations?
+
+2.  I think I should be able to just call the same validation task multiple times, and be agnostic about what phase I am in.
+
+3.   
+
+
+
+
+
+
+
+STACK POLCIES
+
+strict-digest:
+
+
+1. Same as the code works today, except there would be a change to get the active digest lists from the Operator now
+
+
+
+
+active-digest [DEFAULT]:
+
+1.  Uses strict-digest process, however, instead of failing, it substitutes (in .appsody-config) the last version the given MAJOR.MINOR automatically
+
+
+
+
+ignore-digest:
+
+1.   This is not like strict-digest.  .appsody-config is read for its MINOR.MINOR version, and then the Kab is queried to make sure ANY patch level of the MAJOR.MINOR is active, by tag
+     *** does not look at digest ***
+     
+none:
+
+1. No validation - skip without any validation.  
+
+
+
+
+
+pre-deploy policy
+
+
+#. Look up stackPolicy
+#. NO VALUES come from the .appsody-config.xml, versions come from the label
+
+
+#. 1. If policy is none exit
+
+#  2. if policy is activeDigest
+#  Unlike if the activeDigest fails, THERE IS NOT PATCH. Because this is a 3 digit hard requirement to be active
+#  In fact this would be the same as strictDigest with zero differences. 
+
+#  3. if policy is ignoreDigest
+#  Read the "dev.appsody.stack.version"' and compare to all the 3 digit versions from the operator. No digests read/used
+
+#  4. if policy is strictDigest
+#     Compare the digest retrived from skopeo inspect "dev.appsody.stack.digest" to all the active digests
