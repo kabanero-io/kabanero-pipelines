@@ -1,7 +1,7 @@
 #!/bin/sh
 # This scrip is fetching the values of 'registries.insecure' from the 'image.config.openshift.io/cluster' resource
-# and generating a script 'insecure_registry_setup.sh' that will be used by the tasks for setting the
-# 'registries.insecure' in '/etc/containers/registries.conf' file of the contianer. 
+# that will be used by the tasks for setting the
+# 'registries.insecure' in '/etc/containers/registries.conf' file of each step container in the pipelines. 
         
 internal_registry_internal_url=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
 insecure_registries_string=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.registrySources.insecureRegistries[*]}")
