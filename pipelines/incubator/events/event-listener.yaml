@@ -4,28 +4,28 @@ kind: EventListener
 metadata:
   name: listener-@Digest@
 spec:
-  serviceAccountName: tekton-webhooks-extension-eventlistener
+  serviceAccountName: event-listener
   triggers:
   - bindings:
     - apiversion: v1alpha1
       name: build-pl-@Digest@-push-binding
     interceptors:
     - cel:
-        filter: 'body["webhooks-tekton-event-type"] == "push" '
+        filter: 'body["webhooks-tekton-event-type"] == "push" && body["webhooks-tekton-git-branch"] == "master"'
     name: kabanero-push-event
     template:
       apiversion: v1alpha1
-      name: build-pl-@Digest@-template
+      name: build-push-deploy-pl-@Digest@-template
   - bindings:
     - apiversion: v1alpha1
       name: build-push-deploy-pl-@Digest@-pullrequest-binding
     interceptors:
     - cel:
-        filter: 'body["webhooks-tekton-event-type"] == "pull_request" '
+        filter: 'body["webhooks-tekton-event-type"] == "pull_request" && body["webhooks-tekton-git-branch"] != "master" && (body["action"] == "opened" || body["action"] == "synchronize" ) '
     name: kabanero-pullrequest-event
     template:
       apiversion: v1alpha1
-      name: build-push-deploy-pl-@Digest@-template
+      name: build-pl-@Digest@-template
   - bindings:
     - apiversion: v1alpha1
       name: image-retag-pl-@Digest@-pullrequest-binding
