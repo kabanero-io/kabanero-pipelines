@@ -1,3 +1,4 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
 # Monitor the pipelinerun status and update the pull request
 apiVersion: tekton.dev/v1beta1
 kind: Task
