@@ -9,66 +9,51 @@ exec_hooks $script_dir/ext/pre_package.d
 
 pipelines_dir=$base_dir/pipelines/incubator
 eventing_pipelines_dir=$base_dir/pipelines/incubator/events
+gitops_pipelines_dir=$base_dir/pipelines/experimental/gitops
 
 # directory to store assets for test or release
 assets_dir=$base_dir/ci/assets
 mkdir -p $assets_dir
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    sha256cmd="shasum --algorithm 256"    # Mac OSX
-else
-    sha256cmd="sha256sum "  # other OSs
-fi
+package() {
+    local pipelines_dir=$1
+    local prefix=$2
+    # Generate a manifest.yaml file for each file in the tar.gz file
+    asset_manifest=$pipelines_dir/manifest.yaml
+    echo "contents:" > $asset_manifest
 
-# Generate a manifest.yaml file for each file in the tar.gz file
-asset_manifest=$pipelines_dir/manifest.yaml
-echo "contents:" > $asset_manifest
+    # for each of the assets generate a sha256 and add it to the manifest.yaml
+    assets_paths=$(find $pipelines_dir -mindepth 1 -maxdepth 1 -type f -name '*')
+    for asset_path in ${assets_paths}
+    do
+        asset_name=${asset_path#$pipelines_dir/}
+        echo "Asset name: $asset_name"
+        if [ -f $asset_path ] && [ "$(basename -- $asset_path)" != "manifest.yaml" ]
+        then
+            sha256=$(cat $asset_path | $sha256cmd | awk '{print $1}')
+            echo "- file: $asset_name" >> $asset_manifest
+            echo "  sha256: $sha256" >> $asset_manifest
+        fi
+    done
+    # build archive of tekton pipelines
+    tar -czf $assets_dir/${prefix}-pipelines.tar.gz --exclude="./events" -C $pipelines_dir .
+    touch $assets_dir/${prefix}-pipelines-tar-gz-sha256
+    tektonSHA=$(($sha256cmd $assets_dir/${prefix}-pipelines.tar.gz) | awk '{print $1}')
+    echo ${tektonSHA}>> $assets_dir/${prefix}-pipelines-tar-gz-sha256
+}
 
-# for each of the assets generate a sha256 and add it to the manifest.yaml
-for asset_path in $(find $pipelines_dir -type f -name '*')
-do
-    asset_name=${asset_path#$pipelines_dir/}
-    echo "Asset name: $asset_name"
-    if [ -f $asset_path ] && [ "$(basename -- $asset_path)" != "manifest.yaml" ]
-    then
-        sha256=$(cat $asset_path | $sha256cmd | awk '{print $1}')
-        echo "- file: $asset_name" >> $asset_manifest
-        echo "  sha256: $sha256" >> $asset_manifest
-    fi
-done
+package $pipelines_dir "default-kabanero"
 
-# Generate a manifest.yaml file for each file in the tar.gz file
-eventing_asset_manifest=$eventing_pipelines_dir/manifest.yaml
-echo "contents:" > $eventing_asset_manifest
+package $eventing_pipelines_dir "kabanero-events"
 
-# for each of the assets generate a sha256 and add it to the manifest.yaml
-for asset_path in $(find $eventing_pipelines_dir -type f -name '*')
-do
-    asset_name=${asset_path#$eventing_pipelines_dir/}
-    echo "Asset name: $asset_name"
-    if [ -f $asset_path ] && [ "$(basename -- $asset_path)" != "manifest.yaml" ]
-    then
-        sha256=$(cat $asset_path | $sha256cmd | awk '{print $1}')
-        echo "- file: $asset_name" >> $eventing_asset_manifest
-        echo "  sha256: $sha256" >> $eventing_asset_manifest
-    fi
-done
-
-# build archive of tekton pipelines
-tar -czf $assets_dir/default-kabanero-pipelines.tar.gz -C $pipelines_dir .
-touch $assets_dir/default-kabanero-pipelines-tar-gz-sha256
-tektonSHA=$(($sha256cmd $assets_dir/default-kabanero-pipelines.tar.gz) | awk '{print $1}')
-echo ${tektonSHA}>> $assets_dir/default-kabanero-pipelines-tar-gz-sha256
-# build archive of event pipelines
-
-tar -czf $assets_dir/kabanero-events-pipelines.tar.gz -C $eventing_pipelines_dir .
-touch $assets_dir/kabanero-events-pipelines-tar-gz-sha256
-eventSHA=$(($sha256cmd $assets_dir/kabanero-events-pipelines.tar.gz) | awk '{print $1}')
-echo ${eventSHA} >> $assets_dir/kabanero-events-pipelines-tar-gz-sha256
+package $gitops_pipelines_dir "kabanero-gitops"
 
 echo -e "--- Created pipeline artifacts"
+
 # expose an extension point for running after main 'package' processing
 exec_hooks $script_dir/ext/post_package.d
+
+echo -e "--- Building nginx container"
 nginx_arg=
 echo "BUILDING: $IMAGE_REGISTRY_ORG/$INDEX_IMAGE:${INDEX_VERSION}" > ${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log
 if image_build ${build_dir}/image.$INDEX_IMAGE.${INDEX_VERSION}.log \
