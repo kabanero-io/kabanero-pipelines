@@ -16,6 +16,12 @@ export build_dir="${script_dir}/build"
 mkdir -p $assets_dir
 mkdir -p $build_dir
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sha256cmd="shasum --algorithm 256"    # Mac OSX
+else
+    sha256cmd="sha256sum "  # other OSs
+fi
+
 # ENVIRONMENT VARIABLES for controlling behavior of build, package, and release
 
 # Publish images to image registry
