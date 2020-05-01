@@ -3,7 +3,6 @@ apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: build-push-deploy-pl-@Digest@-pullrequest-binding
-  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -16,16 +15,27 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
   - name: webhooks-tekton-local-deploy
     value: $(body.webhooks-tekton-local-deploy)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+  - name: webhooks-tekton-docker-registry
+    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
   name: build-push-deploy-pl-@Digest@-push-binding
-  namespace: tekton-pipelines
 spec:
   params:
   - name: gitrevision
@@ -40,16 +50,27 @@ spec:
     value: $(header.X-Github-Event)
   - name: event-ref
     value: $(body.ref)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
   - name: webhooks-tekton-local-deploy
     value: $(body.webhooks-tekton-local-deploy)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+  - name: webhooks-tekton-docker-registry
+    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: build-push-deploy-pl-@Digest@-template
-  namespace: tekton-pipelines
 spec:
   params:
   - name: event-ref
@@ -80,6 +101,7 @@ spec:
     description: The namespace in which to create this TriggerTemplate's resources
   - name: webhooks-tekton-local-deploy
     description: Determine if there should be a local deploy after build and push
+    default: "true"
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource

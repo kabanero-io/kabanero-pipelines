@@ -15,8 +15,20 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+  - name: webhooks-tekton-docker-registry
+    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -34,8 +46,20 @@ spec:
     value: $(body.head_commit.id)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+  - name: webhooks-tekton-docker-registry
+    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
