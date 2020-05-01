@@ -814,7 +814,7 @@ EOF
 
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
-stack: kabanerobeta/java-microprofile:0.1
+stack: kabanerobeta/java-microprofile:0.2
 EOF
 
 export gitsource=.
@@ -826,13 +826,58 @@ log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
 ./mock.sh ./enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
-if [ "$RC" == "1" ]; then
-   log $INFO "[$VARIATION]: stackPolicy correctly failed."         
+if [ "$RC" != "0" ]; then
+   log $ERROR "[$VARIATION]: Failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   log $INFO "[$VARIATION]: stackPolicy is valid."         
 else
-   log $ERROR "[$VARIATION]: stackPolicy incorrectly passed."
+   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
    exit 1
 fi
 rm enforce_stack_policy.out
+
+######################################
+# Post-build stackPolicy enforcement #
+######################################
+log $INFO "[$VARIATION]: Test post-build stackPolicy enforcement"
+./mock.sh ./enforce_stack_policy.sh post-build > enforce_stack_policy.out 2>&1
+RC=$?
+cat enforce_stack_policy.out
+if [ "$RC" != "0" ]; then
+   log $ERROR "[$VARIATION]: Failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   log $INFO "[$VARIATION]: stackPolicy is valid."          
+else
+   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
+   exit 1
+fi
+rm enforce_stack_policy.out
+
+##################################
+# Deploy stackPolicy enforcement #
+##################################
+log $INFO "[$VARIATION]: Test pre-deploy stackPolicy enforcement"
+./mock.sh ./enforce_deploy_stack_policy.sh > enforce_deploy_stack_policy.out 2>&1
+RC=$?
+cat enforce_deploy_stack_policy.out
+if [ "$RC" != "0" ]; then
+   log $ERROR "[$VARIATION]: Failed."
+   exit 1           
+fi   
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_deploy_stack_policy.out 
+if [ "$?" == "0" ]; then
+   log $INFO "[$VARIATION]: stackPolicy is valid."         
+else
+   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
+   exit 1
+fi
+rm enforce_deploy_stack_policy.out
 
 # Cleanup 
 rm .appsody-config.yaml

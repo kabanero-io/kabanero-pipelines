@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#25"
+VARIATION="Variation#23"
 
 # Source logging constants and functions
 . ./log.sh
@@ -814,7 +814,7 @@ EOF
 
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
-stack: kabanerobeta/java-microprofile:0.2.25
+stack: kabanerobeta/java-microprofile:0.2
 EOF
 
 export gitsource=.
@@ -884,3 +884,4 @@ rm .appsody-config.yaml
 rm kubectl_kabanero.txt
 rm kubectl_stack.txt
 rm skopeo.txt
+

@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#25"
+VARIATION="Variation#21"
 
 # Source logging constants and functions
 . ./log.sh
@@ -40,7 +40,7 @@ cat <<- "EOF" > kubectl_kabanero.txt
         "events": {},
         "github": {},
         "governancePolicy": {
-            "stackPolicy": "ignoreDigest"
+            "stackPolicy": "strictDigest"
         },
         "landing": {},
         "sso": {},
@@ -733,7 +733,7 @@ EOF
 cat <<- "EOF" > skopeo.txt
 {
     "Name": "docker.io/kabanerbeta/java-microprofile",
-    "Digest": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f",
+    "Digest": "sha256:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
     "RepoTags": [
         "latest"
     ],
@@ -814,7 +814,7 @@ EOF
 
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
-stack: kabanerobeta/java-microprofile:0.2.25
+stack: kabanerobeta/java-microprofile:0
 EOF
 
 export gitsource=.
@@ -830,7 +830,7 @@ if [ "$RC" != "0" ]; then
    log $ERROR "[$VARIATION]: Failed."
    exit 1           
 fi   
-grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."         
 else
@@ -850,7 +850,7 @@ if [ "$RC" != "0" ]; then
    log $ERROR "[$VARIATION]: Failed."
    exit 1           
 fi   
-grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."          
 else
@@ -870,7 +870,7 @@ if [ "$RC" != "0" ]; then
    log $ERROR "[$VARIATION]: Failed."
    exit 1           
 fi   
-grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_deploy_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_deploy_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."         
 else

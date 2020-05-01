@@ -727,91 +727,6 @@ cat <<- "EOF" > kubectl_stack.txt
 }
 EOF
 
-
-# This response does double duty, it looks like both a stack image and an application image
-# this is so that we don't have to mock up two different reponses 
-cat <<- "EOF" > skopeo.txt
-{
-    "Name": "docker.io/kabanerbeta/java-microprofile",
-    "Digest": "sha256:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-    "RepoTags": [
-        "latest"
-    ],
-    "Created": "2020-04-21T21:57:06.723716338Z",
-    "DockerVersion": "",
-    "Labels": {
-        "architecture": "x86_64",
-        "authoritative-source-url": "registry.access.redhat.com",
-        "build-date": "2019-10-29T16:44:53.794580",
-        "com.redhat.build-host": "cpt-1002.osbs.prod.upshift.rdu2.redhat.com",
-        "com.redhat.component": "ubi8-container",
-        "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
-        "description": "This image is the Kabanero development container for the java-microprofile stack",
-        "dev.appsody.image.commit.author": "Scott McClements \u003c31139144+smcclem@users.noreply.github.com\u003e",
-        "dev.appsody.image.commit.committer": "GitHub \u003cnoreply@github.com\u003e",
-        "dev.appsody.image.commit.date": "Mon Apr 6 14:47:12 2020 -0400",
-        "dev.appsody.image.commit.message": "Update .appsody-config.yaml",
-        "dev.appsody.stack.authors": "Emily Jiang \u003cemijiang6@googlemail.com\u003e, Neeraj Laad \u003cneeraj.laad@gmail.com\u003e, Ozzy \u003cozzy@ca.ibm.com\u003e",
-        "dev.appsody.stack.commit.author": "kilnerm \u003c38245247+kilnerm@users.noreply.github.com\u003e",
-        "dev.appsody.stack.commit.committer": "GitHub \u003cnoreply@github.com\u003e",
-        "dev.appsody.stack.commit.contextDir": "/incubator/java-microprofile",
-        "dev.appsody.stack.commit.date": "Fri Apr 3 09:22:57 2020 +0100",
-        "dev.appsody.stack.commit.message": "Merge pull request #316 from groeges/release-0.6",
-        "dev.appsody.stack.configured": "docker.io/kabanerobeta/java-microprofile:0.2",
-        "dev.appsody.stack.created": "2020-04-03T08:26:27Z",
-        "dev.appsody.stack.description": "Eclipse MicroProfile on Open Liberty \u0026 OpenJ9 using Maven",
-        "dev.appsody.stack.documentation": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/README.md",
-        "dev.appsody.stack.id": "java-microprofile",
-        "dev.appsody.stack.digest": "sha256:37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f",
-        "dev.appsody.stack.licenses": "Apache-2.0",
-        "dev.appsody.stack.revision": "27a3254c80e6c5367a76e6099c2e18b393d15841",
-        "dev.appsody.stack.source": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile/image",
-        "dev.appsody.stack.tag": "docker.io/kabanerobeta/java-microprofile:0.2.26",
-        "dev.appsody.stack.title": "Eclipse MicroProfile®",
-        "dev.appsody.stack.url": "https://github.com/kabanero-io/collections/tree/master/incubator/java-microprofile",
-        "dev.appsody.stack.version": "0.2.26",
-        "distribution-scope": "public",
-        "io.k8s.description": "The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
-        "io.k8s.display-name": "Red Hat Universal Base Image 8",
-        "io.openshift.expose-services": "",
-        "io.openshift.tags": "base rhel8",
-        "maintainer": "Red Hat, Inc.",
-        "name": "kabanero/java-microprofile",
-        "org.opencontainers.image.authors": "Arthur De Magalhaes, Chris Potter",
-        "org.opencontainers.image.created": "2020-04-21T21:51:53Z",
-        "org.opencontainers.image.documentation": "https://github.com/smcclem/java-microprofile",
-        "org.opencontainers.image.revision": "ed1596c377ccd988679ac90721f0bb64bf63d815-modified-not-pushed",
-        "org.opencontainers.image.source": "https://github.com/smcclem/java-microprofile/tree/master",
-        "org.opencontainers.image.title": "git-source",
-        "org.opencontainers.image.url": "https://github.com/smcclem/java-microprofile",
-        "org.opencontainers.image.vendor": "Open Liberty",
-        "org.opencontainers.image.version": "19.0.0.12",
-        "release": "277",
-        "run": "docker run --rm -ti \u003cimage_name:tag\u003e /bin/bash",
-        "summary": "Image for Kabanero java-microprofile development",
-        "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/ubi8/images/8.1-277",
-        "vcs-ref": "c42933bcdbf9f1c232e981a5e40de257c3534c8e",
-        "vcs-type": "git",
-        "vendor": "Kabanero",
-        "version": "0.2.26"
-    },
-    "Architecture": "amd64",
-    "Os": "linux",
-    "Layers": [
-        "sha256:0bb54aa5e97745c8692f6fc54dadca5b4b645a724ba5df96ecb762626d083981",
-        "sha256:941e1e2b31a86bf0d41d8964e6f0559267859fe3893b518b0dbd605c60c1ffe7",
-        "sha256:7f20732c17c59f6561749c28bde5564b47ce1b44ce7915b997ad50627c831abf",
-        "sha256:83b699b12264ee212ee599288219a12e8d8571412c6e630447693887eda09422",
-        "sha256:295ebc8593e501aac1c38c4f5ff02d7d4f8fbe81455d4f4f2b52eb5d7ba23eac",
-        "sha256:642c3ffd0d27b5d2f305ca49f96d0c55184e70f12394e03dcc079dd5520b18a6",
-        "sha256:f10c9f439b46d5cd77f3379a7f7cde3ad879c33f586a41165eea74384b2dcd80",
-        "sha256:0a0934cc953ddb7e2d689cda705a1a63659c1026fac75d99407ddb0df9409ff3",
-        "sha256:79aa6a5fe1ef94708f16498dc07d9bb9cf3a790f20fa91d8acc786547b9ea8fa",
-        "sha256:f747530fce6e671944a076c212d44e9f9137e2492ae9616511f4e26147dff4aa"
-    ]
-}
-EOF
-
 # Write .appsody-config.yamk
 cat <<- "EOF" > .appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.2.21
@@ -826,17 +741,27 @@ log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
 ./mock.sh ./enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
+
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   log $INFO "[$VARIATION]: stackPolicy is valid."         
+else
+   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
+   exit 1
+fi
+
 if [ "$RC" == "1" ]; then
-   log $INFO "[$VARIATION]: stackPolicy correctly failed."         
+   log $INFO "[$VARIATION]: stackPolicy correctly failed."       
 else
    log $ERROR "[$VARIATION]: stackPolicy incorrectly passed."
    exit 1
 fi
+
 rm enforce_stack_policy.out
 
 # Cleanup 
 rm .appsody-config.yaml
 rm kubectl_kabanero.txt
 rm kubectl_stack.txt
-rm skopeo.txt
+
 

@@ -826,16 +826,25 @@ log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
 ./mock.sh ./enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
+
+grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+if [ "$?" == "0" ]; then
+   log $INFO "[$VARIATION]: stackPolicy is valid."         
+else
+   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
+   exit 1
+fi
+
 if [ "$RC" == "1" ]; then
-   log $INFO "[$VARIATION]: stackPolicy correctly failed."         
+   log $INFO "[$VARIATION]: stackPolicy correctly failed."       
 else
    log $ERROR "[$VARIATION]: stackPolicy incorrectly passed."
    exit 1
 fi
+
 rm enforce_stack_policy.out
 
 # Cleanup 
 rm .appsody-config.yaml
 rm kubectl_kabanero.txt
 rm kubectl_stack.txt
-rm skopeo.txt
