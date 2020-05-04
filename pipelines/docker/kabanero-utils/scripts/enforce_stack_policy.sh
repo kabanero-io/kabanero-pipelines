@@ -1,8 +1,5 @@
 #!/bin/bash 
 
-
-
-
         #############
         # Functions #
         #############
@@ -30,8 +27,7 @@
            echo "$ERROR Stack fails stackPolicy validation." 
            exit 1
         }
-        
-        
+                
         #################
         # activeDigests #
         #################
@@ -67,7 +63,6 @@
            exit 0
    
         }
-        
         
         #################
         # strictDigests #
@@ -138,9 +133,9 @@
         fi
         
 
-        #########################################################################################
-        # Read project, stack image, docker host and stack name from .appsody-config.yaml
-        #########################################################################################
+        ###################################################################################
+        # Read project, stack image, docker host and stack name from .appsody-config.yaml #
+        ###################################################################################
         echo
         echo "$INFO Read project, stack image, docker host and stack name from .appsody-config.yaml" 
         # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
@@ -196,9 +191,9 @@
 
 
 
-        #########################################################################################
-        # Validate stack name & project are present, active in the Kabanero CR
-        #########################################################################################
+        ########################################################################
+        # Validate stack name & project are present, active in the Kabanero CR #
+        ########################################################################
         echo
         echo "$INFO Validate stack name & project are present, active in the Kabanero CR"
         # Check to make sure the stack is active by name first
@@ -232,9 +227,9 @@
         fi
         echo "$INFO Sucessfully validated stack name & project are present, active in the Kabanero CR"
 
-        #########################################################################################
-        #  Main validation between operator and registry
-        #########################################################################################
+        ##################################################
+        #  Main validation between operator and registry #
+        ##################################################
         # IgnoreDigests (always)  &  activeDigest (if failure for autopatch)
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         CLUSTER_STACK_DIGESTS=$( kubectl get stack $STACK_NAME -o json | jq -r '.status.versions[].images[].digest.activation?' )
