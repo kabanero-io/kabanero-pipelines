@@ -1,5 +1,5 @@
-#!/bin/sh
-
+#!/bin/bash 
+ 
         #############
         # Functions #
         #############
@@ -50,11 +50,11 @@
         
            for DIGEST in ${CLUSTER_STACK_DIGESTS}; do            
               # If the stack version starts with same pattern, we are done
-              if [[ "$DIGEST" == "$STACK_DIGEST" ]]; then
+              if [[ "sha256:$DIGEST" == "$STACK_DIGEST" ]]; then
                  echo "$INFO The application stack '$STACK_NAME', version: $STACK_VERSION is active and passes stackPolicy enforcement."
                  exit 0  
               fi  
-              echo "$DIGEST : $STACK_DIGEST"
+              echo "$INFO $DIGEST : $STACK_DIGEST"
            done          
            echo "$ERROR The application stack '$STACK_NAME', version: $STACK_VERSION is not active and fails stackPolicy enforcement."
            exit 0  
@@ -68,26 +68,20 @@
         WARNING="[WARNING]"
         ERROR="[ERROR]"
          
-        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        echo "Running the script /scripts/insecure_registry_setup.sh ...."
-        /scripts/insecure_registry_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "The script failed(/scripts/insecure_registry_setup.sh)" >&2
-           exit $retVal
+        #Setting insecure image registries
+        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
         fi
 
+        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
         #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        echo "Running the script /scripts/ca_certs_setup.sh ...."
-        /scripts/ca_certs_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "The script failed(/scripts/ca_certs_setup.sh)" >&2
-           exit $retVal
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
         fi
- 
+        
         # env var gitsource
         GITSOURCE=$gitsource
         INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$1
