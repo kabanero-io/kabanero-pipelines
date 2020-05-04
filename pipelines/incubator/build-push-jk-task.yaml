@@ -133,7 +133,7 @@ spec:
            #importing RSA secret key, then extract an e-mail address from it.
            gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
-           skopeo copy --dest-tls-verify=true --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+           skopeo copy --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
            RESULT=$?
            if [ $RESULT -ne 0 ]; then
               echo "sign-image failed. exit code : $RESULT"
