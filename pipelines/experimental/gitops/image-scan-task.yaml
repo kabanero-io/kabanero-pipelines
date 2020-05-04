@@ -1,4 +1,3 @@
-#Kabanero! on activate substitute StackId for text 'StackId'
 # This task scans the docker image using the specified command and arguments.
 # It requires an image that contains the scanner to be used to scan the docker-image image input.
 apiVersion: tekton.dev/v1beta1
