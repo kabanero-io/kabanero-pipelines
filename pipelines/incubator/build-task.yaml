@@ -69,7 +69,7 @@ spec:
         echo "OUTPUTS_STACK_IMAGE_REGISTRY_URL that will be used to pull the stack =$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
          
         cd /workspace/$gitsource
-        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$STACK_IMAGE_REGISTRY_URL"
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
         if [ $? != 0 ]; then
             echo "Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
             exit 1
