@@ -9,6 +9,16 @@ spec:
     value: $(body.pull_request.html_url)
   - name: statusesurl
     value: $(body.pull_request.statuses_url)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+  - name: gitsecretname
+    value: $(body.webhooks-tekton-github-secret-name)
+  - name: gitsecretkeyname
+    value: $(body.webhooks-tekton-github-secret-key-name)
+  - name: dashboardurl
+    value: $(body.webhooks-tekton-monitor-dashboard-url)
+  - name: insecure-skip-tls-verify
+    value: $(body.webhooks-tekton-insecure-skip-tls-verify)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -20,6 +30,8 @@ spec:
     value: $(body.object_attributes.url)
   - name: statusesurl
     value: projects/$(body.project.id)/statuses/$(body.object_attributes.last_commit.id)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
@@ -73,6 +85,9 @@ spec:
     description: Whether or not to skip SSL validation of certificates ("true" or "false")
     default: "false"
     type: string
+  - name: webhooks-tekton-service-account
+    description: Service account to run 
+    type: string
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -94,7 +109,7 @@ spec:
     metadata:
       generateName: monitor-task-@Digest@-taskrun-
     spec:
-      serviceAccountName: tekton-webhooks-extension
+      serviceAccountName: $(params.webhooks-tekton-service-account)
       taskRef:
         name: monitor-task-@Digest@
       params:
@@ -108,6 +123,8 @@ spec:
           value: $(params.dashboardurl)
         - name: secret
           value: $(params.gitsecretname)
+        - name: secretkey
+          value: $(params.gitsecretkeyname)
         - name: statusesurl
           value: $(params.statusesurl)
         - name: provider

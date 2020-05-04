@@ -54,6 +54,9 @@ spec:
     - name: secret
       description: The secret containing the access token to access the git server
       type: string
+    - name: secretkey
+      description: The key to the secret containing the access token to access the git server
+      type: string
     # Up to here
   steps:
   - name: check
@@ -85,7 +88,7 @@ spec:
       - name: GITTOKEN
         valueFrom:
           secretKeyRef:
-            key: accessToken
+            key: $(inputs.params.secretkey)
             name: $(inputs.params.secret)
       # Up to here
     command: ["/bin/bash"]
