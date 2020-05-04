@@ -2,39 +2,6 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: image-retag-pl-@Digest@-pullrequest-binding
-spec:
-  params:
-  - name: gitrevision
-    value: $(body.pull_request.head.sha)
-  - name: gitrepositoryurl
-    value: $(body.repository.clone_url)
-  - name: docker-imagename
-    value: $(body.repository.name)
-  - name: docker-src-tag
-    value: $(body.webhooks-tekton-sha)
-  - name: docker-dest-tag
-    value: $(body.webhooks-tekton-tag-version)
-  - name: event-type
-    value: $(header.X-Github-Event)
-  - name: webhooks-tekton-git-server
-    value: $(body.webhooks-tekton-git-server)
-  - name: webhooks-tekton-git-org
-    value: $(body.webhooks-tekton-git-org)
-  - name: webhooks-tekton-git-repo
-    value: $(body.webhooks-tekton-git-repo)
-  - name: webhooks-tekton-git-branch
-    value: $(body.webhooks-tekton-git-branch)
-  - name: webhooks-tekton-target-namespace
-    value: $(body.webhooks-tekton-target-namespace)
-  - name: webhooks-tekton-service-account
-    value: $(body.webhooks-tekton-service-account)
-  - name: webhooks-tekton-docker-registry
-    value: $(body.webhooks-tekton-docker-registry)
----
-apiVersion: triggers.tekton.dev/v1alpha1
-kind: TriggerBinding
-metadata:
   name: image-retag-pl-@Digest@-push-binding
 spec:
   params:
@@ -45,7 +12,7 @@ spec:
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-src-tag
-    value: $(body.webhooks-tekton-sha)
+    value: $(body.head_commit.id)
   - name: docker-dest-tag
     value: $(body.webhooks-tekton-tag-version)
   - name: event-type
@@ -56,8 +23,6 @@ spec:
     value: $(body.webhooks-tekton-git-org)
   - name: webhooks-tekton-git-repo
     value: $(body.webhooks-tekton-git-repo)
-  - name: webhooks-tekton-git-branch
-    value: $(body.webhooks-tekton-git-branch)
   - name: webhooks-tekton-target-namespace
     value: $(body.webhooks-tekton-target-namespace)
   - name: webhooks-tekton-service-account
@@ -98,9 +63,9 @@ spec:
   - name: webhooks-tekton-target-namespace
     description: The namespace in which to create this TriggerTemplate's resources
   - name: docker-src-tag
-    value: The source tag of the image
+    description: The source tag of the image
   - name: docker-dest-tag
-    value: The tag to retag the image to
+    description: The tag to retag the image to
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -131,7 +96,8 @@ spec:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
         webhooks.tekton.dev/gitOrg: $(params.webhooks-tekton-git-org)
         webhooks.tekton.dev/gitRepo: $(params.webhooks-tekton-git-repo)
-        webhooks.tekton.dev/gitBranch: $(params.webhooks-tekton-git-branch)
+        webhooks.tekton.dev/gitRevision: $(params.gitrevision)
+        webhooks.tekton.dev/gitTag: $(params.docker-dest-tag)
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:

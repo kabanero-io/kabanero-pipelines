@@ -101,7 +101,7 @@ spec:
     description: The namespace in which to create this TriggerTemplate's resources
   - name: webhooks-tekton-local-deploy
     description: Determine if there should be a local deploy after build and push
-    default: "true"
+    default: "false"
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
