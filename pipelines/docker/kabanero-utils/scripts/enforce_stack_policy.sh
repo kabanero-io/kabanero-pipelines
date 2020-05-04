@@ -110,9 +110,6 @@
         GITSOURCE=$gitsource
         PHASE=$1
         APPSODY_CONFIG=".appsody-config.yaml"
-        IMAGE_REGISTRY_HOST=$DEFAULT_STACK_IMAGE_REGISTRY_URL
-        IMAGE_REGISTRY_USERNAME=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_USERNAME
-        IMAGE_REGISTRY_PASSWORD=$DEFAULT_STACK_IMAGE_REGISTRY_SECRET_PASSWORD
 
         # Get stack policy
         # Values: strictDigest, activeDigest (default if blank), ignoreDigest and none
@@ -181,18 +178,10 @@
         echo "$INFO STACK_NAME = $STACK_NAME"
 
         # If the host wasn't specified, default to docker.io; if only specified in appsody-cfg.yaml use that
-        # If it's in the config map use that and should match with what's in appsody-cfg.yaml
-        if [ -z "$IMAGE_REGISTRY_HOST" ]; then
-            if [ -z "$STACK_REGISTRY" ]; then
-              IMAGE_REGISTRY_HOST="docker.io"
-            else
-              IMAGE_REGISTRY_HOST=$STACK_REGISTRY
-            fi
+        if [ -z "$STACK_REGISTRY" ]; then
+          IMAGE_REGISTRY_HOST="docker.io"
         else
-            if [ ! -z "$STACK_REGISTRY" ] && [ "$STACK_REGISTRY" != "$IMAGE_REGISTRY_HOST" ]; then
-                RECONCILED_REGISTRY="TRUE"
-                echo "WARNING: $APPSODY_CONFIG specifies different repository, $STACK_REGISTRY, than what's configured in the config map, $IMAGE_REGISTRY_HOST, in the cluster.  Config map entry takes priority.  Using $IMAGE_REGISTRY_HOST as the default stack registry."
-            fi
+          IMAGE_REGISTRY_HOST=$STACK_REGISTRY
         fi
         echo "$INFO Successfully read project, stack image, docker host and stack name from .appsody-config.yaml" 
 
@@ -249,12 +238,13 @@
         fi
 
         # Get the target sha256 digest from the image registry. Use the proper credentials depending on what was passed to us
-        echo "$INFO RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
-        if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
-           TARGET_DIGEST=$( skopeo inspect docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
-        else
-           TARGET_DIGEST=$( skopeo inspect --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
-        fi
+        #echo "$INFO RECONCILED_STACK_IMAGE_REGISTRY_HOST = $IMAGE_REGISTRY_HOST"
+        #if [ -z "$IMAGE_REGISTRY_PASSWORD" ] || [ -z "$IMAGE_REGISTRY_USERNAME" ]; then
+        #   TARGET_DIGEST=$( skopeo inspect docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        #else
+        #   TARGET_DIGEST=$( skopeo inspect --creds="$IMAGE_REGISTRY_USERNAME":"$IMAGE_REGISTRY_PASSWORD" docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
+        #fi
+        TARGET_DIGEST=$( skopeo inspect docker://"$IMAGE_REGISTRY_HOST"/"$PROJECT"/"$STACK_NAME":"$VERSION" | jq '.Digest' )
 
         if [ -z "$TARGET_DIGEST" ]; then
            echo "$APPSODY_CONFIG specifies a stack version of $VERSION , but the image registry does not contain a version tagged with $VERSION, and fails stackPolicy validation."
