@@ -1,0 +1,52 @@
+Unit test cases for "stackPolicy" enforcement in pipelines. See https://github.com/kabanero-io/kabanero-foundation/blob/master/design/digest.md
+
+These test check the three enforcement points in that occur during the Kaberno pipeline run:   pre-build, post-build and pre-deploy.  
+The various scenarios of pass/fail are covered in these variations. 
+
+Kabanero CR activated stacks - mocked data
+--------------------------------------------------------------------------------------------------------
+stack: java-microprofile
+version: 0.2.26,  digest at activation: 37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f
+version: 0.2.25,  digest at activation: 9e69ab0182cf6301867f5b597828b35a72d15791aafe54fd8396ff2d7b0b9acb
+
+
+Variation	stackPolicy		appsody-config							Docker Digest returned by Skopeo mock								Notes	
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+01			null			kabanerobeta/java-microprofile:0.2		37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f	Check that blank is automatically defaulted to activeDigest	
+02			activeDigest	kabanerobeta/java-microprofile:0		FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF*   Check appsody config is patched *Ends up patched 	 
+03			activeDigest	kabanerobeta/java-microprofile:0.1		FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, 0.1 doesn't match and can't be patched  	 
+04			activeDigest	kabanerobeta/java-microprofile:0.2.21   37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f    Check fails, major.minor.patch must be active, but isn't
+05			activeDigest	kabanerobeta/java-microprofile:0.2.25   37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f    Check pass, major.minor.patch is active
+06			activeDigest	kabanerobeta/java-microprofile:1        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, 1  doesn't match and can't be patched 
+07			activeDigest	kabanerobeta/java-microprofile:1.0      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, 1.0  doesn't match and can't be patched 
+08			activeDigest	kabanerobeta/java-microprofile:1.0.1    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, 1.0.1  doesn't match and can't be patched 
+09			activeDigest	kabanerobeta/java-microprofile:latest  37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f    Check pass
+10			activeDigest	kabanerobeta/java-microprofile:bogus    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, "bogus" tag does not exist in image registry 
+
+21			ignoreDigest	kabanerobeta/java-microprofile:0		N/A																	Check fails
+22			ignoreDigest	kabanerobeta/java-microprofile:0.1		N/A	 																Check fails	
+23			ignoreDigest	kabanerobeta/java-microprofile:0.2		N/A   																Check pass	
+24			ignoreDigest	kabanerobeta/java-microprofile:0.2.21   N/A    																Check fails
+25			ignoreDigest	kabanerobeta/java-microprofile:0.2.25   N/A    																Check pass
+26			ignoreDigest	kabanerobeta/java-microprofile:1        N/A     															Check fails
+27			ignoreDigest	kabanerobeta/java-microprofile:1.0      N/A     															Check fails
+28			ignoreDigest	kabanerobeta/java-microprofile:1.0.1    N/A    																Check fails
+29			ignoreDigest	kabanerobeta/java-microprofile:latest  N/A    																Check pass (latest returns version in appsody-config)
+30			ignoreDigest	kabanerobeta/java-microprofile:bogus    N/A     															Check fails
+
+41			ignoreDigest	kabanerobeta/java-microprofile:0		FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF	Check fails	
+42			ignoreDigest	kabanerobeta/java-microprofile:0.1		FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF  	Check fails  	 
+43			ignoreDigest	kabanerobeta/java-microprofile:0.2		37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f  	Check passes   	 
+44			ignoreDigest	kabanerobeta/java-microprofile:0.2.21   FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails
+45			ignoreDigest	kabanerobeta/java-microprofile:0.2.25   37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f    Check passes  
+46			ignoreDigest	kabanerobeta/java-microprofile:1        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 	Check fails    
+47			ignoreDigest	kabanerobeta/java-microprofile:1.0      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails 
+48			ignoreDigest	kabanerobeta/java-microprofile:1.0.1    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails 
+49			ignoreDigest	kabanerobeta/java-microprofile:latest  37cdf72ab9589e4b0f1389e1c6acc574a1aa8c9cc2234f6be3fd2e994e1de93f  	Check fails  
+50			ignoreDigest	kabanerobeta/java-microprofile:bogus    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF    Check fails, bogus tag
+
+
+TODO:
+---------------------------------------------------------------------------------------------------------------------------------
+kabanerobeta/java-microprofile@sha256:9e69ab0182cf6301867f5b597828b35a72d15791aafe54fd8396ff2d7b0b9acb         // Digest specified 
+kabanerobeta/java-microprofile:0.2.21@sha256:9e69ab0182cf6301867f5b597828b35a72d15791aafe54fd8396ff2d7b0b9acb  // Tag + Digest

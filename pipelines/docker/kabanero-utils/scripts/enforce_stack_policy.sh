@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash 
 
         #############
         # Functions #
@@ -27,8 +27,7 @@
            echo "$ERROR Stack fails stackPolicy validation." 
            exit 1
         }
-        
-        
+                
         #################
         # activeDigests #
         #################
@@ -41,28 +40,29 @@
                     CANDIDATE_STACK_VERSIONS+=$STACK_VERSION" "
                  fi
               done
-           # Sort matching versions
-           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
-           if [ -z "$SORTED_CLUSTER_STACK_VERSIONS" ]; then
+           
+           if [ -z "$CANDIDATE_STACK_VERSIONS" ]; then
               echo
               echo "$ERROR $APPSODY_CONFIG specifies a stack version of $VERSION , but there are no matching versions active. Versions active: $CLUSTER_STACK_VERSIONS"
               exit 1
-           else
-              # Check to see what enforcement phase we are in, if it's post-build, we can no longer patch the config, it's already been built
-              if [ "$PHASE" == "post-build" ]; then
-                  echo "$ERROR Failed stackPolicy enforcement, application image has already been built, but the stack configuration in $APPSODY_CONFIG became invalid during the build phase."
-                  exit 1
-              fi
-              # PATCH APPSODY-CONFIG
-              LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
-              PATCHED=${STACK//$VERSION/$LATEST}
-              sed -i -e "s|$STACK|$PATCHED|g" /workspace/$GITSOURCE/$APPSODY_CONFIG
-              echo "$WARN $APPSODY_CONFIG, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
-              echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and fails stackPolcy validation."
-              exit 0
+           fi      
+           
+           # Check to see what enforcement phase we are in, if it's post-build, we can no longer patch the config, it's already been built
+           if [ "$PHASE" == "post-build" ]; then
+              echo "$ERROR Failed stackPolicy enforcement, application image has already been built, but the stack configuration in $APPSODY_CONFIG became invalid during the build phase."
+              exit 1
            fi
+           # Sort matching candidate versions
+           SORTED_CLUSTER_STACK_VERSIONS=$( echo "$CANDIDATE_STACK_VERSIONS" | tr ' ' '\n' | sort | tr '\n' ' ' )
+           # PATCH APPSODY-CONFIG
+           LATEST=$( echo $SORTED_CLUSTER_STACK_VERSIONS | awk '{print $NF}' )
+           PATCHED=${STACK//$VERSION/$LATEST}
+           sed -i -e "s|$STACK|$PATCHED|g" $APPSODY_CONFIG
+           echo "$WARNING $APPSODY_CONFIG, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
+           echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolcy validation."
+           exit 0
+   
         }
-        
         
         #################
         # strictDigests #
@@ -85,27 +85,20 @@
         WARNING="[WARNING]"
         ERROR="[ERROR]"
         
-       
-        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        echo "Running the script /scripts/insecure_registry_setup.sh ...."
-        /scripts/insecure_registry_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "The script failed(/scripts/insecure_registry_setup.sh)" >&2
-           exit $retVal
+        #Setting insecure image registries
+        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
+        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
+           /workspace/$gitsource/insecure_registry_setup.sh
         fi
 
+        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
         #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        echo "Running the script /scripts/ca_certs_setup.sh ...."
-        /scripts/ca_certs_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "The script failed(/scripts/ca_certs_setup.sh)" >&2
-           exit $retVal
+        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
+           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
+           /workspace/$gitsource/ca_certs_setup.sh
         fi
- 
+        
         # env var gitsource
         GITSOURCE=$gitsource
         PHASE=$1
@@ -140,9 +133,9 @@
         fi
         
 
-        #########################################################################################
-        # Read project, stack image, docker host and stack name from .appsody-config.yaml
-        #########################################################################################
+        ###################################################################################
+        # Read project, stack image, docker host and stack name from .appsody-config.yaml #
+        ###################################################################################
         echo
         echo "$INFO Read project, stack image, docker host and stack name from .appsody-config.yaml" 
         # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
@@ -198,9 +191,9 @@
 
 
 
-        #########################################################################################
-        # Validate stack name & project are present, active in the Kabanero CR
-        #########################################################################################
+        ########################################################################
+        # Validate stack name & project are present, active in the Kabanero CR #
+        ########################################################################
         echo
         echo "$INFO Validate stack name & project are present, active in the Kabanero CR"
         # Check to make sure the stack is active by name first
@@ -234,9 +227,9 @@
         fi
         echo "$INFO Sucessfully validated stack name & project are present, active in the Kabanero CR"
 
-        #########################################################################################
-        #  Main validation between operator and registry
-        #########################################################################################
+        ##################################################
+        #  Main validation between operator and registry #
+        ##################################################
         # IgnoreDigests (always)  &  activeDigest (if failure for autopatch)
         CLUSTER_STACK_VERSIONS=$( kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[].version?' )
         CLUSTER_STACK_DIGESTS=$( kubectl get stack $STACK_NAME -o json | jq -r '.status.versions[].images[].digest.activation?' )
