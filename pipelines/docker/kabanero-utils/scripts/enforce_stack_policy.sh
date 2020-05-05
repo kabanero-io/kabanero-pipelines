@@ -175,6 +175,23 @@
           IMAGE_REGISTRY_HOST="docker.io"
         else
           IMAGE_REGISTRY_HOST=$STACK_REGISTRY
+
+          #Logic for if external route of internal image registry url given , then convert external to internal route of internal registry hostname
+          external_route_internal_registry=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.externalRegistryHostnames[0]}")
+          if [[ ! -z "$external_route_internal_registry" ]]; then
+              if [[ $external_route_internal_registry == $IMAGE_REGISTRY_HOST ]]
+              then
+                 internal_route_internal_registry=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.status.internalRegistryHostname}")
+                 if [[ ! -z "$internal_route_internal_registry" ]]; then
+                    IMAGE_REGISTRY_HOST=$internal_route_internal_registry
+                 else
+                    echo "$ERROR Internal image registry is not found, and you are trying to use the internal image registry external route as your stack registry."
+                    echo "Hint : kubectl get image.config.openshift.io/cluster -o yaml --output=\"jsonpath={.status.internalRegistryHostname}\" "
+                    exit 1
+                 fi
+              fi
+          fi
+          echo "$INFO IMAGE_REGISTRY_HOST used finally = $IMAGE_REGISTRY_HOST"
         fi
         echo "$INFO Successfully read project, stack image, docker host and stack name from .appsody-config.yaml" 
 

@@ -35,7 +35,7 @@
         elif [ "$NUM_SLASHES" = 2 ]; then
            STACK_IMAGE_REGISTRY_URL="$(echo $STACK | cut -d'/' -f1)"
         else
-           echo "Unexpeted format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
+           echo "Unexpected format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
            exit 1
         fi
         
