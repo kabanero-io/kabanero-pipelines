@@ -18,16 +18,19 @@ mkdir -p $assets_dir
 package() {
     local pipelines_dir=$1
     local prefix=$2
+    echo -e "--- Creating pipeline artifacts for $prefix"
     # Generate a manifest.yaml file for each file in the tar.gz file
     asset_manifest=$pipelines_dir/manifest.yaml
     echo "contents:" > $asset_manifest
 
     # for each of the assets generate a sha256 and add it to the manifest.yaml
     assets_paths=$(find $pipelines_dir -mindepth 1 -maxdepth 1 -type f -name '*')
+    local assets_names
     for asset_path in ${assets_paths}
     do
         asset_name=${asset_path#$pipelines_dir/}
         echo "Asset name: $asset_name"
+        assets_names="${assets_names} ${asset_name}"
         if [ -f $asset_path ] && [ "$(basename -- $asset_path)" != "manifest.yaml" ]
         then
             sha256=$(cat $asset_path | $sha256cmd | awk '{print $1}')
@@ -35,11 +38,11 @@ package() {
             echo "  sha256: $sha256" >> $asset_manifest
         fi
     done
+
     # build archive of tekton pipelines
-    tar -czf $assets_dir/${prefix}-pipelines.tar.gz --exclude="./events" -C $pipelines_dir .
-    touch $assets_dir/${prefix}-pipelines-tar-gz-sha256
-    tektonSHA=$(($sha256cmd $assets_dir/${prefix}-pipelines.tar.gz) | awk '{print $1}')
-    echo ${tektonSHA}>> $assets_dir/${prefix}-pipelines-tar-gz-sha256
+    tar -czf $assets_dir/${prefix}-pipelines.tar.gz -C $pipelines_dir ${assets_names}
+    tarballSHA=$(($sha256cmd $assets_dir/${prefix}-pipelines.tar.gz) | awk '{print $1}')
+    echo ${tarballSHA}>> $assets_dir/${prefix}-pipelines-tar-gz-sha256
 }
 
 package $pipelines_dir "default-kabanero"
