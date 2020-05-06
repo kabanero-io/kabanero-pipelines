@@ -45,6 +45,7 @@ ORIGINAL_STRING='\[registries\.insecure\]\nregistries = \[\]'
 REPLACE_STRING='\[registries\.insecure\]\nregistries = \['"$INSECURE_REGISTRTY"'\]'
            
 sed -i -e ':a;N;$!ba;s|'"$ORIGINAL_STRING"'|'"$REPLACE_STRING"'|' /etc/containers/registries.conf
+echo "$INFO The image registries that got added successfully to insecure list are = [ $INSECURE_REGISTRTY ]"
 ############
 
 # This script section will be used in later tasks to fetch the trusted ca certificates configured 
@@ -57,7 +58,7 @@ sed -i -e ':a;N;$!ba;s|'"$ORIGINAL_STRING"'|'"$REPLACE_STRING"'|' /etc/container
 additonal_trusted_CA=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.additionalTrustedCA.name}")
 
 if [[ ! -z "$additonal_trusted_CA" ]]; then
-   echo "additonal_trusted_CA=$additonal_trusted_CA found in the image.config.openshift.io/cluster resource, setting up the certificates in /etc/docker/certs.d/ location"        
+   echo "$INFO additonal_trusted_CA=$additonal_trusted_CA found in the image.config.openshift.io/cluster resource, setting up the certificates in /etc/docker/certs.d/ location"        
    config_map_key_count=$(kubectl get configmap $additonal_trusted_CA -n openshift-config -o json | jq '.data' | jq 'keys | length')
 
    for ((i=0;i<config_map_key_count;i++));do
@@ -74,5 +75,8 @@ if [[ ! -z "$additonal_trusted_CA" ]]; then
        key=$(sed -e 's/\.\./:/g' <<< "$key")
        mkdir -p /etc/docker/certs.d/$key
        echo "$cert_value" | sudo tee -a /etc/docker/certs.d/$key/ca.crt
+       echo "$INFO Certificate added for the host $key at location /etc/docker/certs.d/$key/"
    done
 fi
+
+
