@@ -85,19 +85,17 @@
         WARNING="[WARNING]"
         ERROR="[ERROR]"
         
-        #Setting insecure image registries
-        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
-        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
-           /workspace/$gitsource/insecure_registry_setup.sh
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "$INFO Running the script /scripts/application_image_registry_access_setup.sh ...."
+        /scripts/application_image_registry_access_setup.sh
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "$INFO The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+           exit $retVal
         fi
 
-        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
-        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
-           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
-           /workspace/$gitsource/ca_certs_setup.sh
-        fi
         
         # env var gitsource
         GITSOURCE=$gitsource
