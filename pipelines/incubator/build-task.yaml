@@ -1,4 +1,6 @@
 #Kabanero! on activate substitute StackId for text 'StackId'
+#
+# This task will build an appsody project specificed in the git-source using `appsody build`
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -22,6 +24,7 @@ spec:
     default: ""
   steps:
   - name: build
+    # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils:0.9.0
@@ -29,31 +32,24 @@ spec:
     args:
       - -c
       - |
-        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        echo "Running the script /scripts/insecure_registry_setup.sh ...."
-        /scripts/insecure_registry_setup.sh
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "Running the script /scripts/application_image_registry_access_setup.sh ...."
+        /scripts/application_image_registry_access_setup.sh
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/scripts/insecure_registry_setup.sh)" >&2
+           echo "The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
            exit $retVal
         fi
 
-        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        echo "Running the script /scripts/ca_certs_setup.sh ...."
-        /scripts/ca_certs_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "The script failed(/scripts/ca_certs_setup.sh)" >&2
-           exit $retVal
-        fi
-        
+        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+        # So lowercase the image name if it has any upper case characters.        
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
            exit $retVal
         fi
         
@@ -61,17 +57,18 @@ spec:
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/scripts/stack_registry_url_setup.sh) Reason: $OUTPUTS_STACK_IMAGE_REGISTRY_URL" >&2
+           echo "[ERROR] The script failed(/scripts/stack_registry_url_setup.sh) Reason: $OUTPUTS_STACK_IMAGE_REGISTRY_URL" >&2
            exit $retVal
         fi
 
-        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-        echo "OUTPUTS_STACK_IMAGE_REGISTRY_URL that will be used to pull the stack =$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+        echo "[INFO] Stack registry URL = $OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+        echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
          
         cd /workspace/$gitsource
+        echo "[INFO] Running appsody build..."
         appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
         if [ $? != 0 ]; then
-            echo "Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
+            echo "[ERROR] Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
             exit 1
         fi
     env:
