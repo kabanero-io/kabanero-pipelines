@@ -1,0 +1,18 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+# This pipeline will call a task to deploy a service using the kustomization.yaml in the gitops repo.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: deploy-kustomize-pl-@Digest@
+spec:
+  resources:
+    - name: git-source
+      type: git
+  tasks:
+    - name: deploy-kustomize-task
+      taskRef:
+        name: deploy-kustomize-task-@Digest@
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source

@@ -1,0 +1,37 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+# This task will deploy the service using the kustomization.yaml in the gitops repo.
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-kustomize-task-@Digest@
+spec:
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+  steps:
+  - name: deploy
+    image: kabanero/kabanero-utils:0.9.0
+    script: |
+        #!/usr/bin/env sh
+        
+        # First check if a dryrun is successful
+        kubectl apply -k /workspace/git-source/env --dry-run=server
+        
+        if [ $? != 0 ]; then
+          echo "[ERROR] Dry run of deployment was unsuccessful. Please review errors above for more details. Service will not be deployed."
+          exit 1
+        fi
+
+        # If it's good then run
+        echo "[INFO] Starting deployment..."
+        kubectl apply -k /workspace/git-source/environments
+
+        # TODO: The pipeline declares success if apply is successful.  It takes a minute or so after we apply for the app pod to come up.
+        # Maybe we should wait and try to check for status of app?.
+
+        # TODO: To support newer kustomize 
+        # kustomize build /workspace/git-source/env | kubectl apply -k -
+    env:
+    - name: gitsource
+      value: git-source

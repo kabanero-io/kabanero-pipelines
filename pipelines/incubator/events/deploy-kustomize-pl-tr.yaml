@@ -1,0 +1,116 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: deploy-kustomize-pl--@Digest@-pullrequest-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.pull_request.head.sha)
+  - name: gitrepositoryurl
+    value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
+  - name: event-type
+    value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
+  - name: webhooks-tekton-git-branch
+    value: $(body.webhooks-tekton-git-branch)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: deploy-kustomize-pl-@Digest@-push-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.pull_request.head.sha)
+  - name: gitrepositoryurl
+    value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
+  - name: event-type
+    value: $(header.X-Github-Event)
+  - name: webhooks-tekton-git-server
+    value: $(body.webhooks-tekton-git-server)
+  - name: webhooks-tekton-git-org
+    value: $(body.webhooks-tekton-git-org)
+  - name: webhooks-tekton-git-repo
+    value: $(body.webhooks-tekton-git-repo)
+  - name: webhooks-tekton-git-branch
+    value: $(body.webhooks-tekton-git-branch)
+  - name: webhooks-tekton-target-namespace
+    value: $(body.webhooks-tekton-target-namespace)
+  - name: webhooks-tekton-service-account
+    value: $(body.webhooks-tekton-service-account)
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: deploy-kustomize-pl-@Digest@-template
+  namespace: tekton-pipelines
+spec:
+  params:
+  - name: event-ref
+    default: other
+  - name: gitrevision
+    description: The revision of your Git repository
+  - name: gitrepositoryurl
+    description: The url of your Git repository
+  - name: git-project
+    description: The name of your Git repository
+  - name: webhooks-tekton-git-server
+    description: The server name in the Git url
+  - name: webhooks-tekton-git-org
+    description: The org name in the Git url
+  - name: webhooks-tekton-git-repo
+    description: The repository name in the Git url
+  - name: webhooks-tekton-git-branch
+    description: The branch for the Git repository
+  - name: event-type
+    description: The Git event type
+  - name: webhooks-tekton-service-account
+    description: The ServiceAccount that the PipelineRun will execute under
+  - name: webhooks-tekton-target-namespace
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: git-source-$(uid)
+      namespace: $(params.webhooks-tekton-target-namespace)
+    spec:
+      type: git
+      params:
+      - name: revision
+        value: $(params.gitrevision)
+      - name: url
+        value: $(params.gitrepositoryurl)
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: deploy-kustomize-pl-@Digest@-run-
+      namespace: $(params.webhooks-tekton-target-namespace)
+      labels:
+        webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
+        webhooks.tekton.dev/gitOrg: $(params.webhooks-tekton-git-org)
+        webhooks.tekton.dev/gitRepo: $(params.webhooks-tekton-git-repo)
+        webhooks.tekton.dev/gitBranch: $(params.webhooks-tekton-git-branch)
+    spec:
+      serviceAccountName: $(params.webhooks-tekton-service-account)
+      pipelineRef:
+        name: deploy-kustomize-pl-@Digest@
+      resources:
+      - name: git-source
+        resourceRef:
+          name: git-source-$(uid)

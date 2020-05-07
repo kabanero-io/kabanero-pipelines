@@ -1,8 +1,11 @@
 #Kabanero! on activate substitute Digest for text '@Digest@'
+# This pipeline will build the source repo, optionally sign the image built, push the image to the image registry,
+# scan the built image, and optionally promote the deployment data to a gitops repo.  
+# The pipeline will also do a local deployment if webhooks-tekton-local-deploy is set to true.
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: build-push-deploy-pl-@Digest@
+  name: build-push-promote-pl-@Digest@
 spec:
   params:
   - name: webhooks-tekton-local-deploy
@@ -17,9 +20,9 @@ spec:
   - name: docker-image
     type: image
   tasks:
-  - name: build-push-task
+  - name: build-push-promote-task
     taskRef:
-      name: build-push-task-@Digest@
+      name: build-push-promote-task-@Digest@
     params:
       - name: docker-imagename
         value: "$(params.docker-imagename)"
@@ -39,7 +42,7 @@ spec:
   - name: image-scan-task
     taskRef:
       name: image-scan-task-@Digest@
-    runAfter: [build-push-task]
+    runAfter: [build-push-promote-task]
     params:
       - name: docker-imagename
         value: "$(params.docker-imagename)"
@@ -69,6 +72,6 @@ spec:
       inputs:
       - name: git-source
         resource: git-source
-        from: [build-push-task]
+        from: [build-push-promote-task]
       - name: docker-image
         resource: docker-image
