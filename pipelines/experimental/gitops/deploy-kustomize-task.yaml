@@ -22,7 +22,7 @@ spec:
         fi
 
         # If it's good then run
-        kubectl apply -k /workspace/git-source/env
+        kubectl apply -k /workspace/git-source/environments
 
         # TODO: The pipeline declares success if apply is successful.  It takes a minute or so after we apply for the app pod to come up.
         # Maybe we should wait and try to check for status of app?.
