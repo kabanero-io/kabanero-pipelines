@@ -52,7 +52,7 @@ echo "$INFO The image registries that got added successfully to insecure list ar
 # in a configmap which is set in the 'image.config.openshift.io/cluster' resource by the user. If such additional ca certificates found, we will copy the certificate values and generate 'ca.crt' as '/etc/docker/certs.d/<hostname>/ca.crt' for each certificate on the container.
 # Reference Redhat documentation link : https://docs.openshift.com/container-platform/4.2/openshift_images/image-configuration.html
 
-#We find if cluster resource 'image.config.openshift.io/cluster' has any additional_trusted_ca setup by user
+#Check if cluster resource 'image.config.openshift.io/cluster' has any additional_trusted_ca setup by user
 #If yes we pull the certificate values from the configmap setup there and create ca.crt files for each hostname with 
 #the certificate value given by the user in location '/etc/docker/certs.d/[hostname]/ca.crt'
 additonal_trusted_CA=$(kubectl get image.config.openshift.io/cluster -o yaml --output="jsonpath={.spec.additionalTrustedCA.name}")

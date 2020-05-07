@@ -75,7 +75,7 @@
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "$INFO The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun." >&2
+           echo "$ERROR The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun." >&2
            exit $retVal
         fi
  
