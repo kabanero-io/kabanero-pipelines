@@ -1,4 +1,9 @@
 #Kabanero! on activate substitute Digest for text '@Digest@'
+# 
+# This condition will check if webhooks-tekton-local-deploy is set to true.
+# The result of this condition check is used to determine is the deploy-task should
+# be run in the build-push-promote-pl to do a local deployment.
+#
 apiVersion: tekton.dev/v1alpha1
 kind: Condition
 metadata:

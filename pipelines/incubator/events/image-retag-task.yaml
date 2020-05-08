@@ -1,4 +1,5 @@
 #Kabanero! on activate substitute Digest for text '@Digest@'
+# This task will retag an image in the image registry and push it back to image registry with the new tag.
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -8,13 +9,12 @@ spec:
     inputs:
       - name: docker-src-image
         type: image
-      - name: docker-dest-image
-        type: image
     outputs:
       - name: docker-dest-image
         type: image
   steps:
     - name: buildah-pull
+      - # Pull down the source image from the registry.
       securityContext:
         privileged: true
       image: kabanero/kabanero-utils:0.9.0
@@ -22,23 +22,24 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+            echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+            exit $retVal
           fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
-          fi
-          
+          echo "[INFO] Completed setup for image registry access."
+            
           buildah pull $(inputs.resources.docker-src-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
     - name: buildah-tag
+      # Tag the pulled image with the new tag. 
       securityContext:
         privileged: true
       image: kabanero/kabanero-utils:0.9.0
@@ -46,23 +47,24 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+            echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+            exit $retVal
           fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
-          fi
-          
-          buildah tag $(inputs.resources.docker-src-image.url) $(inputs.resources.docker-dest-image.url)
+          echo "[INFO] Completed setup for image registry access."
+            
+          buildah tag $(inputs.resources.docker-src-image.url) $(outputs.resources.docker-dest-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers
           name: varlibcontainers
     - name: buildah-push
+      # Push the newly tagged image to the registry.
       securityContext:
         privileged: true
       image: appsody/appsody-buildah:0.5.8-buildah1.9.0
@@ -70,18 +72,18 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+            echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+            exit $retVal
           fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
-          fi
-          
+          echo "[INFO] Completed setup for image registry access."
+            
           buildah push $(outputs.resources.docker-dest-image.url) docker://$(outputs.resources.docker-dest-image.url)
       volumeMounts:
         - mountPath: /var/lib/containers

@@ -1,5 +1,7 @@
 #Kabanero! on activate substitute Digest for text '@Digest@'
+#
 # This pipeline will build the source in the git-source repo and create a local image specified in the docker-image resource.
+#
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -28,8 +30,6 @@ spec:
         inputs:
         - name: git-source
           resource: git-source
-        - name: docker-image
-          resource: docker-image
         outputs:
         - name: docker-image
           resource: docker-image

@@ -45,6 +45,8 @@ spec:
       args:
         - -c
         - |
+          # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+          # So lowercase the image name if it has any upper case characters.
           INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
           retVal=$?
           if [ $retVal -ne 0 ]
@@ -54,16 +56,15 @@ spec:
           fi
           echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
  
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
-          fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun" >&2
+             exit $retVal
           fi
         
           echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"

@@ -2,17 +2,15 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-push-deploy-pl-@Digest@-pullrequest-binding
+  name: deploy-kustomize-pl--@Digest@-pullrequest-binding
 spec:
   params:
   - name: gitrevision
     value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
-  - name: docker-imagename
+  - name: git-project
     value: $(body.repository.name)
-  - name: docker-imagetag
-    value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
   - name: webhooks-tekton-git-server
@@ -23,33 +21,25 @@ spec:
     value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
-  - name: webhooks-tekton-local-deploy
-    value: $(body.webhooks-tekton-local-deploy)
   - name: webhooks-tekton-target-namespace
     value: $(body.webhooks-tekton-target-namespace)
   - name: webhooks-tekton-service-account
     value: $(body.webhooks-tekton-service-account)
-  - name: webhooks-tekton-docker-registry
-    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-push-deploy-pl-@Digest@-push-binding
+  name: deploy-kustomize-pl-@Digest@-push-binding
 spec:
   params:
   - name: gitrevision
-    value: $(body.head_commit.id)
+    value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
-  - name: docker-imagename
+  - name: git-project
     value: $(body.repository.name)
-  - name: docker-imagetag
-    value: $(body.head_commit.id)    
   - name: event-type
     value: $(header.X-Github-Event)
-  - name: event-ref
-    value: $(body.ref)
   - name: webhooks-tekton-git-server
     value: $(body.webhooks-tekton-git-server)
   - name: webhooks-tekton-git-org
@@ -58,19 +48,15 @@ spec:
     value: $(body.webhooks-tekton-git-repo)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
-  - name: webhooks-tekton-local-deploy
-    value: $(body.webhooks-tekton-local-deploy)
   - name: webhooks-tekton-target-namespace
     value: $(body.webhooks-tekton-target-namespace)
   - name: webhooks-tekton-service-account
     value: $(body.webhooks-tekton-service-account)
-  - name: webhooks-tekton-docker-registry
-    value: $(body.webhooks-tekton-docker-registry)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: build-push-deploy-pl-@Digest@-template
+  name: deploy-kustomize-pl-@Digest@-template
 spec:
   params:
   - name: event-ref
@@ -79,6 +65,8 @@ spec:
     description: The revision of your Git repository
   - name: gitrepositoryurl
     description: The url of your Git repository
+  - name: git-project
+    description: The name of your Git repository
   - name: webhooks-tekton-git-server
     description: The server name in the Git url
   - name: webhooks-tekton-git-org
@@ -89,19 +77,9 @@ spec:
     description: The branch for the Git repository
   - name: event-type
     description: The Git event type
-  - name: webhooks-tekton-docker-registry
-    description: The image registry
-  - name: docker-imagename
-    description: The docker image name
-  - name: docker-imagetag
-    description: The docker image tag
   - name: webhooks-tekton-service-account
     description: The ServiceAccount that the PipelineRun will execute under
   - name: webhooks-tekton-target-namespace
-    description: The namespace in which to create this TriggerTemplate's resources
-  - name: webhooks-tekton-local-deploy
-    description: Determine if there should be a local deploy after build and push
-    default: "false"
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -115,20 +93,10 @@ spec:
         value: $(params.gitrevision)
       - name: url
         value: $(params.gitrepositoryurl)
-  - apiVersion: tekton.dev/v1alpha1
-    kind: PipelineResource
-    metadata:
-      name: docker-image-$(uid)
-      namespace: $(params.webhooks-tekton-target-namespace)
-    spec:
-      type: image
-      params:
-      - name: url
-        value: $(params.webhooks-tekton-docker-registry)
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: build-push-deploy-pl-@Digest@-run-
+      generateName: deploy-kustomize-pl-@Digest@-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -138,20 +106,8 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: build-push-deploy-pl-@Digest@
-      params:
-      - name: webhooks-tekton-local-deploy
-        value: $(params.webhooks-tekton-local-deploy)
-      - name: docker-imagename
-        value: $(params.docker-imagename)
-      - name: docker-imagetag
-        value: $(params.docker-imagetag)
+        name: deploy-kustomize-pl-@Digest@
       resources:
       - name: git-source
         resourceRef:
           name: git-source-$(uid)
-      - name: docker-image
-        resourceRef: 
-          name: docker-image-$(uid)
-
-

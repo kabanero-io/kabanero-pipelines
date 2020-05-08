@@ -1,4 +1,7 @@
 #Kabanero! on activate substitute Digest for text '@Digest@'
+#
+# This task will deploy the application image to the cluster using the info in the app-deploy.yaml file.
+#
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -20,7 +23,9 @@ spec:
     type: string
     default: ""
   steps:
-  - name: enforce-stack-policy-post-build
+  - name: enforce-stack-policy-pre-deploy
+    # This step enforces the pre build stack governance policy configured in the Kabanero CR.
+    # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils:0.9.0
@@ -36,11 +41,11 @@ spec:
         fi
         echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         /scripts/enforce_deploy_stack_policy.sh $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
-        
     env:  
     - name: gitsource
       value: git-source
   - name: deploy-image
+    # Deploy the image specified in the app-deploy.yaml file.
     image: kabanero/kabanero-utils:0.3.0
     command: ['/bin/sh']
     args: ['-c', 'find /workspace/$gitsource -name ${YAMLFILE} -type f|xargs kubectl apply -f']
