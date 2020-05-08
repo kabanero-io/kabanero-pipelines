@@ -2,19 +2,23 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-push-deploy-pl-@Digest@-pullrequest-binding
+  name: build-push-promote-pl-@Digest@-pullrequest-binding
 spec:
   params:
   - name: gitrevision
     value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-server
     value: $(body.webhooks-tekton-git-server)
   - name: webhooks-tekton-git-org
@@ -35,13 +39,15 @@ spec:
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: build-push-deploy-pl-@Digest@-push-binding
+  name: build-push-promote-pl-@Digest@-push-binding
 spec:
   params:
   - name: gitrevision
     value: $(body.head_commit.id)
   - name: gitrepositoryurl
     value: $(body.repository.clone_url)
+  - name: git-project
+    value: $(body.repository.name)
   - name: docker-imagename
     value: $(body.repository.name)
   - name: docker-imagetag
@@ -70,15 +76,15 @@ spec:
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: build-push-deploy-pl-@Digest@-template
+  name: build-push-promote-pl-@Digest@-template
 spec:
   params:
-  - name: event-ref
-    default: other
   - name: gitrevision
     description: The revision of your Git repository
   - name: gitrepositoryurl
     description: The url of your Git repository
+  - name: git-project
+    description: The name of your Git repository
   - name: webhooks-tekton-git-server
     description: The server name in the Git url
   - name: webhooks-tekton-git-org
@@ -89,6 +95,9 @@ spec:
     description: The branch for the Git repository
   - name: event-type
     description: The Git event type
+  - name: event-ref
+    description: The Git event ref
+    default: other
   - name: webhooks-tekton-docker-registry
     description: The image registry
   - name: docker-imagename
@@ -128,7 +137,7 @@ spec:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: build-push-deploy-pl-@Digest@-run-
+      generateName: build-push-promote-pl-@Digest@-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -138,7 +147,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: build-push-deploy-pl-@Digest@
+        name: build-push-promote-pl-@Digest@
       params:
       - name: webhooks-tekton-local-deploy
         value: $(params.webhooks-tekton-local-deploy)
@@ -146,6 +155,8 @@ spec:
         value: $(params.docker-imagename)
       - name: docker-imagetag
         value: $(params.docker-imagetag)
+      - name: git-project
+        value: $(params.git-project)
       resources:
       - name: git-source
         resourceRef:

@@ -18,8 +18,6 @@ spec:
     inputs:
     - name: git-source
       type: git
-    - name: docker-image
-      type: image
     outputs:
     - name: docker-image
       type: image
@@ -28,10 +26,10 @@ spec:
   params:
   - name: docker-imagename
     type: string
-    default: ""
   - name: docker-imagetag
     type: string
-    default: ""
+  - name: git-project
+    type: string
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -44,7 +42,6 @@ spec:
       - -c
       - |
         /scripts/enforce_stack_policy.sh pre-build
-        
     env:
     - name: gitsource
       value: git-source
@@ -56,32 +53,23 @@ spec:
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils:0.9.0
+    imagePullPolicy: Always
     command: ["/bin/bash"]
     args:
       - -c
       - |
         # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
         # by adding it to the trust store based on OpenShift cluster resource configuration.
-        echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
-        /scripts/application_image_registry_access_setup.sh
+        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
            exit $retVal
         fi
+        echo "[INFO] Completed setup for image registry access."
 
- 
-        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
-        # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
-           exit $retVal
-        fi
-        
         # If the image registry URL of the stack image is the external route of the internal registry, change the stack regisry URL to the 
         # internal route.  This avoids having to configure additional secrets, certificates etc.
         OUTPUTS_STACK_IMAGE_REGISTRY_URL=$( /scripts/stack_registry_url_setup.sh )
@@ -93,8 +81,20 @@ spec:
         fi
 
         echo "[INFO] Stack registry URL = $OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+
+        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+        # So lowercase the image name if it has any upper case characters.
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+
         echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
+        # Kickoff appsody build
         cd /workspace/$gitsource
         echo "[INFO] Running appsody build..."
         appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
@@ -102,6 +102,7 @@ spec:
             echo "[ERROR] Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
             exit 1
         fi
+        echo "[INFO] Completed appsody build."
         
         echo "[INFO] Copying the generated app-deploy.yaml file to the next task of the pipeline..."
         cp app-deploy.yaml $(outputs.resources.git-source.path)
@@ -140,7 +141,7 @@ spec:
       - |
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
         # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
@@ -152,17 +153,20 @@ spec:
 
         # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
         # by adding it to the trust store based on OpenShift cluster resource configuration.
-        echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
-        /scripts/application_image_registry_access_setup.sh
+        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
            exit $retVal
         fi
 
         # Check if /image-signing-config/registry is setup to enable container image signature generation.
-        REPO=`cat /image-signing-config/registry`
+        if [ -f "/image-signing-config/registry" ]; then
+            REPO=`cat /image-signing-config/registry`
+        fi
+
         if [[ -z $REPO ]]
         then
            echo "[INFO] Signature will not be generated."
@@ -213,7 +217,7 @@ spec:
     args:
       - -c
       - |
-        echo " "
+        echo "[INFO] Checking if gitops repo is configured... "
         echo "[INFO] Gitops repo url = $GITOPS_REPO_URL"
         echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
         echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
@@ -280,27 +284,30 @@ spec:
           fi
 
           # Promote the service
+          echo "[INFO] Promoting service to gitops repo... "
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit"
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
             exit 1
           fi
 
-          echo " "
+          echo "[INFO] Promotion to gitops repo complete."
         else
           echo "[INFO] No gitops repo configured.  service promote not executed."
         fi
     env:
     - name: gitsource
       value: git-source
+    # Load the token from the gitops-token secret
     - name: GITHUB_TOKEN
       valueFrom:
         secretKeyRef:
           name: gitops-token
           key: password
           optional: true
+    # Load values from gitops-map config map
     - name: GITOPS_REPO_URL
       valueFrom:
         configMapKeyRef:
@@ -327,10 +334,12 @@ spec:
   volumes:
   - name: varlibcontainers
     emptyDir: {}
+  # Config map for gitops
   - name: gitops-map
     configMap:
       name: gitops-map
       optional: true
+  # Config maps & secrets for image signing
   - name: registries-d
     configMap:
       name: registries-d

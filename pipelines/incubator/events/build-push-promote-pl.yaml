@@ -14,6 +14,8 @@ spec:
     type: string
   - name: docker-imagetag
     type: string
+  - name: git-project
+    type: string
   resources:
   - name: git-source
     type: git
@@ -28,12 +30,12 @@ spec:
         value: "$(params.docker-imagename)"
       - name: docker-imagetag
         value: "$(params.docker-imagetag)"
+      - name: git-project
+        value: "$(params.git-project)"
     resources:
       inputs:
       - name: git-source
         resource: git-source
-      - name: docker-image
-        resource: docker-image
       outputs:
       - name: docker-image
         resource: docker-image
