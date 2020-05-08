@@ -20,7 +20,6 @@ spec:
   - name: docker-imagetag
     type: string
   steps:
-  steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
