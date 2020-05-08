@@ -27,16 +27,15 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
-          fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
+          /scripts/application_image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+             exit $retVal
           fi
           
           buildah pull $(inputs.resources.docker-src-image.url)
@@ -51,16 +50,15 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
-          fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
+          /scripts/application_image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+             exit $retVal
           fi
           
           buildah tag $(inputs.resources.docker-src-image.url) $(inputs.resources.docker-dest-image.url)
@@ -75,16 +73,15 @@ spec:
       args:
         - -c
         - |
-          #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-          if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-             echo "Running the script /scripts/insecure_registry_setup.sh ...."
-             /scripts/insecure_registry_setup.sh
-          fi
-
-          #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-          if [ -f "/scripts/ca_certs_setup.sh" ]; then
-             echo "Running the script /scripts/ca_certs_setup.sh ...."
-             /scripts/ca_certs_setup.sh
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
+          /scripts/application_image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+             exit $retVal
           fi
           
           buildah push $(outputs.resources.docker-dest-image.url) docker://$(outputs.resources.docker-dest-image.url)

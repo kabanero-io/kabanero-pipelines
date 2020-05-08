@@ -1,4 +1,4 @@
-	#Kabanero! on activate substitute StackId for text 'StackId'
+#Kabanero! on activate substitute StackId for text 'StackId'
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:

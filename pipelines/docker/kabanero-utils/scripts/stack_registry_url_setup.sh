@@ -5,6 +5,10 @@
 #  2. If the stack url has openshift internal image registry external route, then it uses internal registry internal route 'image-registry.openshift-image-registry.svc:5000', and returns as output of this script.
 #  3. If first 2 cases are not true, it returns the registry url it finds as output of this script.
 
+       # Tracing prefixes
+        INFO="[INFO]"
+        WARNING="[WARNING]"
+        ERROR="[ERROR]"
 
         APPSODY_CONFIG=".appsody-config.yaml"
             
@@ -14,13 +18,13 @@
         cd /workspace/$gitsource
             
         if [ ! -f "$APPSODY_CONFIG" ]; then
-           echo "$APPSODY_CONFIG is not found in the root of the source directory."
+           echo "$ERROR $APPSODY_CONFIG is not found in the root of the source directory."
            exit 1
         else
            # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
            declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
            if [ -z "$STACK" ]; then
-              echo "$APPSODY_CONFIG does not contain a stack definition."
+              echo "$ERROR $APPSODY_CONFIG does not contain a stack definition."
               exit 1
            fi
         fi
@@ -35,7 +39,7 @@
         elif [ "$NUM_SLASHES" = 2 ]; then
            STACK_IMAGE_REGISTRY_URL="$(echo $STACK | cut -d'/' -f1)"
         else
-           echo "Unexpected format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
+           echo "$ERROR Unexpected format for stack in APPSODY_CONFIG. Using docker.io as the stack registry"
            exit 1
         fi
         
@@ -48,7 +52,7 @@
                if [[ ! -z "$internal_route_internal_registry" ]]; then
                   STACK_IMAGE_REGISTRY_URL=$internal_route_internal_registry
                else
-                  echo "Error: Internal image registry is not found, and you are trying to use the internal image registry external route as your stack registry."
+                  echo "$ERROR Internal image registry is not found, and you are trying to use the internal image registry external route as your stack registry."
                   echo "Hint : kubectl get image.config.openshift.io/cluster -o yaml --output=\"jsonpath={.status.internalRegistryHostname}\" "
                   exit 1
                fi

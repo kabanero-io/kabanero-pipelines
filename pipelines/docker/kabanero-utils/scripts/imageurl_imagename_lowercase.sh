@@ -10,11 +10,11 @@
 
 
 display_help() {
- echo "Usage"
- echo "******************************************************"
- echo "./imageurl_imagename_lowercase.sh -u [docker regisrtry url] -n [docker imagename] -t [docker image tagname]"
- echo "example: "
- echo "./imageurl_imagename_lowercase.sh -u docker.io/<dockerid> -n nodejs-image -t latest" 
+ echo "$INFO Usage"
+ echo "$INFO ******************************************************"
+ echo "$INFO ./imageurl_imagename_lowercase.sh -u [docker regisrtry url] -n [docker imagename] -t [docker image tagname]"
+ echo "$INFO example: "
+ echo "$INFO ./imageurl_imagename_lowercase.sh -u docker.io/<dockerid> -n nodejs-image -t latest" 
  echo "******************************************************"
  exit 1
 }
@@ -56,8 +56,13 @@ docker_imagename=$dockerimagename
 docker_imagetag=$dockerimagetag
 app_deploy_filename="app-deploy.yaml"
 
+# Tracing prefixes
+INFO="[INFO]"
+WARNING="[WARNING]"
+ERROR="[ERROR]"
+
 if [[ -z "$docker_registry_url" ]]; then
-   echo "Error : The input parameter docker-image resource url to the script is empty, please provide it and try again(Possible value example: docker.io/<docker-userid>, image-registry.openshift-image-registry.svc:5000/kabanero)"
+   echo "$ERROR The input parameter docker-image resource url to the script is empty, please provide it and try again(Possible value example: docker.io/<docker-userid>, image-registry.openshift-image-registry.svc:5000/kabanero)"
    exit 1
 else
    if [[ -z "$docker_imagename"  ]]; then
@@ -67,7 +72,7 @@ else
 
          docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
       else
-         echo "Error : docker_imagename is empty and the $app_deploy_filename is not present in the github appsody project.
+         echo "$ERROR docker_imagename is empty and the $app_deploy_filename is not present in the github appsody project.
          Either provide the value for the variable or make the $app_deploy_filename file available in the github appsody project
          Case 1: If you are running a pipeline where you do not want the docker imagename to be coming from 'app-deploy.yaml' ,
                  you would need to provide the imagename from the Trigger file.

@@ -73,7 +73,7 @@
               echo "$ERROR A compatible version of the application stack, "$PROJECT/$STACK_NAME:$VERSION", is not active on this cluster. Please review the active versions of the stack on the cluster (oc get stack $STACK_NAME -o json) and the stack specification in the $APPSODY_CONFIG file of the git project."
               exit 1
            else
-              echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
+              echo "$ERROR The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
               exit 0
            fi 
         }
@@ -85,19 +85,17 @@
         WARNING="[WARNING]"
         ERROR="[ERROR]"
         
-        #Setting insecure image registries
-        #executing the insecure_registry_setup.sh script if exists, to add user mentioned registry url to insecure registry list
-        if [ -f "/workspace/$gitsource/insecure_registry_setup.sh" ]; then
-           echo "$INFO Running the script /workspace/$gitsource/insecure_registry_setup.sh ...."
-           /workspace/$gitsource/insecure_registry_setup.sh
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "$INFO Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "$INFO The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun." >&2
+           exit $retVal
         fi
 
-        #Making tls-verify=true for the image registries based on additional trusted ca certs provided by the user.
-        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/workspace/$gitsource/ca_certs_setup.sh" ]; then
-           echo "$INFO Running the script /workspace/$gitsource/ca_certs_setup.sh ...."
-           /workspace/$gitsource/ca_certs_setup.sh
-        fi
         
         # env var gitsource
         GITSOURCE=$gitsource
