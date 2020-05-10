@@ -160,18 +160,15 @@ spec:
         fi
 
         # Check if /image-signing-config/registry is setup to enable container image signature generation.
-        REPO=`cat /image-signing-config/registry`
-        if [[ -z $REPO ]]
-        then
-           echo "[INFO] Signature will not be generated."
+        if [ -f "/image-signing-config/registry" ]; then
+            REPO=`cat /image-signing-config/registry`
+        fi
+        if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+           echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
            echo "[INFO] Pushing image to registry..."
            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         else
            echo "[INFO] Signature will be generated."
-           if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-              echo "[ERROR] The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-              exit 1
-           fi
            #importing RSA secret key, then extract an e-mail address from it.
            gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
