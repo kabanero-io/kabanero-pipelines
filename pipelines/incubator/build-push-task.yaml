@@ -36,7 +36,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -53,7 +53,7 @@ spec:
     # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -114,7 +114,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -131,7 +131,7 @@ spec:
     # Push the image built in the build step to the specified image registry.  Optionally sign the image.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
