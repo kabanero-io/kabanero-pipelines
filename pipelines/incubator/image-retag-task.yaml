@@ -80,7 +80,7 @@ spec:
           retVal=$?
           if [ $retVal -ne 0 ]
           then
-             echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+             echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
              exit $retVal
           fi
           
