@@ -9,7 +9,7 @@ spec:
       type: git
   steps:
   - name: deploy
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     script: |
         #!/usr/bin/env sh
         

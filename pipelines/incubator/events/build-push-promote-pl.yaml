@@ -16,6 +16,14 @@ spec:
     type: string
   - name: git-project
     type: string
+  - name: webhooks-tekton-gitops-repository-url
+    type: string
+  - name: webhooks-tekton-gitops-repository-type
+    type: string
+  - name: webhooks-tekton-gitops-commit-username
+    type: string
+  - name: webhooks-tekton-gitops-commit-email
+    type: string
   resources:
   - name: git-source
     type: git
@@ -32,6 +40,14 @@ spec:
         value: "$(params.docker-imagetag)"
       - name: git-project
         value: "$(params.git-project)"
+      - name: webhooks-tekton-gitops-repository-url
+        value: "$(params.webhooks-tekton-gitops-repository-url)"
+      - name: webhooks-tekton-gitops-repository-type
+        value: "$(params.webhooks-tekton-gitops-repository-type)"
+      - name: webhooks-tekton-gitops-commit-username
+        value: "$(params.webhooks-tekton-gitops-commit-username)"
+      - name: webhooks-tekton-gitops-commit-email
+        value: "$(params.webhooks-tekton-gitops-commit-email)"
     resources:
       inputs:
       - name: git-source
