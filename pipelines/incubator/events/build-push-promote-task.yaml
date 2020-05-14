@@ -38,7 +38,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -54,7 +54,7 @@ spec:
     # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     imagePullPolicy: Always
     command: ["/bin/bash"]
     args:
@@ -119,7 +119,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -136,7 +136,7 @@ spec:
     # Push the image built in the build step to the specified image registry.  Optionally sign the image.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -168,18 +168,12 @@ spec:
         if [ -f "/image-signing-config/registry" ]; then
             REPO=`cat /image-signing-config/registry`
         fi
-
-        if [[ -z $REPO ]]
-        then
-           echo "[INFO] Signature will not be generated."
+        if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+           echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
            echo "[INFO] Pushing image to registry..."
            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         else
            echo "[INFO] Signature will be generated."
-           if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-              echo "[ERROR] The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-              exit 1
-           fi
            #importing RSA secret key, then extract an e-mail address from it.
            gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
@@ -220,13 +214,16 @@ spec:
       - -c
       - |
         echo "[INFO] Checking if gitops repo is configured... "
-        echo "[INFO] Gitops repo enabled = $GITOPS_REPO_ENABLED"
-        echo "[INFO] Gitops repo url = $(params.webhooks-tekton-gitops-url)"
+        echo "[INFO] Gitops repo enabled = $GITOPS_REPOSITORY_ENABLED"
+        echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
+        echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
         echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
         echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
         echo " "
 
-        if [[ ! -z "$GITOPS_REPO_ENABLED" ]]; then
+        echo "[INFO] Gitops repo url param = $(params.webhooks-tekton-gitops-url)"
+
+        if [[ ! -z "$GITOPS_REPOSITORY_ENABLED" ]]; then
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -286,10 +283,16 @@ spec:
             exit 1
           fi
 
+          # Determine repo type 
+          if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
+            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_REPOSITORY_TYPE="github"
+          fi
+
           # Promote the service
           echo "[INFO] Promoting service to gitops repo... "
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type ghe
+          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type GITOPS_REPOSITORY_TYPE
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
@@ -311,11 +314,23 @@ spec:
           key: password
           optional: true
     # Load values from gitops-map config map
-    - name: GITOPS_REPO_ENABLED
+    - name: GITOPS_REPOSITORY_ENABLED
       valueFrom:
         configMapKeyRef:
          name: gitops-map
-         key: gitops-repo-enabled
+         key: gitops-repository-enabled
+         optional: true
+    - name: GITOPS_REPOSITORY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repository-url
+         optional: true
+    - name: GITOPS_REPOSITORY_TYPE
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repository-type
          optional: true
     - name: GITOPS_COMMIT_USER_NAME
       valueFrom:

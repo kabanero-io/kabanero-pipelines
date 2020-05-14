@@ -21,7 +21,7 @@ spec:
   - name: enforce-stack-policy-pre-build
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -36,7 +36,7 @@ spec:
   - name: build
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -80,7 +80,7 @@ spec:
   - name: enforce-stack-policy-post-build
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -95,7 +95,7 @@ spec:
   - name: push
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -163,18 +163,19 @@ spec:
   - name: promote
     securityContext:
       privileged: true
-    image: quay.io/redhat-developer/gitops-cli:v0.1
+    image: quay.io/redhat-developer/gitops-cli:latest
     command: ["/bin/bash"]
     args:
       - -c
       - |
         echo " "
-        echo "Gitops repo url = $GITOPS_REPO_URL"
+        echo "Gitops repo url = $GITOPS_REPOSITORY_URL"
+        echo "Gitops repo type = $GITOPS_REPOSITORY_TYPE"
         echo "Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
         echo "Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
         echo " "
 
-        if [[ ! -z "$GITOPS_REPO_URL" ]]; then
+        if [[ ! -z "$GITOPS_REPOSITORY_URL" ]]; then
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -234,8 +235,14 @@ spec:
             exit 1
           fi
 
+          # Determine repo type 
+          if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
+            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_REPOSITORY_TYPE="github"
+          fi
+
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug  --repository-type GITOPS_REPOSITORY_TYPE
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
@@ -255,11 +262,18 @@ spec:
           name: gitops-token
           key: password
           optional: true
-    - name: GITOPS_REPO_URL
+    # Load values from gitops-map config map
+    - name: GITOPS_REPOSITORY_URL
       valueFrom:
         configMapKeyRef:
          name: gitops-map
-         key: gitops-repo-url
+         key: gitops-repository-url
+         optional: true
+    - name: GITOPS_REPOSITORY_TYPE
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repository-type
          optional: true
     - name: GITOPS_COMMIT_USER_NAME
       valueFrom:

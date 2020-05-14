@@ -23,12 +23,10 @@ spec:
     type: string
     default: ""
   steps:
-  - name: enforce-stack-policy-pre-deploy
-    # This step enforces the pre build stack governance policy configured in the Kabanero CR.
-    # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
+  - name: enforce-stack-policy-post-build
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils:0.9.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ["/bin/bash"]
     args:
       - -c
@@ -45,10 +43,12 @@ spec:
     - name: gitsource
       value: git-source
   - name: deploy-image
-    # Deploy the image specified in the app-deploy.yaml file.
-    image: kabanero/kabanero-utils:0.3.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ['/bin/sh']
-    args: ['-c', 'find /workspace/$gitsource -name ${YAMLFILE} -type f|xargs kubectl apply -f']
+    args:
+      - -c
+      - |
+         kubectl apply -f  /workspace/$gitsource/${YAMLFILE}
     env:
     - name: gitsource
       value: git-source
