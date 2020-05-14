@@ -16,6 +16,8 @@ spec:
     type: string
   - name: git-project
     type: string
+  - name: webhooks-tekton-gitops-url
+    type: string
   resources:
   - name: git-source
     type: git
@@ -32,6 +34,8 @@ spec:
         value: "$(params.docker-imagetag)"
       - name: git-project
         value: "$(params.git-project)"
+      - name: webhooks-tekton-gitops-url
+        value: "$(params.webhooks-tekton-gitops-url)"
     resources:
       inputs:
       - name: git-source

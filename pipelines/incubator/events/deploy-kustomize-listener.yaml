@@ -1,0 +1,18 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: deploy-kustomize-listener
+spec:
+  serviceAccountName: event-listener
+  triggers:
+  - bindings:
+    - apiversion: v1alpha1
+      name: deploy-kustomize-pl-push-binding
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "push" && body["webhooks-tekton-git-branch"] == "master"'
+    name: kabanero-push-event
+    template:
+      apiversion: v1alpha1
+      name: deploy-kustomize-pl-template

@@ -14,7 +14,7 @@ spec:
         type: image
   steps:
     - name: buildah-pull
-      - # Pull down the source image from the registry.
+      # Pull down the source image from the registry.
       securityContext:
         privileged: true
       image: kabanero/kabanero-utils:0.9.0

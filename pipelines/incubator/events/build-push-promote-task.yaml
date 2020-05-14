@@ -30,6 +30,8 @@ spec:
     type: string
   - name: git-project
     type: string
+  - name: webhooks-tekton-gitops-url
+    type: string
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -166,12 +168,18 @@ spec:
         if [ -f "/image-signing-config/registry" ]; then
             REPO=`cat /image-signing-config/registry`
         fi
-        if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-           echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
+
+        if [[ -z $REPO ]]
+        then
+           echo "[INFO] Signature will not be generated."
            echo "[INFO] Pushing image to registry..."
            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         else
            echo "[INFO] Signature will be generated."
+           if [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+              echo "[ERROR] The specified signed image repository does not match the name of the repository in image-signing-config secret resource. The repository name should start with $REPO, Specified signed image name is $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+              exit 1
+           fi
            #importing RSA secret key, then extract an e-mail address from it.
            gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
@@ -206,18 +214,19 @@ spec:
     # Promote the service to the gitops repo configured in the gitops-map config map.
     securityContext:
       privileged: true
-    image: quay.io/redhat-developer/gitops-cli:v0.1
+    image: quay.io/redhat-developer/gitops-cli:latest
     command: ["/bin/bash"]
     args:
       - -c
       - |
         echo "[INFO] Checking if gitops repo is configured... "
-        echo "[INFO] Gitops repo url = $GITOPS_REPO_URL"
+        echo "[INFO] Gitops repo enabled = $GITOPS_REPO_ENABLED"
+        echo "[INFO] Gitops repo url = $(params.webhooks-tekton-gitops-url)"
         echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
         echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
         echo " "
 
-        if [[ ! -z "$GITOPS_REPO_URL" ]]; then
+        if [[ ! -z "$GITOPS_REPO_ENABLED" ]]; then
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -280,7 +289,7 @@ spec:
           # Promote the service
           echo "[INFO] Promoting service to gitops repo... "
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPO_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit"
+          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type ghe
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
@@ -302,11 +311,11 @@ spec:
           key: password
           optional: true
     # Load values from gitops-map config map
-    - name: GITOPS_REPO_URL
+    - name: GITOPS_REPO_ENABLED
       valueFrom:
         configMapKeyRef:
          name: gitops-map
-         key: gitops-repo-url
+         key: gitops-repo-enabled
          optional: true
     - name: GITOPS_COMMIT_USER_NAME
       valueFrom:

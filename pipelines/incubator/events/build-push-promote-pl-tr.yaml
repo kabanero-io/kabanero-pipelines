@@ -35,6 +35,8 @@ spec:
     value: $(body.webhooks-tekton-service-account)
   - name: webhooks-tekton-docker-registry
     value: $(body.webhooks-tekton-docker-registry)
+  - name: webhooks-tekton-gitops-url
+    value: $(body.webhooks-tekton-gitops-url)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -72,6 +74,8 @@ spec:
     value: $(body.webhooks-tekton-service-account)
   - name: webhooks-tekton-docker-registry
     value: $(body.webhooks-tekton-docker-registry)
+  - name: webhooks-tekton-gitops-url
+    value: $(body.webhooks-tekton-gitops-url)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
@@ -111,6 +115,8 @@ spec:
   - name: webhooks-tekton-local-deploy
     description: Determine if there should be a local deploy after build and push
     default: "false"
+  - name: webhooks-tekton-gitops-url
+    description: URL to the gitops repository for the project being built
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -157,6 +163,8 @@ spec:
         value: $(params.docker-imagetag)
       - name: git-project
         value: $(params.git-project)
+      - name: webhooks-tekton-gitops-url
+        value: $(params.webhooks-tekton-gitops-url)
       resources:
       - name: git-source
         resourceRef:
