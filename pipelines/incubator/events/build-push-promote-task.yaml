@@ -33,16 +33,12 @@ spec:
     type: string
   - name: webhooks-tekton-gitops-repository-url
     type: string
-    default: not_configured
   - name: webhooks-tekton-gitops-repository-type
     type: string
-    default: github
   - name: webhooks-tekton-gitops-commit-username
     type: string
-    default: kabanero
   - name: webhooks-tekton-gitops-commit-email
     type: string
-    default: kabanero@kabanero.io
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -306,8 +302,6 @@ spec:
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
-    - name: gitops-map
-      mountPath: /config
   volumes:
   - name: varlibcontainers
     emptyDir: {}
