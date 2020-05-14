@@ -35,8 +35,14 @@ spec:
     value: $(body.webhooks-tekton-service-account)
   - name: webhooks-tekton-docker-registry
     value: $(body.webhooks-tekton-docker-registry)
-  - name: webhooks-tekton-gitops-url
-    value: $(body.webhooks-tekton-gitops-url)
+  - name: webhooks-tekton-gitops-repository-url
+    value: "$(params.webhooks-tekton-gitops-repository-url)"
+  - name: webhooks-tekton-gitops-repository-type
+    value: "$(params.webhooks-tekton-gitops-repository-type)"
+  - name: webhooks-tekton-gitops-commit-username
+    value: "$(params.webhooks-tekton-gitops-commit-username)"
+  - name: webhooks-tekton-gitops-commit-email
+    value: "$(params.webhooks-tekton-gitops-commit-email)"
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -74,8 +80,14 @@ spec:
     value: $(body.webhooks-tekton-service-account)
   - name: webhooks-tekton-docker-registry
     value: $(body.webhooks-tekton-docker-registry)
-  - name: webhooks-tekton-gitops-url
-    value: $(body.webhooks-tekton-gitops-url)
+  - name: webhooks-tekton-gitops-repository-url
+    value: "$(params.webhooks-tekton-gitops-repository-url)"
+  - name: webhooks-tekton-gitops-repository-type
+    value: "$(params.webhooks-tekton-gitops-repository-type)"
+  - name: webhooks-tekton-gitops-commit-username
+    value: "$(params.webhooks-tekton-gitops-commit-username)"
+  - name: webhooks-tekton-gitops-commit-email
+    value: "$(params.webhooks-tekton-gitops-commit-email)"
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
@@ -115,8 +127,18 @@ spec:
   - name: webhooks-tekton-local-deploy
     description: Determine if there should be a local deploy after build and push
     default: "false"
-  - name: webhooks-tekton-gitops-url
+  - name: webhooks-tekton-gitops-repository-url
     description: URL to the gitops repository for the project being built
+    default: "not_configured"
+  - name: webhooks-tekton-gitops-repository-type
+    description: The type of gitops repo (ghe, gitlab, github)
+    default: "github"
+  - name: webhooks-tekton-gitops-commit-username
+    description: Username to use to commit and create PR in the gitops repo
+    default: "kabanero"    
+  - name: webhooks-tekton-gitops-commit-email
+    description: Email to use to commit and create PR in the gitops repo
+    default: "kabanero@kabanero.io"
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -163,8 +185,14 @@ spec:
         value: $(params.docker-imagetag)
       - name: git-project
         value: $(params.git-project)
-      - name: webhooks-tekton-gitops-url
-        value: $(params.webhooks-tekton-gitops-url)
+      - name: webhooks-tekton-gitops-repository-url
+        value: "$(params.webhooks-tekton-gitops-repository-url)"
+      - name: webhooks-tekton-gitops-repository-type
+        value: "$(params.webhooks-tekton-gitops-repository-type)"
+      - name: webhooks-tekton-gitops-commit-username
+        value: "$(params.webhooks-tekton-gitops-commit-username)"
+      - name: webhooks-tekton-gitops-commit-email
+        value: "$(params.webhooks-tekton-gitops-commit-email)"
       resources:
       - name: git-source
         resourceRef:

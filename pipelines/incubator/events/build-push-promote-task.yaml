@@ -4,7 +4,8 @@
 # and push the generated application image to the specified image registry. The image can be optionally
 # signed before it's pushed to the registry. 
 #
-# If the gitops-map config map is setup, it will promote the service to the specified gitops repo.
+# If the webhooks-tekton-gitops-repository-url param is configured, it will also promote the service to the specified gitops repo.
+# If gitops is enabled, a secret called gitops-token also needs to be configured with the token for the gitops repo.
 #
 # Insecure registy access or secure connection to the image registries can be setup by configuring the 
 # OpenShift cluster resource.  For more information, refer to https://kabanero.io/guides/working-with-pipelines/#transport-layer-security-tls-verification-for-image-registry-access-in-pipelines
@@ -30,8 +31,18 @@ spec:
     type: string
   - name: git-project
     type: string
-  - name: webhooks-tekton-gitops-url
+  - name: webhooks-tekton-gitops-repository-url
     type: string
+    default: not_configured
+  - name: webhooks-tekton-gitops-repository-type
+    type: string
+    default: github
+  - name: webhooks-tekton-gitops-commit-username
+    type: string
+    default: kabanero
+  - name: webhooks-tekton-gitops-commit-email
+    type: string
+    default: kabanero@kabanero.io
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -208,22 +219,17 @@ spec:
     # Promote the service to the gitops repo configured in the gitops-map config map.
     securityContext:
       privileged: true
-    image: quay.io/redhat-developer/gitops-cli:latest
+    image: quay.io/redhat-developer/gitops-cli@sha256:f5f47bb0cf1dcd081c29e7017e4511441cab3379d06ef587ba6e539f005945dd
     command: ["/bin/bash"]
     args:
       - -c
       - |
-        echo "[INFO] Checking if gitops repo is configured... "
-        echo "[INFO] Gitops repo enabled = $GITOPS_REPOSITORY_ENABLED"
-        echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
-        echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
-        echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
-        echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
-        echo " "
+        if [[ "$(params.webhooks-tekton-gitops-repository-url)" != "not_configured" ]]; then
 
-        echo "[INFO] Gitops repo url param = $(params.webhooks-tekton-gitops-url)"
-
-        if [[ ! -z "$GITOPS_REPOSITORY_ENABLED" ]]; then
+          echo "[INFO] Gitops repo url = $(params.webhooks-tekton-gitops-repository-url)"
+          echo "[INFO] Gitops repo type = $(params.webhooks-tekton-gitops-repository-type)"
+          echo "[INFO] Gitops repo commit name = $(params.webhooks-tekton-gitops-commit-username)"
+          echo "[INFO] Gitops repo commit email = $(params.webhooks-tekton-gitops-commit-email)"
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -256,24 +262,14 @@ spec:
           echo "[INFO] List of files under config directory being promoted - "
           ls
 
-          # Genreate the .gitconfig file used by service promote
+         # Genreate the .gitconfig file used by service promote
           cd $HOME
           GITCONFIG=".gitconfig"
           touch $GITCONFIG
 
-          if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
-            echo "[WARN] gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
-            GITOPS_COMMIT_USER_NAME="kabanero"
-          fi
-
-          if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
-            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
-            GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
-          fi
-
           echo "[user]" >> $GITCONFIG
-          echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
-          echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
+          echo "  name = $(params.webhooks-tekton-gitops-commit-username)" >> $GITCONFIG
+          echo "  email = $(params.webhooks-tekton-gitops-commit-email)" >> $GITCONFIG
           cat $HOME/.gitconfig
 
           echo " "
@@ -283,16 +279,10 @@ spec:
             exit 1
           fi
 
-          # Determine repo type 
-          if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
-            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
-            GITOPS_REPOSITORY_TYPE="github"
-          fi
-
           # Promote the service
           echo "[INFO] Promoting service to gitops repo... "
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type GITOPS_REPOSITORY_TYPE
+          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-repository-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type $(params.webhooks-tekton-gitops-repository-type)
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
@@ -313,37 +303,6 @@ spec:
           name: gitops-token
           key: password
           optional: true
-    # Load values from gitops-map config map
-    - name: GITOPS_REPOSITORY_ENABLED
-      valueFrom:
-        configMapKeyRef:
-         name: gitops-map
-         key: gitops-repository-enabled
-         optional: true
-    - name: GITOPS_REPOSITORY_URL
-      valueFrom:
-        configMapKeyRef:
-         name: gitops-map
-         key: gitops-repository-url
-         optional: true
-    - name: GITOPS_REPOSITORY_TYPE
-      valueFrom:
-        configMapKeyRef:
-         name: gitops-map
-         key: gitops-repository-type
-         optional: true
-    - name: GITOPS_COMMIT_USER_NAME
-      valueFrom:
-        configMapKeyRef:
-         name: gitops-map
-         key: gitops-commit-user-name
-         optional: true
-    - name: GITOPS_COMMIT_USER_EMAIL
-      valueFrom:
-        configMapKeyRef:
-         name: gitops-map
-         key: gitops-commit-user-email
-         optional: true
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
@@ -352,11 +311,6 @@ spec:
   volumes:
   - name: varlibcontainers
     emptyDir: {}
-  # Config map for gitops
-  - name: gitops-map
-    configMap:
-      name: gitops-map
-      optional: true
   # Config maps & secrets for image signing
   - name: registries-d
     configMap:
