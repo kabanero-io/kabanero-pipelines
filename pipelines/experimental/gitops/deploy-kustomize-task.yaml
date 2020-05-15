@@ -1,3 +1,4 @@
+# This task will deploy the service using the kustomization.yaml in the gitops repo.
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -14,7 +15,8 @@ spec:
         #!/usr/bin/env sh
         
         # First check if a dryrun is successful
-        kubectl apply -k /workspace/git-source/env --dry-run=server
+        echo "[INFO] Starting dry run..."
+        kubectl apply -k /workspace/git-source/environments --dry-run=server
         
         if [ $? != 0 ]; then
           echo "[ERROR] Dry run of deployment was unsuccessful. Please review errors above for more details. Service will not be deployed."
@@ -22,13 +24,18 @@ spec:
         fi
 
         # If it's good then run
+        echo "[INFO] Starting deployment..."
         kubectl apply -k /workspace/git-source/environments
+        if [ $? != 0 ]; then
+          echo "[ERROR] Deployment was unsuccessful. Please review errors above for more details. Service was not deployed."
+          exit 1
+        fi
+
+        # TODO: To support newer kustomize we should be doing
+        # kustomize build /workspace/git-source/environments | kubectl apply -k -
 
         # TODO: The pipeline declares success if apply is successful.  It takes a minute or so after we apply for the app pod to come up.
-        # Maybe we should wait and try to check for status of app?.
-
-        # TODO: To support newer kustomize 
-        # kustomize build /workspace/git-source/env | kubectl apply -k -
+        # Maybe we should wait and try to check for status of app?
     env:
     - name: gitsource
       value: git-source

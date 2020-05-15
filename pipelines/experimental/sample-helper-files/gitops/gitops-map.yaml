@@ -3,6 +3,7 @@ apiVersion: v1
 metadata:
   name: gitops-map
 data:
-  gitops-repo-url: <gitops_repo_url> 
+  gitops-repository-url: <gitops_repo_url> 
+  gitops-repository-type: <gitops_repo_type: ghe, github, gitlab>
   gitops-commit-user-name: <user_name_to_commit_using>
   gitops-commit-user-email: <user_email_to_commit_using>

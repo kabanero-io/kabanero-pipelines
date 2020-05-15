@@ -1,4 +1,3 @@
-#Kabanero! on activate substitute Digest for text '@Digest@'
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: EventListener
 metadata:

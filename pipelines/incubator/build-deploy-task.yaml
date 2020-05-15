@@ -146,9 +146,12 @@ spec:
     - mountPath: /var/lib/containers
       name: varlibcontainers
   - name: deploy-image
-    image: kabanero/kabanero-utils:0.3.0
+    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
     command: ['/bin/sh']
-    args: ['-c', 'find /workspace/$gitsource -name ${YAMLFILE} -type f|xargs kubectl apply -f']
+    args:
+      - -c
+      - |
+         kubectl apply -f  /workspace/$gitsource/${YAMLFILE}
     env:
     - name: gitsource
       value: git-source
