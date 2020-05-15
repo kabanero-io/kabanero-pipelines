@@ -827,7 +827,7 @@ log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
 RC=$?
 cat enforce_stack_policy.out
 
-grep -q "Enforcing 'stackPolicy' of 'ignoreDigest'" enforce_stack_policy.out 
+grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."         
 else
