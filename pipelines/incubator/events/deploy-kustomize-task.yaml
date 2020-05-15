@@ -1,4 +1,3 @@
-#Kabanero! on activate substitute Digest for text '@Digest@'
 # This task will deploy the service using the kustomization.yaml in the gitops repo.
 apiVersion: tekton.dev/v1beta1
 kind: Task

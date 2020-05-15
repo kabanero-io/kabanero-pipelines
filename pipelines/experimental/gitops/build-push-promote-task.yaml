@@ -1,3 +1,14 @@
+#
+# This task will build an appsody project specificed in the git-source using `appsody build` 
+# and push the generated application image to the specified image registry. The image can be optionally
+# signed before it's pushed to the registry. 
+#
+# If the gitops-map configmap is configured, it will also promote the service to the specified gitops repo.
+# If gitops is enabled, a secret called gitops-token also needs to be configured with the token for the gitops repo.
+#
+# Insecure registy access or secure connection to the image registries can be setup by configuring the 
+# OpenShift cluster resource.  For more information, refer to https://kabanero.io/guides/working-with-pipelines/#transport-layer-security-tls-verification-for-image-registry-access-in-pipelines
+#
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -17,8 +28,21 @@ spec:
     type: string
   - name: docker-imagetag
     type: string
+     else
+              #invoking scripts for processing a generated signature.
+              echo "A signature is stored by scripts."
+              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
+           fi
+        fi
+    env:
+    - name: gitsource
+      value: git-source
+    volumeMounts:
+    - mountPath: /var/li
   steps:
   - name: enforce-stack-policy-pre-build
+    # This step enforces the pre build stack governance policy configured in the Kabanero CR.
+    # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
@@ -32,45 +56,62 @@ spec:
       value: git-source
     volumeMounts:
     - mountPath: /var/lib/containers
-      name: varlibcontainers
+      name: varlibcontainers     
   - name: build
+    # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
+    imagePullPolicy: Always
     command: ["/bin/bash"]
     args:
       - -c
       - |
-        cd /workspace/$gitsource
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+           exit $retVal
+        fi
+        echo "[INFO] Completed setup for image registry access."
 
-        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-           echo "Running the script /scripts/insecure_registry_setup.sh ...."
-           /scripts/insecure_registry_setup.sh
-           echo "printing the content /etc/containers/registries.conf"
-           cat /etc/containers/registries.conf
+        # If the image registry URL of the stack image is the external route of the internal registry, change the stack regisry URL to the 
+        # internal route.  This avoids having to configure additional secrets, certificates etc.
+        OUTPUTS_STACK_IMAGE_REGISTRY_URL=$( /scripts/stack_registry_url_setup.sh )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/stack_registry_url_setup.sh) Reason: $OUTPUTS_STACK_IMAGE_REGISTRY_URL" >&2
+           exit $retVal
         fi
 
-        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/scripts/ca_certs_setup.sh" ]; then
-           echo "Running the script /scripts/ca_certs_setup.sh ...."
-           /scripts/ca_certs_setup.sh
-        fi
+        echo "[INFO] Stack registry URL = $OUTPUTS_STACK_IMAGE_REGISTRY_URL"
 
+        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+        # So lowercase the image name if it has any upper case characters.
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
            exit $retVal
         fi
 
-        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
+        # Kickoff appsody build
         cd /workspace/$gitsource
-        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker"
-        #echo "Copying the generated app-deploy.yaml file from input to the output to pass the file to the next task when this task is used in deploy pipeline"
-        #cp app-deploy.yaml $(outputs.resources.git-source.path)
+        echo "[INFO] Running appsody build..."
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "--format=docker" --stack-registry "$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+        if [ $? != 0 ]; then
+            echo "[ERROR] Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
+            exit 1
+        fi
+        echo "[INFO] Completed appsody build."
     env:
     - name: gitsource
       value: git-source
@@ -78,6 +119,8 @@ spec:
     - mountPath: /var/lib/containers
       name: varlibcontainers
   - name: enforce-stack-policy-post-build
+    # This step enforces the post build stack governance policy configured in the Kabanero CR.
+    # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
@@ -86,13 +129,15 @@ spec:
       - -c
       - |
         /scripts/enforce_stack_policy.sh post-build
+        
     env:
     - name: gitsource
       value: git-source
     volumeMounts:
     - mountPath: /var/lib/containers
-      name: varlibcontainers
+      name: varlibcontainers   
   - name: push
+    # Push the image built in the build step to the specified image registry.  Optionally sign the image.
     securityContext:
       privileged: true
     image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
@@ -100,52 +145,55 @@ spec:
     args:
       - -c
       - |
-
+        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+        # So lowercase the image name if it has any upper case characters.
         OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
-           echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
            exit $retVal
         fi
-        echo "OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        
+        echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
-        #executing the insecure_registry_setup.sh script if exists, to add internal registry to insecure registry list
-        if [ -f "/scripts/insecure_registry_setup.sh" ]; then
-           echo "Running the script /scripts/insecure_registry_setup.sh ...."
-           /scripts/insecure_registry_setup.sh
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+           exit $retVal
         fi
 
-        #executing the ca_certs_setup.sh script if exists, to add additional trusted ca certs to /etc/docker/certs.d/<hosname>/ca.crt
-        if [ -f "/scripts/ca_certs_setup.sh" ]; then
-           echo "Running the script /scripts/ca_certs_setup.sh ...."
-           /scripts/ca_certs_setup.sh
-        fi
-
-        #if /image-signing-config/registry does not exist, a container image signature is not generated.
+        # Check if /image-signing-config/registry is setup to enable container image signature generation.
         if [ -f "/image-signing-config/registry" ]; then
-           REPO=`cat /image-signing-config/registry`
+            REPO=`cat /image-signing-config/registry`
         fi
         if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-           echo "Signature will not be generated. The signed image repository is not set or does not match the target registry."
+           echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
+           echo "[INFO] Pushing image to registry..."
            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
         else
-           echo "Signature will be generated."
+           echo "[INFO] Signature will be generated."
            #importing RSA secret key, then extract an e-mail address from it.
            gpg --import /image-signing-config/secret.asc
            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
+           echo "[INFO] Pushing image to registry..."
            skopeo copy --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
            RESULT=$?
            if [ $RESULT -ne 0 ]; then
-              echo "sign-image failed. exit code : $RESULT"
+              echo "[ERROR] sign-image failed. exit code : $RESULT"
               exit $RESULT
            fi
            if [[ -z `cat /image-signing-config/sigstore` ]]; then
-              echo "Signature is stored in the image registry"
+              echo "[INFO] Signature is stored in the image registry"
            else
               #invoking scripts for processing a generated signature.
-              echo "A signature is stored by scripts."
-              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
+              echo "[INFO] A signature is stored by scripts."
+              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "[INFO] Processing $f"; $f;  done
            fi
         fi
     env:
@@ -159,23 +207,23 @@ spec:
     - mountPath: /etc/containers/registries.d
       name: registries-d
     - mountPath: /sigstore-script
-      name: sigstore-script
+      name: sigstore-script    
   - name: promote
     securityContext:
       privileged: true
-    image: quay.io/redhat-developer/gitops-cli:latest
+    image: quay.io/redhat-developer/gitops-cli@sha256:f5f47bb0cf1dcd081c29e7017e4511441cab3379d06ef587ba6e539f005945dd
     command: ["/bin/bash"]
     args:
       - -c
       - |
         echo " "
-        echo "Gitops repo url = $GITOPS_REPOSITORY_URL"
-        echo "Gitops repo type = $GITOPS_REPOSITORY_TYPE"
-        echo "Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
-        echo "Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
-        echo " "
+        echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
 
         if [[ ! -z "$GITOPS_REPOSITORY_URL" ]]; then
+          echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
+          echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
+          echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+          echo " "
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -229,7 +277,7 @@ spec:
           cat $HOME/.gitconfig
 
           echo " "
-          echo "service name = $(inputs.params.git-project)"
+          echo "[INFO] service name = $(inputs.params.git-project)"
           if [[ -z "$(inputs.params.git-project)" ]]; then
             echo "[ERROR] Unable to retrieve service name from input params.  Unable to promote."
             exit 1
@@ -242,7 +290,7 @@ spec:
           fi
 
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug  --repository-type GITOPS_REPOSITORY_TYPE
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug --repository-type GITOPS_REPOSITORY_TYPE
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."

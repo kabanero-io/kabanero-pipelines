@@ -1,3 +1,4 @@
+# This pipeline will call a task to deploy a service using the kustomization.yaml in the gitops repo.
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
