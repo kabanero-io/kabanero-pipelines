@@ -28,17 +28,6 @@ spec:
     type: string
   - name: docker-imagetag
     type: string
-     else
-              #invoking scripts for processing a generated signature.
-              echo "A signature is stored by scripts."
-              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "Processing $f"; $f;  done
-           fi
-        fi
-    env:
-    - name: gitsource
-      value: git-source
-    volumeMounts:
-    - mountPath: /var/li
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
