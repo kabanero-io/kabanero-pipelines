@@ -85,7 +85,7 @@ spec:
     # Push the image built in the build step to the specified image registry.  Optionally sign the image.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
+    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
     command: ["/bin/bash"]
     args:
       - -c
@@ -146,7 +146,7 @@ spec:
     - mountPath: /var/lib/containers
       name: varlibcontainers
   - name: deploy-image
-    image: kabanero/kabanero-utils@sha256:8020573657ed1b80e2b872a37719d6398ee78219296fe6180733f54425f7bd6a
+    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
     command: ['/bin/sh']
     args:
       - -c
