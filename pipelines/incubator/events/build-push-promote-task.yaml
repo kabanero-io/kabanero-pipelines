@@ -4,7 +4,7 @@
 # and push the generated application image to the specified image registry. The image can be optionally
 # signed before it's pushed to the registry. 
 #
-# If the webhooks-tekton-gitops-repository-url param is configured, it will also promote the service to the specified gitops repo.
+# If the gitops-map configmap is configured, it will also promote the service to the specified gitops repo.
 # If gitops is enabled, a secret called gitops-token also needs to be configured with the token for the gitops repo.
 #
 # Insecure registy access or secure connection to the image registries can be setup by configuring the 
@@ -245,11 +245,11 @@ spec:
               fi
           done
 
-          echo "$KUSTOMIZATION_YAML contents - "
+          echo "[INFO] $KUSTOMIZATION_YAML contents - "
           cat $KUSTOMIZATION_YAML
           
           echo " "
-          echo "List of files under config directory being promoted - "
+          echo "[INFO] List of files under config directory being promoted - "
           ls
 
           # Genreate the .gitconfig file used by service promote
@@ -293,6 +293,7 @@ spec:
             exit 1
           fi
 
+          echo "[INFO] Promotion to gitops repo complete."
           echo " "
         else
           echo "[INFO] No gitops repo configured.  service promote not executed."
