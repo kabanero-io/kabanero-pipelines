@@ -198,6 +198,7 @@ spec:
     - mountPath: /sigstore-script
       name: sigstore-script    
   - name: promote
+  # Promote the service to the configured gitops repository using the `services promote` CLI
     securityContext:
       privileged: true
     image: quay.io/redhat-developer/gitops-cli@sha256:f5f47bb0cf1dcd081c29e7017e4511441cab3379d06ef587ba6e539f005945dd
@@ -279,7 +280,7 @@ spec:
           fi
 
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug --repository-type GITOPS_REPOSITORY_TYPE
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug --repository-type $(GITOPS_REPOSITORY_TYPE)
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."

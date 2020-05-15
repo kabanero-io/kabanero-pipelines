@@ -31,14 +31,6 @@ spec:
     type: string
   - name: git-project
     type: string
-  - name: webhooks-tekton-gitops-repository-url
-    type: string
-  - name: webhooks-tekton-gitops-repository-type
-    type: string
-  - name: webhooks-tekton-gitops-commit-username
-    type: string
-  - name: webhooks-tekton-gitops-commit-email
-    type: string
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -212,7 +204,7 @@ spec:
     - mountPath: /sigstore-script
       name: sigstore-script
   - name: promote
-    # Promote the service to the gitops repo configured in the gitops-map config map.
+    # Promote the service to the configured gitops repository using the `services promote` CLI
     securityContext:
       privileged: true
     image: quay.io/redhat-developer/gitops-cli@sha256:f5f47bb0cf1dcd081c29e7017e4511441cab3379d06ef587ba6e539f005945dd
@@ -220,12 +212,14 @@ spec:
     args:
       - -c
       - |
-        if [[ "$(params.webhooks-tekton-gitops-repository-url)" != "not_configured" ]]; then
+        echo " "
+        echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
 
-          echo "[INFO] Gitops repo url = $(params.webhooks-tekton-gitops-repository-url)"
-          echo "[INFO] Gitops repo type = $(params.webhooks-tekton-gitops-repository-type)"
-          echo "[INFO] Gitops repo commit name = $(params.webhooks-tekton-gitops-commit-username)"
-          echo "[INFO] Gitops repo commit email = $(params.webhooks-tekton-gitops-commit-email)"
+        if [[ ! -z "$GITOPS_REPOSITORY_URL" ]]; then
+          echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
+          echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
+          echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+          echo " "
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
@@ -251,21 +245,31 @@ spec:
               fi
           done
 
-          echo "[INFO] $KUSTOMIZATION_YAML contents - "
+          echo "$KUSTOMIZATION_YAML contents - "
           cat $KUSTOMIZATION_YAML
           
           echo " "
-          echo "[INFO] List of files under config directory being promoted - "
+          echo "List of files under config directory being promoted - "
           ls
 
-         # Genreate the .gitconfig file used by service promote
+          # Genreate the .gitconfig file used by service promote
           cd $HOME
           GITCONFIG=".gitconfig"
           touch $GITCONFIG
 
+          if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
+            echo "[WARN] gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
+            GITOPS_COMMIT_USER_NAME="kabanero"
+          fi
+
+          if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
+            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
+          fi
+
           echo "[user]" >> $GITCONFIG
-          echo "  name = $(params.webhooks-tekton-gitops-commit-username)" >> $GITCONFIG
-          echo "  email = $(params.webhooks-tekton-gitops-commit-email)" >> $GITCONFIG
+          echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
+          echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
           cat $HOME/.gitconfig
 
           echo " "
@@ -275,37 +279,70 @@ spec:
             exit 1
           fi
 
-          # Promote the service
-          echo "[INFO] Promoting service to gitops repo... "
+          # Determine repo type 
+          if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
+            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+            GITOPS_REPOSITORY_TYPE="github"
+          fi
+
           gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(params.webhooks-tekton-gitops-repository-url) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type $(params.webhooks-tekton-gitops-repository-type)
+          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --debug --repository-type $(GITOPS_REPOSITORY_TYPE)
           
           if [ $? != 0 ]; then
             echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
             exit 1
           fi
 
-          echo "[INFO] Promotion to gitops repo complete."
+          echo " "
         else
           echo "[INFO] No gitops repo configured.  service promote not executed."
         fi
     env:
     - name: gitsource
       value: git-source
-    # Load the token from the gitops-token secret
     - name: GITHUB_TOKEN
       valueFrom:
         secretKeyRef:
           name: gitops-token
           key: password
           optional: true
+    # Load values from gitops-map config map
+    - name: GITOPS_REPOSITORY_URL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repository-url
+         optional: true
+    - name: GITOPS_REPOSITORY_TYPE
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-repository-type
+         optional: true
+    - name: GITOPS_COMMIT_USER_NAME
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-name
+         optional: true
+    - name: GITOPS_COMMIT_USER_EMAIL
+      valueFrom:
+        configMapKeyRef:
+         name: gitops-map
+         key: gitops-commit-user-email
+         optional: true
     volumeMounts:
     - mountPath: /var/lib/containers
       name: varlibcontainers
+    - name: gitops-map
+      mountPath: /config
   volumes:
   - name: varlibcontainers
     emptyDir: {}
-  # Config maps & secrets for image signing
+  - name: gitops-map
+    configMap:
+      name: gitops-map
+      optional: true
   - name: registries-d
     configMap:
       name: registries-d
