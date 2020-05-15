@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#28"
+VARIATION="Variation#48"
 
 # Source logging constants and functions
 . ./log.sh
