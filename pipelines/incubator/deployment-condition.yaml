@@ -13,7 +13,7 @@ spec:
     description: "The Git event ref"
   check:
     name: deployment-condition
-    image: alpine
+    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
     command: ["/bin/sh"]
     args:
       - -ce
