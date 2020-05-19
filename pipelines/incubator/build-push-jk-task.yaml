@@ -52,13 +52,21 @@ spec:
         fi
 
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
-        # So lowercase the image name if it has any upper case characters.        
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
-           exit $retVal
+        # So lowercase the image name if it has any upper case characters.
+           echo "[INFO] Input resource docker-image.url=$(inputs.resources.docker-image.url)"
+           echo "[INFO] Input param docker-imagename=$(inputs.params.docker-imagename)"
+           echo "[INFO] Input param docker-imagetag=$(inputs.params.docker-imagetag)"
+        if [[ (-z $(inputs.params.docker-imagename) ) || (-z $(inputs.params.docker-imagetag)) || (-z $(inputs.resources.docker-image.url))]]; then
+           echo "[ERROR] Either the input resource docker-image.url is empty or the incoming params 'docker-imagename' or 'docker-imagetag'are empty, please review the pipelinerun for the passing of the correct params values. Pipeline run aborted "
+           exit 1
+        else
+           OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+           retVal=$?
+           if [ $retVal -ne 0 ]
+           then
+              echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+              exit $retVal
+           fi
         fi
         
         OUTPUTS_STACK_IMAGE_REGISTRY_URL=$( /scripts/stack_registry_url_setup.sh )
@@ -98,12 +106,20 @@ spec:
       - |
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
         # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
-           exit $retVal
+           echo "[INFO] Input resource docker-image.url=$(inputs.resources.docker-image.url)"
+           echo "[INFO] Input param docker-imagename=$(inputs.params.docker-imagename)"
+           echo "[INFO] Input param docker-imagetag=$(inputs.params.docker-imagetag)"
+        if [[ (-z $(inputs.params.docker-imagename) ) || (-z $(inputs.params.docker-imagetag)) || (-z $(inputs.resources.docker-image.url))]]; then
+           echo "[ERROR] Either the input resource docker-image.url is empty or the incoming params 'docker-imagename' or 'docker-imagetag'are empty, please review the pipelinerun for the passing of the correct params values. Pipeline run aborted "
+           exit 1
+        else
+           OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+           retVal=$?
+           if [ $retVal -ne 0 ]
+           then
+              echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+              exit $retVal
+           fi
         fi
         echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 

@@ -47,12 +47,20 @@ spec:
         - |
           # Docker does not support upper case characters in the image name.  Github does not have this restriction.
           # So lowercase the image name if it has any upper case characters.
-          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
-          retVal=$?
-          if [ $retVal -ne 0 ]
-          then
-             echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
-             exit $retVal
+             echo "[INFO] Input resource docker-image.url=$(inputs.resources.docker-image.url)"
+             echo "[INFO] Input param docker-imagename=$(inputs.params.docker-imagename)"
+             echo "[INFO] Input param docker-imagetag=$(inputs.params.docker-imagetag)"
+          if [[ (-z $(inputs.params.docker-imagename) ) || (-z $(inputs.params.docker-imagetag)) || (-z $(inputs.resources.docker-image.url))]]; then
+             echo "[ERROR] Either the input resource docker-image.url is empty or the incoming params 'docker-imagename' or 'docker-imagetag'are empty, please review the pipelinerun for the passing of the correct params values. Pipeline run aborted "
+             exit 1
+          else
+             OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+             retVal=$?
+             if [ $retVal -ne 0 ]
+             then
+                echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+                exit $retVal
+             fi
           fi
           echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
  
@@ -104,49 +112,58 @@ spec:
           # For now we needed to remove the code, because we moved out the script from utilities task to 'kabanero-utils' image
           # and this image uses some other image.
           ########
-          docker_registry_url=$(inputs.resources.docker-image.url)
-          docker_imagename=$(inputs.params.docker-imagename)
-          docker_imagetag=$(inputs.params.docker-imagetag)
-          app_deploy_filename="app-deploy.yaml"
-
-          if [[ -z "$docker_registry_url" ]]; then
-             echo "Error : The input parameter docker-image resource url to the script is empty, please provide it and try again(Possible value example: docker.io/<docker-userid>, image-registry.openshift-image-registry.svc:5000/kabanero)"
+             echo "[INFO] Input resource docker-image.url=$(inputs.resources.docker-image.url)"
+             echo "[INFO] Input param docker-imagename=$(inputs.params.docker-imagename)"
+             echo "[INFO] Input param docker-imagetag=$(inputs.params.docker-imagetag)"
+          if [[ (-z $(inputs.params.docker-imagename) ) || (-z $(inputs.params.docker-imagetag)) || (-z $(inputs.resources.docker-image.url))]]; then
+             echo "[ERROR] Either the input resource docker-image.url is empty or the incoming params 'docker-imagename' or 'docker-imagetag'are empty, please review the pipelinerun for the passing of the correct params values. Pipeline run aborted "
              exit 1
           else
-             if [[ -z "$docker_imagename"  ]]; then
-                if [[ -f /workspace/$gitsource/$app_deploy_filename ]];then
-                   cd /workspace/$gitsource
-                   APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
+             docker_registry_url=$(inputs.resources.docker-image.url)
+             docker_imagename=$(inputs.params.docker-imagename)
+             docker_imagetag=$(inputs.params.docker-imagetag)
+             app_deploy_filename="app-deploy.yaml"
 
-                   docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
-                else
-                   echo "Error : docker_imagename is empty and the $app_deploy_filename is not present in the github appsody project.
-                   Either provide the value for the variable or make the $app_deploy_filename file available in the github appsody project
-                   Case 1: If you are running a pipeline where you do not want the docker imagename to be coming from 'app-deploy.yaml' ,
-                           you would need to provide the imagename from the Trigger file.
-                           (Hint: Check the pipeline trigger file passing the input parameter 'docker_imagename' to the pipelines)
-                   Case 2: If your requirement is to pull the imagename from the  'app-deploy.yaml' file variable 'name' ,
-                           then you need to make sure that you have the file available in the appsody project in github whose url you have provided as git-source to the pipeline"
-                   exit 1
-                fi
+             if [[ -z "$docker_registry_url" ]]; then
+                echo "Error : The input parameter docker-image resource url to the script is empty, please provide it and try again(Possible value example: docker.io/<docker-userid>, image-registry.openshift-image-registry.svc:5000/kabanero)"
+                exit 1
              else
-                docker_imagename_lowercase=$(echo $docker_imagename |  tr '[:upper:]' '[:lower:]')
+                if [[ -z "$docker_imagename"  ]]; then
+                   if [[ -f /workspace/$gitsource/$app_deploy_filename ]];then
+                      cd /workspace/$gitsource
+                      APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
+
+                      docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
+                   else
+                      echo "Error : docker_imagename is empty and the $app_deploy_filename is not present in the github appsody project.
+                      Either provide the value for the variable or make the $app_deploy_filename file available in the github appsody project
+                      Case 1: If you are running a pipeline where you do not want the docker imagename to be coming from 'app-deploy.yaml' ,
+                              you would need to provide the imagename from the Trigger file.
+                              (Hint: Check the pipeline trigger file passing the input parameter 'docker_imagename' to the pipelines)
+                      Case 2: If your requirement is to pull the imagename from the  'app-deploy.yaml' file variable 'name' ,
+                              then you need to make sure that you have the file available in the appsody project in github whose url you have provided as git-source to the pipeline"
+                      exit 1
+                   fi
+                else
+                   docker_imagename_lowercase=$(echo $docker_imagename |  tr '[:upper:]' '[:lower:]')
+                fi
              fi
-          fi
 
-          #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
-          #Check if trailing '/' exists for docker registry url, it not add it.
-          if [[ $docker_registry_url != */ ]];then
-                docker_registry_url=$docker_registry_url/
-          fi
+             #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
+             #Check if trailing '/' exists for docker registry url, it not add it.
+             if [[ $docker_registry_url != */ ]];then
+                   docker_registry_url=$docker_registry_url/
+             fi
 
-          #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
-          if [[ ! -z "$docker_imagetag" ]]; then
-              DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
-          else
-              DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
+             #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
+             if [[ ! -z "$docker_imagetag" ]]; then
+                 DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
+             else
+                 DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
+             fi
+             INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$DOCKER_IMAGE_URL
+          
           fi
-          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$DOCKER_IMAGE_URL
           #######
           
           echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
