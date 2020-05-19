@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-VARIATION="Variation#21"
+VARIATION="Variation#41"
 
 # Source logging constants and functions
 . ./log.sh
@@ -826,10 +826,7 @@ log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
 ./mock.sh ./enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
-if [ "$RC" != "0" ]; then
-   log $ERROR "[$VARIATION]: Failed."
-   exit 1           
-fi   
+
 grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_stack_policy.out 
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: stackPolicy is valid."         
@@ -837,47 +834,15 @@ else
    log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
    exit 1
 fi
-rm enforce_stack_policy.out
 
-######################################
-# Post-build stackPolicy enforcement #
-######################################
-log $INFO "[$VARIATION]: Test post-build stackPolicy enforcement"
-./mock.sh ./enforce_stack_policy.sh post-build > enforce_stack_policy.out 2>&1
-RC=$?
-cat enforce_stack_policy.out
-if [ "$RC" != "0" ]; then
-   log $ERROR "[$VARIATION]: Failed."
-   exit 1           
-fi   
-grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_stack_policy.out 
-if [ "$?" == "0" ]; then
-   log $INFO "[$VARIATION]: stackPolicy is valid."          
+if [ "$RC" == "1" ]; then
+   log $INFO "[$VARIATION]: stackPolicy correctly failed."       
 else
-   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
+   log $ERROR "[$VARIATION]: stackPolicy incorrectly passed."
    exit 1
 fi
-rm enforce_stack_policy.out
 
-##################################
-# Deploy stackPolicy enforcement #
-##################################
-log $INFO "[$VARIATION]: Test pre-deploy stackPolicy enforcement"
-./mock.sh ./enforce_deploy_stack_policy.sh > enforce_deploy_stack_policy.out 2>&1
-RC=$?
-cat enforce_deploy_stack_policy.out
-if [ "$RC" != "0" ]; then
-   log $ERROR "[$VARIATION]: Failed."
-   exit 1           
-fi   
-grep -q "Enforcing 'stackPolicy' of 'strictDigest'" enforce_deploy_stack_policy.out 
-if [ "$?" == "0" ]; then
-   log $INFO "[$VARIATION]: stackPolicy is valid."         
-else
-   log $ERROR "[$VARIATION]: Failed. Expected stackPolicy not found."
-   exit 1
-fi
-rm enforce_deploy_stack_policy.out
+rm enforce_stack_policy.out
 
 # Cleanup 
 rm .appsody-config.yaml

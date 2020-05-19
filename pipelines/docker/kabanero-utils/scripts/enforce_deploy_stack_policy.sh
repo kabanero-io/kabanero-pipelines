@@ -45,9 +45,18 @@
               echo "$WARNING The image label 'dev.appsody.stack.digest' has not been set for image: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE, unable to enforce stackPolicy"
               exit 0  
            fi
-           # Retrieve all the digests of the stack
-           CLUSTER_STACK_DIGESTS=$( kubectl get stack $STACK_NAME -o json | jq -r '.status.versions[].images[].digest.activation?' )
-        
+           
+           # Filter out inerror and inactive stacks, allow only active  
+           ACTIVE_STACK_VERSIONS=$(kubectl get stack $STACK_NAME  -o json | jq -r '.status.versions[] | .status + "," + .version + "," + .images[0].digest.activation' )
+           for A_VERSION in ${ACTIVE_STACK_VERSIONS}
+              do
+                 STATUS="$(echo $A_VERSION | cut -d',' -f1 )"
+                 if [ "$STATUS" == "active" ]; then
+                    DIGEST="$(echo $A_VERSION | cut -d',' -f3 )" 
+                    CLUSTER_STACK_DIGESTS+=$DIGEST" "
+                 fi
+              done
+                   
            for DIGEST in ${CLUSTER_STACK_DIGESTS}; do            
               # If the stack version starts with same pattern, we are done
               if [[ "sha256:$DIGEST" == "$STACK_DIGEST" ]]; then
