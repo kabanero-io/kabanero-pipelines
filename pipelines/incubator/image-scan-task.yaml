@@ -54,11 +54,11 @@ spec:
              echo "[ERROR] Either the input resource docker-image.url is empty or the incoming params 'docker-imagename' and 'docker-imagetag' are empty, please review the pipelinerun for the passing of the correct params values. Pipeline run aborted "
              exit 1
           else
-             OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+             INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
              retVal=$?
              if [ $retVal -ne 0 ]
              then
-                echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+                echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
                 exit $retVal
              fi
           fi
