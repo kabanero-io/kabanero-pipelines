@@ -39,6 +39,8 @@ spec:
     value: $(body.head_commit.id)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
@@ -104,6 +106,11 @@ spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
         name: deploy-kustomize-pl
+      params:
+      - name: event-type
+        value: $(params.event-type)
+      - name: event-ref
+        value: $(params.event-ref)
       resources:
       - name: git-source
         resourceRef:
