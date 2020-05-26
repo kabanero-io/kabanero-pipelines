@@ -201,7 +201,7 @@ spec:
   # Promote the service to the configured gitops repository using the `services promote` CLI
     securityContext:
       privileged: true
-    image: quay.io/redhat-developer/gitops-cli@sha256:f5f47bb0cf1dcd081c29e7017e4511441cab3379d06ef587ba6e539f005945dd
+    image: quay.io/redhat-developer/gitops-cli@sha256:59c2b11e6ba5836505e7a91b932a6b2c6ceb44781e523c4f066de4015fde3209
     command: ["/bin/bash"]
     args:
       - -c

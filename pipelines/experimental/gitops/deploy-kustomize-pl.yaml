@@ -4,11 +4,25 @@ kind: Pipeline
 metadata:
   name: deploy-kustomize-pl
 spec:
+  params:
+  - name: event-type
+    type: string
+    description: "The event type"
+  - name: event-ref
+    type: string
+    description: "The event ref"
   resources:
     - name: git-source
       type: git
   tasks:
     - name: deploy-kustomize-task
+      conditions:
+      - conditionRef: deployment-condition
+        params:
+        - name: event-type
+          value: $(params.event-type)
+        - name: event-ref
+          value: $(params.event-ref)
       taskRef:
         name: deploy-kustomize-task
       resources:

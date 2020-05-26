@@ -16,7 +16,7 @@ spec:
         
         # First check if a dryrun is successful
         echo "[INFO] Starting dry run..."
-        kubectl apply -k /workspace/git-source/environments --dry-run=server
+        kubectl apply -k /workspace/git-source/environments --dry-run=client
         
         if [ $? != 0 ]; then
           echo "[ERROR] Dry run of deployment was unsuccessful. Please review errors above for more details. Service will not be deployed."
