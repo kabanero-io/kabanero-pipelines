@@ -32,7 +32,7 @@ spec:
     # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
+    image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
     command: ["/bin/bash"]
     args:
       - -c
@@ -85,7 +85,7 @@ spec:
     # Push the image built in the build step to the specified image registry.  Optionally sign the image.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
+    image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
     command: ["/bin/bash"]
     args:
       - -c
@@ -146,7 +146,7 @@ spec:
     - mountPath: /var/lib/containers
       name: varlibcontainers
   - name: deploy-image
-    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
+    image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
     command: ['/bin/sh']
     args:
       - -c

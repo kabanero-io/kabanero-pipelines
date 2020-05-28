@@ -15,7 +15,7 @@ spec:
     description: "Determine if there should be a local deploy"
   check:
     name: deployment-condition
-    image: kabanero/kabanero-utils@sha256:f9ceeb7d2ba94c2216d430e7fb0b16eb6e36da41de79222f47aaac82dfd024da
+    image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
     command: ["/bin/sh"]
     args:
       - -ce
