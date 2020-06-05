@@ -28,6 +28,10 @@ spec:
     type: string
   - name: docker-imagetag
     type: string
+  - name: event-type
+    type: string
+  - name: event-ref
+    type: string
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -134,56 +138,60 @@ spec:
     args:
       - -c
       - |
-        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
-        # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
-           exit $retVal
-        fi
-        
-        echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+        if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
+          # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+          # So lowercase the image name if it has any upper case characters.
+          OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+            echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+            exit $retVal
+          fi
+          
+          echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
 
-        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
-        # by adding it to the trust store based on OpenShift cluster resource configuration.
-        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
-        /scripts/image_registry_access_setup.sh
-        retVal=$?
-        if [ $retVal -ne 0 ]
-        then
-           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
-           exit $retVal
-        fi
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+            echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+            exit $retVal
+          fi
 
-        # Check if /image-signing-config/registry is setup to enable container image signature generation.
-        if [ -f "/image-signing-config/registry" ]; then
-            REPO=`cat /image-signing-config/registry`
-        fi
-        if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
-           echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
-           echo "[INFO] Pushing image to registry..."
-           buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+          # Check if /image-signing-config/registry is setup to enable container image signature generation.
+          if [ -f "/image-signing-config/registry" ]; then
+              REPO=`cat /image-signing-config/registry`
+          fi
+          if [[ -z $REPO ]] || [[ $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE != $REPO/* ]]; then
+            echo "[INFO] Signature will not be generated. The signed image repository is not set or does not match the target registry."
+            echo "[INFO] Pushing image to registry..."
+            buildah push "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+          else
+            echo "[INFO] Signature will be generated."
+            #importing RSA secret key, then extract an e-mail address from it.
+            gpg --import /image-signing-config/secret.asc
+            SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
+            echo "[INFO] Pushing image to registry..."
+            skopeo copy --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+            RESULT=$?
+            if [ $RESULT -ne 0 ]; then
+                echo "[ERROR] sign-image failed. exit code : $RESULT"
+                exit $RESULT
+            fi
+            if [[ -z `cat /image-signing-config/sigstore` ]]; then
+                echo "[INFO] Signature is stored in the image registry"
+            else
+                #invoking scripts for processing a generated signature.
+                echo "[INFO] A signature is stored by scripts."
+                for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "[INFO] Processing $f"; $f;  done
+            fi
+          fi
         else
-           echo "[INFO] Signature will be generated."
-           #importing RSA secret key, then extract an e-mail address from it.
-           gpg --import /image-signing-config/secret.asc
-           SIGNBY=`gpg --list-keys|sed -n -e "/.*<.*>.*/p"|sed -e "s/^.*<\(.*\)>.*$/\1/"`
-           echo "[INFO] Pushing image to registry..."
-           skopeo copy --remove-signatures --sign-by $SIGNBY "containers-storage:$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" "docker://$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
-           RESULT=$?
-           if [ $RESULT -ne 0 ]; then
-              echo "[ERROR] sign-image failed. exit code : $RESULT"
-              exit $RESULT
-           fi
-           if [[ -z `cat /image-signing-config/sigstore` ]]; then
-              echo "[INFO] Signature is stored in the image registry"
-           else
-              #invoking scripts for processing a generated signature.
-              echo "[INFO] A signature is stored by scripts."
-              for f in /sigstore-script/*; do [ -f "$f" ] || break; echo "[INFO] Processing $f"; $f;  done
-           fi
+          echo "[INFO] Skipping push to image registry as event is not a push to master / PR merge."
         fi
     env:
     - name: gitsource
@@ -206,90 +214,94 @@ spec:
     args:
       - -c
       - |
-        echo " "
-        echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
-
-        if [[ ! -z "$GITOPS_REPOSITORY_URL" ]]; then
-          echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
-          echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
-          echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+        if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then        
           echo " "
+          echo "[INFO] Gitops repo url = $GITOPS_REPOSITORY_URL"
 
-          if [ -z "$GITHUB_TOKEN" ]; then
-            echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
-            exit 1
+          if [[ ! -z "$GITOPS_REPOSITORY_URL" ]]; then
+            echo "[INFO] Gitops repo type = $GITOPS_REPOSITORY_TYPE"
+            echo "[INFO] Gitops repo commit name = $GITOPS_COMMIT_USER_NAME"
+            echo "[INFO] Gitops repo commit email = $GITOPS_COMMIT_USER_EMAIL"
+            echo " "
+
+            if [ -z "$GITHUB_TOKEN" ]; then
+              echo "[ERROR] Secret 'gitops-token' with the token to access gitops repo was not configured. Please configure secret and try again."
+              exit 1
+            fi
+
+            # Move the app-deploy.yaml to the /config folder of the gitops repo
+            cd /workspace/$gitsource
+            mkdir config
+            mv app-deploy.yaml config
+
+            # Generate a kustomize.yaml file under config with list of resources
+            cd config 
+            KUSTOMIZATION_YAML="kustomization.yaml"
+            touch $KUSTOMIZATION_YAML
+            echo "---" >> $KUSTOMIZATION_YAML
+            echo "resources: " >> $KUSTOMIZATION_YAML
+
+            for asset_name in $(ls)
+            do
+                if [ $asset_name != $KUSTOMIZATION_YAML ]; then
+                  echo "  - $asset_name" >> $KUSTOMIZATION_YAML
+                fi
+            done
+
+            echo "$KUSTOMIZATION_YAML contents - "
+            cat $KUSTOMIZATION_YAML
+            
+            echo " "
+            echo "List of files under config directory being promoted - "
+            ls
+
+            # Genreate the .gitconfig file used by service promote
+            cd $HOME
+            GITCONFIG=".gitconfig"
+            touch $GITCONFIG
+
+            if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
+              echo "[WARN] gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
+              GITOPS_COMMIT_USER_NAME="kabanero"
+            fi
+
+            if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
+              echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+              GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
+            fi
+
+            echo "[user]" >> $GITCONFIG
+            echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
+            echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
+            cat $HOME/.gitconfig
+
+            echo " "
+            echo "[INFO] service name = $(inputs.params.git-project)"
+            if [[ -z "$(inputs.params.git-project)" ]]; then
+              echo "[ERROR] Unable to retrieve service name from input params.  Unable to promote."
+              exit 1
+            fi
+
+            # Determine repo type 
+            if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
+              echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
+              GITOPS_REPOSITORY_TYPE="github"
+            fi
+
+            gitCommit=$(git rev-parse --short HEAD)
+            services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type $(GITOPS_REPOSITORY_TYPE)
+            
+            if [ $? != 0 ]; then
+              echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
+              exit 1
+            fi
+
+            echo " "
+          else
+            echo "[INFO] No gitops repo configured.  service promote not executed."
           fi
-
-          # Move the app-deploy.yaml to the /config folder of the gitops repo
-          cd /workspace/$gitsource
-          mkdir config
-          mv app-deploy.yaml config
-
-          # Generate a kustomize.yaml file under config with list of resources
-          cd config 
-          KUSTOMIZATION_YAML="kustomization.yaml"
-          touch $KUSTOMIZATION_YAML
-          echo "---" >> $KUSTOMIZATION_YAML
-          echo "resources: " >> $KUSTOMIZATION_YAML
-
-          for asset_name in $(ls)
-          do
-              if [ $asset_name != $KUSTOMIZATION_YAML ]; then
-                echo "  - $asset_name" >> $KUSTOMIZATION_YAML
-              fi
-          done
-
-          echo "$KUSTOMIZATION_YAML contents - "
-          cat $KUSTOMIZATION_YAML
-          
-          echo " "
-          echo "List of files under config directory being promoted - "
-          ls
-
-          # Genreate the .gitconfig file used by service promote
-          cd $HOME
-          GITCONFIG=".gitconfig"
-          touch $GITCONFIG
-
-          if [ -z "$GITOPS_COMMIT_USER_NAME" ]; then
-            echo "[WARN] gitops-commit-user-name not configured in the gitops-map config map.  Using a default value of kabanero."
-            GITOPS_COMMIT_USER_NAME="kabanero"
-          fi
-
-          if [ -z "$GITOPS_COMMIT_USER_EMAIL" ]; then
-            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
-            GITOPS_COMMIT_USER_EMAIL="functional-id@kabanero.io"
-          fi
-
-          echo "[user]" >> $GITCONFIG
-          echo "  name = $GITOPS_COMMIT_USER_NAME" >> $GITCONFIG
-          echo "  email = $GITOPS_COMMIT_USER_EMAIL" >> $GITCONFIG
-          cat $HOME/.gitconfig
-
-          echo " "
-          echo "[INFO] service name = $(inputs.params.git-project)"
-          if [[ -z "$(inputs.params.git-project)" ]]; then
-            echo "[ERROR] Unable to retrieve service name from input params.  Unable to promote."
-            exit 1
-          fi
-
-          # Determine repo type 
-          if [ -z "$GITOPS_REPOSITORY_TYPE" ]; then
-            echo "[WARN] gitops-commit-user-email not configured in the gitops-map config map.  Using a default value of functional-id@kabanero.io."
-            GITOPS_REPOSITORY_TYPE="github"
-          fi
-
-          gitCommit=$(git rev-parse --short HEAD)
-          services promote --from /workspace/$gitsource --to $(GITOPS_REPOSITORY_URL) --service $(inputs.params.git-project) --commit-message "Publish $(inputs.params.git-project) commit $gitCommit" --repository-type $(GITOPS_REPOSITORY_TYPE)
-          
-          if [ $? != 0 ]; then
-            echo "[ERROR] Promote to gitops repo failed.  Please review logs above."
-            exit 1
-          fi
-
-          echo " "
         else
-          echo "[INFO] No gitops repo configured.  service promote not executed."
+          echo "[INFO] Skipping service promote as event is not a push to master / PR merge."
         fi
     env:
     - name: gitsource

@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: deploy-kustomize-task
+  name: deploy-env-task
 spec:
   resources:
     inputs:

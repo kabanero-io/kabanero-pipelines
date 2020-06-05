@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: deploy-kustomize-pl
+  name: deploy-env-pl
 spec:
   params:
   - name: event-type
@@ -15,7 +15,7 @@ spec:
     - name: git-source
       type: git
   tasks:
-    - name: deploy-kustomize-task
+    - name: deploy-env-task
       conditions:
       - conditionRef: deployment-condition
         params:
@@ -24,7 +24,7 @@ spec:
         - name: event-ref
           value: $(params.event-ref)
       taskRef:
-        name: deploy-kustomize-task
+        name: deploy-env-task
       resources:
         inputs:
         - name: git-source

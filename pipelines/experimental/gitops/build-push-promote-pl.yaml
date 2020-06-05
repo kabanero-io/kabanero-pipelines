@@ -10,6 +10,12 @@ spec:
       type: string
     - name: docker-imagetag
       type: string
+    - name: event-type
+      type: string
+      description: "The event type"
+    - name: event-ref
+      type: string
+      description: "The event ref"
   resources:
     - name: git-source
       type: git
@@ -26,6 +32,10 @@ spec:
           value: "$(params.docker-imagename)"
         - name: docker-imagetag
           value: "$(params.docker-imagetag)"
+        - name: event-type
+          value: "$(params.event-type)"
+        - name: event-ref
+          value: "$(params.event-ref)"
       resources:
         inputs:
         - name: git-source
@@ -34,6 +44,13 @@ spec:
         - name: docker-image
           resource: docker-image
     - name: image-scan-task
+      conditions:
+      - conditionRef: image-scan-condition
+        params:
+        - name: event-type
+          value: $(params.event-type)
+        - name: event-ref
+          value: $(params.event-ref)
       taskRef:
         name: image-scan-task
       runAfter: [build-push-promote-task]

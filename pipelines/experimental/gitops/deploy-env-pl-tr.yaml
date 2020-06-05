@@ -1,7 +1,7 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: deploy-kustomize-pl-pullrequest-binding
+  name: deploy-env-pl-pullrequest-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -17,13 +17,15 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: deploy-kustomize-pl-push-binding
+  name: deploy-env-pl-push-binding
   namespace: tekton-pipelines
 spec:
   params:
@@ -47,7 +49,7 @@ spec:
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
-  name: deploy-kustomize-pl-template
+  name: deploy-env-pl-template
   namespace: tekton-pipelines
 spec:
   params:
@@ -95,7 +97,7 @@ spec:
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
-      generateName: deploy-kustomize-pl-run-
+      generateName: deploy-env-pl-run-
       namespace: $(params.webhooks-tekton-target-namespace)
       labels:
         webhooks.tekton.dev/gitServer: $(params.webhooks-tekton-git-server)
@@ -105,7 +107,7 @@ spec:
     spec:
       serviceAccountName: $(params.webhooks-tekton-service-account)
       pipelineRef:
-        name: deploy-kustomize-pl
+        name: deploy-env-pl
       params:
       - name: event-type
         value: $(params.event-type)
