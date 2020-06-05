@@ -59,7 +59,7 @@
            PATCHED=${STACK//$VERSION/$LATEST}
            sed -i -e "s|$STACK|$PATCHED|g" $APPSODY_CONFIG
            echo "$WARNING $APPSODY_CONFIG, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
-           echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolcy validation."
+           echo "$INFO The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and passes stackPolicy validation."
            exit 0
    
         }
