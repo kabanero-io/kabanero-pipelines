@@ -21,9 +21,9 @@ spec:
         echo "Event-type = $(params.event-type)"
         echo "Event-ref = $(params.event-ref)"
         if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
-          echo "Event type is a push to master.  Executing deploy-env-task."
+          echo "[INFO] Event type is a push to master.  Executing deploy-env-task."
           exit 0
         else
-          echo "Event type is not a push to master. Skipping deploy-env-task execution"
+          echo "[INFO] Event type is not a push to master. Skipping deploy-env-task execution"
           exit 1
         fi

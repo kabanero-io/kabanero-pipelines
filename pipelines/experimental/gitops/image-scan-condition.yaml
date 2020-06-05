@@ -21,9 +21,9 @@ spec:
         echo "Event-type = $(params.event-type)"
         echo "Event-ref = $(params.event-ref)"
         if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
-          echo "Event type is a push to master"
+          echo "[INFO] Event type is a push to master.  Execute the image-scan-task."
           exit 0
         else
-          echo "Event type is not a push to master. Skipping image-scan-task execution"
+          echo "[INFO] Event type is not a push to master. Skipping image-scan-task execution."
           exit 1
         fi
