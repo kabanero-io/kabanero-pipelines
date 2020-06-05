@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: deploy-env-task
+  name: deploy-gitops-task
 spec:
   resources:
     inputs:
