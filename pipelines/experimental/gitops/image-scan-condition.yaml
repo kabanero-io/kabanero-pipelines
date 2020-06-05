@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Condition
 metadata:
-  name: deployment-condition
+  name: image-scan-condition
 spec:
   params:
   - name: "event-type"
@@ -11,19 +11,19 @@ spec:
     type: string
     description: "The Git event ref"
   check:
-    name: deployment-condition
+    name: image-scan-condition
     image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
     command: ["/bin/sh"]
     args:
       - -ce
       - |
-        echo "Checking if deploy-gitops-task should execute..."
+        echo "Checking if image-scan-task should execute..."
         echo "Event-type = $(params.event-type)"
         echo "Event-ref = $(params.event-ref)"
         if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
-          echo "[INFO] Event type is a push to master.  Executing deploy-gitops-task."
+          echo "[INFO] Event type is a push to master.  Execute the image-scan-task."
           exit 0
         else
-          echo "[INFO] Event type is not a push to master. Skipping deploy-gitops-task execution"
+          echo "[INFO] Event type is not a push to master. Skipping image-scan-task execution."
           exit 1
         fi

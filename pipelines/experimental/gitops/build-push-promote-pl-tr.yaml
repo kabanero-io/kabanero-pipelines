@@ -17,6 +17,8 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
@@ -39,6 +41,8 @@ spec:
     value: $(body.head_commit.id)
   - name: event-type
     value: $(header.X-Github-Event)
+  - name: event-ref
+    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
@@ -50,6 +54,7 @@ metadata:
 spec:
   params:
   - name: event-ref
+    description: The Git event ref
     default: other
   - name: gitrevision
     description: The revision of your Git repository
@@ -121,6 +126,10 @@ spec:
         value: $(params.docker-imagetag)
       - name: git-project
         value: $(params.git-project)
+      - name: event-type
+        value: $(params.event-type)
+      - name: event-ref
+        value: $(params.event-ref)
       resources:
       - name: git-source
         resourceRef:
