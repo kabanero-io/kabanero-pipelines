@@ -17,7 +17,13 @@ spec:
     args:
       - -ce
       - |
-        echo "Checking if deploy step should execute..."
-        echo $(params.event-type)
-        echo $(params.event-ref)
-        [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]
+        echo "Checking if deploy-env-task should execute..."
+        echo "Event-type = $(params.event-type)"
+        echo "Event-ref = $(params.event-ref)"
+        if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
+          echo "Event type is a push to master.  Executing deploy-env-task."
+          exit 0
+        else
+          echo "Event type is not a push to master. Skipping deploy-env-task execution"
+          exit 1
+        fi
