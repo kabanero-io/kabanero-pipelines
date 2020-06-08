@@ -17,8 +17,6 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: event-type
     value: $(header.X-Github-Event)
-  - name: event-ref
-    value: $(body.ref)
   - name: webhooks-tekton-git-branch
     value: $(body.webhooks-tekton-git-branch)
 ---
