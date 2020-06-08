@@ -70,7 +70,7 @@ spec:
               PATCHED=${STACK//$VERSION/$LATEST}
               sed -i -e "s|$STACK|$PATCHED|g" /workspace/$GITSOURCE/$APPSODY_CONFIG
               echo "WARN: .appsody-config.yaml, stack: value patched from '$STACK' to '$PATCHED' according to stackPolicy setting of 'activeDigest'"
-              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and fails stackPolcy validation."
+              echo "INFO: The application stack, "$PROJECT/$STACK_NAME:$VERSION", in $APPSODY_CONFIG is active on this cluster and fails stackPolicy validation."
               exit 0
            fi
         }
