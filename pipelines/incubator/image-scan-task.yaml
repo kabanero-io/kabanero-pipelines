@@ -30,15 +30,15 @@ spec:
     default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
   - name: docker-imagename
     type: string
-    default: ""
+    default: "null"
   - name: docker-imagetag
     type: string
-    default: ""
+    default: "null"
   steps:
     - name: mount-image          
       securityContext:
         privileged: true
-      image: kabanero/kabanero-utils@sha256:12bd19bbdca1fcbab070c494e79d29f9668f3e0c58b2d2f2388b748d4eeca41c
+      image: kabanero/kabanero-utils@sha256:adc6f6dc4821ff83a76782e057c41a25c6017604d1fa7c7e2faf47c09b1845b1
 # Temporarily make copy of mounted image since the mounted image will be unmounted when the container for this task ends.
 # TODO: Determine another way to persist the mounted container image across containers
       command: ['/bin/bash']
@@ -47,7 +47,7 @@ spec:
         - |
           # Docker does not support upper case characters in the image name.  Github does not have this restriction.
           # So lowercase the image name if it has any upper case characters.
-          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
           retVal=$?
           if [ $retVal -ne 0 ]
           then
