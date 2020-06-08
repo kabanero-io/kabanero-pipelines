@@ -113,9 +113,9 @@ spec:
       - name: event-type
         value: $(params.event-type)
       - name: docker-imagename
-        value: ""
+        value: "null"
       - name: docker-imagetag
-        value: ""
+        value: "null"
       resources:
       - name: git-source
         resourceRef:
