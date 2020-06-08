@@ -30,10 +30,10 @@ spec:
     default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
   - name: docker-imagename
     type: string
-    default: ""
+    default: "null"
   - name: docker-imagetag
     type: string
-    default: ""
+    default: "null"
   steps:
     - name: mount-image          
       securityContext:
@@ -47,7 +47,7 @@ spec:
         - |
           # Docker does not support upper case characters in the image name.  Github does not have this restriction.
           # So lowercase the image name if it has any upper case characters.
-          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
           retVal=$?
           if [ $retVal -ne 0 ]
           then

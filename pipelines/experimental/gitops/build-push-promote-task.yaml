@@ -86,7 +86,7 @@ spec:
 
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
         # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(outputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
@@ -141,7 +141,7 @@ spec:
         if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
           # Docker does not support upper case characters in the image name.  Github does not have this restriction.
           # So lowercase the image name if it has any upper case characters.
-          OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(outputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+          OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(outputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
           retVal=$?
           if [ $retVal -ne 0 ]
           then

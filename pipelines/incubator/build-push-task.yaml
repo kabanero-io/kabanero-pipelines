@@ -26,10 +26,10 @@ spec:
   params:
   - name: docker-imagename
     type: string
-    default: ""
+    default: "null"
   - name: docker-imagetag
     type: string
-    default: ""
+    default: "null"
   steps:
   - name: enforce-stack-policy-pre-build
     # This step enforces the pre build stack governance policy configured in the Kabanero CR.
@@ -72,7 +72,7 @@ spec:
  
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
         # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
@@ -138,7 +138,7 @@ spec:
       - |
         # Docker does not support upper case characters in the image name.  Github does not have this restriction.
         # So lowercase the image name if it has any upper case characters.
-        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u $(inputs.resources.docker-image.url) -n $(inputs.params.docker-imagename) -t $(inputs.params.docker-imagetag) )
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
         retVal=$?
         if [ $retVal -ne 0 ]
         then
