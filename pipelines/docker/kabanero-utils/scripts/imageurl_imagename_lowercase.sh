@@ -76,20 +76,20 @@ if [[ -z "$docker_registry_url" ]]; then
    exit 1
 else
    if [[ ( -z "$docker_imagename") || ("$docker_imagename" == "null") ]]; then
+      #Trim the trailing forward slash('/') and then count no of forward slash.
+      if [[ $docker_registry_url == */ ]];then
+         docker_registry_url=${docker_registry_url%/}
+      fi
+      NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
+      
       # This case is to handle jenkins pipeline scenario, where the user would specify the image name in the app-deploy.yaml
-      if [[ -f /workspace/$gitsource/$app_deploy_filename ]];then
+      if [[ (-f /workspace/$gitsource/$app_deploy_filename) && ("$NUM_SLASHES" = 1) ]];then
          cd /workspace/$gitsource
          APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
          docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
       else
          #Checking the migration case where imagename can be empty and if registry url has imagename. 
          #ex: image-registry.openshift-image-registry.svc:5000/kabanero/kab60-java-spring-boot2:e7a1448806240f0294035097c0203caa3f
-            #Trim the trailing forward slash('/') and then count no of forward slash.
-            if [[ $docker_registry_url == */ ]];then
-               docker_registry_url=${docker_registry_url%/}
-            fi
-            
-            NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
             if [ "$NUM_SLASHES" = 1 ]; then
                echo "$ERROR image registry url=$docker_registry_url does not have imagename and tagname values, you can specify it in your pipeline resource or through trigger template and try again."
                exit 1
