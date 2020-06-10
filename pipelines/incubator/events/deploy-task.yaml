@@ -26,7 +26,7 @@ spec:
   - name: enforce-stack-policy-pre-deploy
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:adc6f6dc4821ff83a76782e057c41a25c6017604d1fa7c7e2faf47c09b1845b1
+    image: kabanero/kabanero-utils@sha256:835371285400bf247ef5ec834d22c72629d2f4b11c304db22dca8f12ecd710ce
     command: ["/bin/bash"]
     args:
       - -c
@@ -43,7 +43,7 @@ spec:
     - name: gitsource
       value: git-source
   - name: deploy-image
-    image: kabanero/kabanero-utils@sha256:adc6f6dc4821ff83a76782e057c41a25c6017604d1fa7c7e2faf47c09b1845b1
+    image: kabanero/kabanero-utils@sha256:835371285400bf247ef5ec834d22c72629d2f4b11c304db22dca8f12ecd710ce
     command: ['/bin/sh']
     args:
       - -c
