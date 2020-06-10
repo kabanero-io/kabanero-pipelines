@@ -55,14 +55,9 @@ if [ ! -z "$TRAVIS_TAG" ] && [ ! -z "$DOCKER_USERNAME" ] && [ ! -z "$DOCKER_PASS
  image_digest_value=$(sed -e 's/^"//' -e 's/"$//' <<<"$image_digest_value_withquote");
  
  echo "[INFO] Trying to replace string image : $image_original_string as $image_digest_value in all the pipelines yaml files";
- pwd
- ls -la
  find ./ -type f -name '*.yaml' -exec sed -i 's|'"$image_original_string"'|'"$image_digest_value"'|g' {} +
  if [ $? == 0 ]; then
    echo "[INFO] Updated string image : $image_original_string with $image_digest_value in all the pipelines yaml files successfully"
-   cat /home/travis/build/kabanero-io/kabanero-pipelines/pipelines/incubator/build-push-task.yaml
-   echo "*******"
-   cat /home/travis/build/kabanero-io/kabanero-pipelines/pipelines/incubator/build-task.yaml
  else
    echo "[ERROR] There was some error in updating the string image : $image_original_string with $image_digest_value in all the pipelines yaml files."
    exit 1
