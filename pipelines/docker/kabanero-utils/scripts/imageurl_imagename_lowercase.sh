@@ -62,34 +62,28 @@ WARNING="[WARNING]"
 ERROR="[ERROR]"
 
 if [[ ! -z "$docker_registry_url"  ]]; then
-   docker_registry_url_trimmed_trailing_slash=${docker_registry_url%/}
-   NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url_trimmed_trailing_slash}")
+   docker_registry_url=${docker_registry_url%/}
+   NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
    if [[ ("$NUM_SLASHES" -ge 2 ) && ( ! -z $docker_imagename ) && ($docker_imagename != "null")]]; then
-      echo "$ERROR The image registry url=$docker_registry_url has imagename in it, and it is also provided as in input parameter=$docker_imagename to the pipeline as parameter, pipeline cannot take imagename twice, you can specify it from your (pipeline resourse) or through combination of (webhook setup and trigger template)."
-      exit 1
-   fi
-fi
-
-if [[ -z "$docker_registry_url" ]]; then
-   echo "$ERROR Please specify the image registry url in your webhook setup or event mediator or your pipeline resource and try again.
-         [Hint] : The image registry url can be docker.io/<docker-userid> ex: image-registry.openshift-image-registry.svc:5000/kabanero"
-   exit 1
-else
-   if [[ ( -z "$docker_imagename") || ("$docker_imagename" == "null") ]]; then
-      #Trim the trailing forward slash('/') and then count no of forward slash.
-      if [[ $docker_registry_url == */ ]];then
-         docker_registry_url=${docker_registry_url%/}
-      fi
-      NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
+      echo "$WARNING The image registry url=$docker_registry_url has imagename in it, and it is also provided as in input parameter=$docker_imagename to the pipeline as parameter,pipeline will use the imagename from $docker_registry_url."
+      DOCKER_IMAGE_URL=$docker_registry_url
+   else
+      #Start of else
+      if [[ ( -z "$docker_imagename") || ("$docker_imagename" == "null") ]]; then
+         #Trim the trailing forward slash('/') and then count no of forward slash.
+         if [[ $docker_registry_url == */ ]];then
+            docker_registry_url=${docker_registry_url%/}
+         fi
+         NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
       
-      # This case is to handle jenkins pipeline scenario, where the user would specify the image name in the app-deploy.yaml
-      if [[ (-f /workspace/$gitsource/$app_deploy_filename) && ("$NUM_SLASHES" = 1) ]];then
-         cd /workspace/$gitsource
-         APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
-         docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
-      else
-         #Checking the migration case where imagename can be empty and if registry url has imagename. 
-         #ex: image-registry.openshift-image-registry.svc:5000/kabanero/kab60-java-spring-boot2:e7a1448806240f0294035097c0203caa3f
+         # This case is to handle jenkins pipeline scenario, where the user would specify the image name in the app-deploy.yaml
+         if [[ (-f /workspace/$gitsource/$app_deploy_filename) && ("$NUM_SLASHES" = 1) ]];then
+            cd /workspace/$gitsource
+            APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
+            docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
+         else
+            #Checking the migration case where imagename can be empty and if registry url has imagename. 
+            #ex: image-registry.openshift-image-registry.svc:5000/kabanero/kab60-java-spring-boot2:e7a1448806240f0294035097c0203caa3f
             if [ "$NUM_SLASHES" = 1 ]; then
                echo "$ERROR image registry url=$docker_registry_url does not have imagename and tagname values, you can specify it in your pipeline resource or through trigger template and try again."
                exit 1
@@ -108,24 +102,31 @@ else
                fi
                docker_registry_url=$(echo $docker_registry_url | rev | cut -d"/" -f2- | rev)
             fi   
+         fi
+         
+      elif [[ ! -z "$docker_imagename" ]]; then
+              docker_imagename_lowercase=$(echo $docker_imagename |  tr '[:upper:]' '[:lower:]')
       fi
-   elif [[ ! -z "$docker_imagename" ]]; then
-      docker_imagename_lowercase=$(echo $docker_imagename |  tr '[:upper:]' '[:lower:]')
-   fi
-fi
-
-
-#If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
-# If docker_registry_url value does not have trailing '/' add it before concatenating it with imagename
-if [[ $docker_registry_url != */ ]];then
-   docker_registry_url=$docker_registry_url/
-fi
+      
+      #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
+      # If docker_registry_url value does not have trailing '/' add it before concatenating it with imagename
+      if [[ $docker_registry_url != */ ]];then
+         docker_registry_url=$docker_registry_url/
+      fi
         
-#Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
-if [[ (! -z "$docker_imagetag") && ("$docker_imagetag" != "null") ]]; then
-   DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
+      #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
+      if [[ (! -z "$docker_imagetag") && ("$docker_imagetag" != "null") ]]; then
+         DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
+      else
+         DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
+      fi
+ 
+      #End of else
+   fi
 else
-   DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
+   echo "$ERROR Incoming image registry url is empty , please specify the image registry url in your webhook setup or event mediator or your pipeline resource and try again.
+   [Hint] : The image registry url can be docker.io/<docker-userid> ex: image-registry.openshift-image-registry.svc:5000/kabanero"
+   exit 1
 fi
 
 echo "$DOCKER_IMAGE_URL"
