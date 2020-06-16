@@ -16,7 +16,7 @@ items:
   spec:
     params:
     - name: revision
-      value: test
+      value: issue182
     - name: url
       value: https://github.com/smcclem/kabanero-pipelines
     type: git
