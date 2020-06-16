@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: kabanero-pipelines-test-pipeline-run
+spec:
+  params:
+  - name: event-type
+    value: push
+  - name: event-ref
+    value: refs/heads/master
+  - name: docker-imagename
+    value: image
+  - name: docker-imagetag
+    value: latest
+  serviceAccountName: kabanero-pipeline
+  timeout: "1h0m0s"
+  pipelineRef:
+    name: kabanero-pipelines-test-pipeline
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source
+    - name: docker-image
+      resourceRef:
+        name: docker-image

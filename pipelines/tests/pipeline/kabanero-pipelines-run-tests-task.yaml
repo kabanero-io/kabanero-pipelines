@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kabanero-pipeline-run-tests-task
+spec:
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+    outputs:
+    - name: docker-image
+      type: image
+    - name: git-source
+      type: git
+  params:
+  - name: docker-imagename
+    type: string
+    default: "null"
+  - name: docker-imagetag
+    type: string
+    default: "null"
+  steps:
+  - name: run-tests
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        echo "Scott"
+       
+        
+    env:
+    - name: gitsource
+      value: git-source    

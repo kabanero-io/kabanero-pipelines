@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: kabanero-pipelines-test-pipeline
+spec:
+  params:
+  - name: event-type
+    type: string
+    description: "The event type"
+  - name: event-ref
+    type: string
+    description: "The event ref"
+  - name: docker-imagename
+    type: string
+  - name: docker-imagetag
+    type: string
+  resources:
+  - name: git-source
+    type: git
+  - name: docker-image
+    type: image
+  tasks:
+  - name: kabanero-pipeline-run-tests-task
+    taskRef:
+      name: kabanero-pipeline-run-tests-task
+    params:
+      - name: docker-imagename
+        value: "$(params.docker-imagename)"
+      - name: docker-imagetag
+        value: "$(params.docker-imagetag)"
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      - name: docker-image
+        resource: docker-image
+      outputs:
+      - name: docker-image
+        resource: docker-image
+      - name: git-source
+        resource: git-source
+
