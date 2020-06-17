@@ -730,7 +730,7 @@ EOF
 
 
 # Write .appsody-config.yamk
-cat <<- "EOF" > .appsody-config.yaml
+cat <<- "EOF" > /workspace/$gitsource/.appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.1
 EOF
 
