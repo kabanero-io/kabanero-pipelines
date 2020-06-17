@@ -53,9 +53,14 @@ for testcase in $( echo "$regressionTestScripts") ; do
          touch $testcasePath/PASSED.TXT
        fi
      fi
+     echo
+     echo "*** Finished running testcase $testcase"
+     echo
      cd -
    else
+     echo
      echo "*** No test found in $testcase"
+     echo
    fi
 done
 
