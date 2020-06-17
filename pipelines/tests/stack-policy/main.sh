@@ -1,5 +1,7 @@
 #!/bin/bash
 
+yum -y install findutils
+
 # Time to run tests now
 scriptHome=$(dirname $(readlink -f $0))
 level=$(date "+%Y-%m-%d_%H%M%S")
