@@ -201,6 +201,7 @@
         echo
         echo "$INFO Validate stack name & project are present, active in the Kabanero CR"
         # Check to make sure the stack is active by name first
+        pwd
         kubectl get stack $STACK_NAME -o json 
         if [ $? -ne 0 ]; then
            echo "$ERROR No versions of $STACK_NAME in $APPSODY_CONFIG are active in the cluster.  Stack fails stackPolicy validation since $STACK_NAME is not active."
