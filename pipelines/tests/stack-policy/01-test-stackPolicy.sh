@@ -811,14 +811,9 @@ cat <<- "EOF" > skopeo.txt
 EOF
 
 # Write .appsody-config.yamk
-cat <<- "EOF" > .appsody-config.yaml
+cat <<- "EOF" > /workspace/$gitsource/.appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.2
 EOF
-
-ls .appsody-config.yaml
-cat .appsody-config.yaml
-ls -R
-
 
 #####################################
 # Pre-build stackPolicy enforcement #
