@@ -1,10 +1,5 @@
 #!/bin/bash
 
-if ! oc whoami; then
-    echo "Must login using oc before running"
-    exit 1
-fi
-
 # Time to run tests now
 scriptHome=$(dirname $(readlink -f $0))
 level=$(date "+%Y-%m-%d_%H%M%S")
