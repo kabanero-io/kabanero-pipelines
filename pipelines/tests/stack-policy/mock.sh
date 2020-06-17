@@ -6,11 +6,11 @@ skopeo () {
 
 kubectl () {
    if [[ "$2" == "stack" ]]; then
-      cat kubectl_stack.txt
+      cat ./kubectl_stack.txt
       return
    fi
    if [[ "$2" == "kabanero" ]]; then
-      cat kubectl_kabanero.txt
+      cat ./kubectl_kabanero.txt
       return
    fi
    echo "ERROR: Unknown option"
