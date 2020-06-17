@@ -131,7 +131,6 @@
         ###################################################################################
         # Read project, stack image, docker host and stack name from .appsody-config.yaml #
         ###################################################################################
-        echo
         echo "$INFO Read project, stack image, docker host and stack name from .appsody-config.yaml" 
         # Find the value for "stack:" from the appsody config file and assign it to the variable 'stack'
         declare $( awk '{if ($1 ~ "stack:"){printf "STACK="$2}}'  $APPSODY_CONFIG )
