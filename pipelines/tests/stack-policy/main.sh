@@ -29,7 +29,9 @@ for testcase in $( echo "$regressionTestScripts") ; do
      mkdir -p $outputPath
      mkdir -p $resultsPath
      echo
+     echo "***********************************************"
      echo "*** Running testcase $testcase"
+     echo "***********************************************"
      echo
      cd $(dirname "$testcase") 
      if [[ $testcase == *.sh ]] ; then
@@ -54,7 +56,9 @@ for testcase in $( echo "$regressionTestScripts") ; do
        fi
      fi
      echo
+     echo "***********************************************"
      echo "*** Finished running testcase $testcase"
+     echo "***********************************************"
      echo
      cd -
    else
