@@ -6,7 +6,7 @@ yum -y install findutils
 scriptHome=$(dirname $(readlink -f $0))
 level=$(date "+%Y-%m-%d_%H%M%S")
 buildPath=$scriptHome/build_${level}
-cd $scriptHome/tests
+// cd $scriptHome/tests
 
 mkdir -p $buildPath
 ln -fsvn $buildPath $scriptHome/build
