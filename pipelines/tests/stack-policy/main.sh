@@ -1,6 +1,8 @@
 #!/bin/bash
 
+echo "Installing the find command ..."
 yum -y install findutils
+echo "... finished installing the find command"
 
 # Time to run tests now
 scriptHome=$(dirname $(readlink -f $0))
@@ -26,7 +28,9 @@ for testcase in $( echo "$regressionTestScripts") ; do
      resultsPath=$testcasePath/results
      mkdir -p $outputPath
      mkdir -p $resultsPath
+     echo
      echo "*** Running testcase $testcase"
+     echo
      cd $(dirname "$testcase") 
      if [[ $testcase == *.sh ]] ; then
        ./$testcaseScript > >(tee -a $resultsPath/${testcaseScript}.stdout.txt) 2> >(tee -a $resultsPath/${testcaseScript}.stderr.txt >&2)
