@@ -815,13 +815,12 @@ cat <<- "EOF" > .appsody-config.yaml
 stack: kabanerobeta/java-microprofile:0.2
 EOF
 
-export PATH=$PATH:$gitsource/pipelines/docker/kabanero-utils/scripts
 
 #####################################
 # Pre-build stackPolicy enforcement #
 #####################################
 log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
-./mock.sh enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
+./mock.sh $gitsource/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
 if [ "$RC" != "0" ]; then
