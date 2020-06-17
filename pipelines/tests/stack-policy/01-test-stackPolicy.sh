@@ -820,7 +820,7 @@ EOF
 # Pre-build stackPolicy enforcement #
 #####################################
 log $INFO "[$VARIATION]: Test pre-build stackPolicy enforcement"
-. ./mock.sh $gitsource/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
+./mock.sh $1/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
 if [ "$RC" != "0" ]; then
