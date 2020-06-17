@@ -1,16 +1,16 @@
 #!/bin/bash 
 
 skopeo () {
-  cat skopeo.txt
+  cat /workspace/$gitsource/pipelines/tests/stack-policy/skopeo.txt
 }
 
 kubectl () {
    if [[ "$2" == "stack" ]]; then
-      cat ./kubectl_stack.txt
+      cat /workspace/$gitsource/pipelines/tests/stack-policy/kubectl_stack.txt
       return
    fi
    if [[ "$2" == "kabanero" ]]; then
-      cat ./kubectl_kabanero.txt
+      cat /workspace/$gitsource/pipelines/tests/stack-policy/kubectl_kabanero.txt
       return
    fi
    echo "ERROR: Unknown option"
