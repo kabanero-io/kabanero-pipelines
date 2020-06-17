@@ -1,8 +1,13 @@
 #!/bin/bash
 
+# We are going to use the kabanero-utils image for running our tests
+# so we need to install anything we need that is missing from this image
+
+echo
 echo "Installing test prereqs ..."
 yum -y install findutils
 echo "... finished installing test prereqs"
+echo
 
 # Time to run tests now
 scriptHome=$(dirname $(readlink -f $0))
