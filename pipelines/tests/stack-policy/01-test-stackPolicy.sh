@@ -825,7 +825,7 @@ echo gitsource:$gitsource
 echo $1/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh
 ls $1/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh 
 
-./mock.sh $1/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
+./mock.sh /workspace/$gitsource/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh pre-build > enforce_stack_policy.out 2>&1
 RC=$?
 cat enforce_stack_policy.out
 if [ "$RC" != "0" ]; then
