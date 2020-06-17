@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "Installing the find command ..."
+echo "Installing test prereqs ..."
 yum -y install findutils
-echo "... finished installing the find command"
+echo "... finished installing test prereqs"
 
 # Time to run tests now
 scriptHome=$(dirname $(readlink -f $0))
