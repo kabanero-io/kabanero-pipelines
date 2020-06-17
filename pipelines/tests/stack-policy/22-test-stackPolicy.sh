@@ -762,6 +762,6 @@ fi
 rm enforce_stack_policy.out
 
 # Cleanup 
-rm .appsody-config.yaml
+rm /workspace/$gitsource/.appsody-config.yaml
 rm /workspace/$gitsource/pipelines/tests/stack-policy/kubectl_kabanero.txt
 rm /workspace/$gitsource/pipelines/tests/stack-policy/kubectl_stack.txt
