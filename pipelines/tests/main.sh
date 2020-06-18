@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# We are going to use the kabanero-utils image for running our tests
-# so we need to install anything we need that is missing from this image
+
 
 echo
 echo "Installing test prereqs ..."
+echo
+# We are going to use the kabanero-utils image for running our tests
+# so we need to install anything we need that is missing from this image
 yum -y install findutils
+echo
 echo "... finished installing test prereqs"
 echo
 
@@ -21,7 +24,6 @@ ln -fsvn $buildPath $scriptHome/build
 let anyfail=0
 failed=""
 
-# find any .sh|test.yaml|test.yml
 regressionTestScripts=$(find . -type f -name '[0-9]*.sh' | sort)
 for testcase in $( echo "$regressionTestScripts") ; do
    if [ -f "$testcase" ] ; then
@@ -79,9 +81,5 @@ if [ $anyfail -eq 0 ] ; then
 else
    echo "*** There were $anyfail testcase failures - $failed"
 fi 
-
-# get the logs
-cd $buildPath
-$scriptHome/scripts/kabanero-mustgather.sh
 
 exit $anyfail
