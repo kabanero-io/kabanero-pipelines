@@ -21,13 +21,13 @@ function retry() {
 }
 
 cd /workspace/$gitsource/pipelines/incubator/events
-find . -type f -name '*.yaml' -exec sed -i 's/@Digest@/test/g' {} \;
+find . -type f -name '*.yaml' -exec sed -i 's/@Digest@/nodejs/g' {} \;
 find . -type f -name '*.yaml' -exec kubectl apply -f  {} \;
 
 
-git_url="https://github.com/smcclem/nodejs"
+git_url="https://github.com/smcclem/"
 docker_url="index.docker.io/smcclem/"
-collection="test"
+collection="nodejs"
 
 declare -a active_collections
 active_collections=( nodejs )
