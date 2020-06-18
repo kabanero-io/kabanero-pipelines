@@ -12,7 +12,7 @@ spec:
     value: image
   - name: docker-imagetag
     value: latest
-  serviceAccountName: kabanero-pipeline
+  serviceAccountName: kabanero-pipeline-test
   timeout: "1h0m0s"
   pipelineRef:
     name: kabanero-pipelines-test-pipeline
