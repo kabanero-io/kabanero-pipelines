@@ -42,6 +42,7 @@ for testcase in $( echo "$regressionTestScripts") ; do
      echo
      cd $(dirname "$testcase") 
      if [[ $testcase == *.sh ]] ; then
+       chmod 755 ./$testcaseScript
        ./$testcaseScript > >(tee -a $resultsPath/${testcaseScript}.stdout.txt) 2> >(tee -a $resultsPath/${testcaseScript}.stderr.txt >&2)
        if [ $? -ne 0 ]; then
          let anyfail+=1
