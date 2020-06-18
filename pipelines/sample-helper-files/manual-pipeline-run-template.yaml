@@ -15,7 +15,7 @@ spec:
   serviceAccountName: kabanero-pipeline
   timeout: "1h0m0s"
   pipelineRef:
-    name: <stack-name>-build-deploy-pl
+    name: build-push-promote-pl-<stack-name>
   resources:
     - name: git-source
       resourceRef:
