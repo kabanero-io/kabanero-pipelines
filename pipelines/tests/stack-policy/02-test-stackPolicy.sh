@@ -838,7 +838,7 @@ else
    exit 1
 fi
 # Check to see appsody-config.yaml was patched with correct version
-grep -q "kabanerobeta/java-microprofile:0.2.26" .appsody-config.yaml
+grep -q "kabanerobeta/java-microprofile:0.2.26" /workspace/$gitsource/.appsody-config.yaml
 if [ "$?" == "0" ]; then
    log $INFO "[$VARIATION]: .appsody-config.yaml correctly patched/updated to the expected version."         
 else
