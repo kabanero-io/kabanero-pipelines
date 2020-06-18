@@ -22,7 +22,7 @@ let anyfail=0
 failed=""
 
 # find any .sh|test.yaml|test.yml
-regressionTestScripts=$(find . -type f -name '*.sh'| sort)
+regressionTestScripts=$(find . -type f -name '[0-9]*.sh' | sort)
 for testcase in $( echo "$regressionTestScripts") ; do
    if [ -f "$testcase" ] ; then
      testsuiteName=$(basename $(dirname $testcase))
