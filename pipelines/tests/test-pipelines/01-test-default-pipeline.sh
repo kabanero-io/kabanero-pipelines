@@ -76,5 +76,5 @@ else
 fi 
 
 # Delete the pipeline run and application
-kubectl delete pipelineruns --all
-kubectl delete appsodyapplications  --all
+# kubectl delete pipelineruns --all
+# kubectl delete appsodyapplications  --all
