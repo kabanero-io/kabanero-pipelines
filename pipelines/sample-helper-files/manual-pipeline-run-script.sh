@@ -5,9 +5,9 @@ set +x
 set +v
 
 oc > /dev/null 2>&1
-if [[ $? != "0" ]]; then
-   alias oc="kubectl"
-fi
+if [ "$?" != "0" ]; then
+   alias oc="kubectl"         
+fi  
 
 display_help() {
  echo "Usage"
