@@ -58,8 +58,8 @@ succeeded=$( kubectl get pipelinerun $collection"-manual-pipeline-run" --no-head
           
 if [ "$succeeded" != "True" ]; then
    # Piplerun failed, collect logs
-   pod_id=$( kubectl get pods | grep *manual-pipeline-run-build-push-promote-task*)
-   declare $( echo pod_id | awk '{printf pod="$1"}')
+   pod_id=$( kubectl get pods | grep manual-pipeline-run-build-push-promote-task)
+   declare $( echo $pod_id | awk '{printf "pod="$1}')
    echo
    echo "Pipeline run for collection "$collection" failed. Inlining pod logs ($pod):"
    echo "_______________________________________________________________________________________________"
