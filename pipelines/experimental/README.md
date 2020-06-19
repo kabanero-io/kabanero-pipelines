@@ -40,3 +40,5 @@ The pipeline invokes the following tasks to accomplish the steps listed:
     
 *   * [image-scan-task.yaml](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/incubator/events/image-scan-task.yaml)
     The `image-scan-task` task will initiate a container scan of the image published by the `build-push-task` using OpenSCAP.  The results of the scan are published in the logs of the task.
+
+# Maven cache pipelines
