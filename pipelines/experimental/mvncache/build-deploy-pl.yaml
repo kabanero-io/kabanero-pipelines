@@ -1,0 +1,88 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: StackId-build-deploy-pl
+spec:
+  workspaces:
+  - name: varlibcontainers
+  - name: mavenrepo
+  params:
+  - name: event-type
+    type: string
+    description: "The event type"
+  - name: event-ref
+    type: string
+    description: "The event ref"
+  - name: docker-imagename
+    type: string
+  - name: docker-imagetag
+    type: string
+  resources:
+  - name: git-source
+    type: git
+  - name: docker-image
+    type: image
+  tasks:
+  - name: build-push-task
+    taskRef:
+      name: StackId-build-push-task
+      workspaces:
+        - name: varlibcontainers
+          workspace: varlibcontainers
+        - name: mavenrepo
+          workspace: mavenrepo
+    params:
+      - name: docker-imagename
+        value: "$(params.docker-imagename)"
+      - name: docker-imagetag
+        value: "$(params.docker-imagetag)"
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      - name: docker-image
+        resource: docker-image
+      outputs:
+      - name: docker-image
+        resource: docker-image
+      - name: git-source
+        resource: git-source
+  - name: image-scan-task
+    taskRef:
+      name: StackId-image-scan-task
+    runAfter: [build-push-task]
+    params:
+      - name: docker-imagename
+        value: "$(params.docker-imagename)"
+      - name: docker-imagetag
+        value: "$(params.docker-imagetag)"
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+      - name: docker-image
+        resource: docker-image
+  - name: deploy-task
+    conditions:
+    - conditionRef: StackId-deployment-condition
+      params:
+      - name: event-type
+        value: $(params.event-type)
+      - name: event-ref
+        value: $(params.event-ref)
+    taskRef:
+      name: StackId-deploy-task
+    runAfter: [image-scan-task]
+    params:
+      - name: docker-imagename
+        value: "$(params.docker-imagename)"
+      - name: docker-imagetag
+        value: "$(params.docker-imagetag)"
+    resources:
+      inputs:
+      - name: git-source
+        resource: git-source
+        from: [build-push-task]
+      - name: docker-image
+        resource: docker-image
