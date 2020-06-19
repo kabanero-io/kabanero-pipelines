@@ -58,17 +58,15 @@ succeeded=$( kubectl get pipelinerun $collection"-manual-pipeline-run" --no-head
           
 if [ "$succeeded" != "True" ]; then
    # Piplerun failed, collect logs
-   build_pod_id=$( kubectl get pods | grep $collection.*build-push-task)
-   deploy_pod_id=$( kubectl get pods | grep $collection.*deploy-task)
-   declare $( echo $build_pod_id | awk '{printf "build_pod="$1}')
-   declare $( echo $deploy_pod_id | awk '{printf "deploy_pod="$1}')
-   log_dir=$collection/$(date +%Y-%m-%d-%H-%M-%S)
-   mkdir -p $log_dir
+   pod_id=$( kubectl get pods | grep *manual-pipeline-run-build-push-promote-task*)
+   declare $( echo pod_id | awk '{printf pod="$1}')
    echo
-   echo "Pipeline run for collection "$collection" failed. Collecting logs to: "$log_dir", succeeded: "$succeeded
+   echo "Pipeline run for collection "$collection" failed. Inlining pod logs ($pod):"
+   echo "_______________________________________________________________________________________________"
    echo
-   kubectl logs $build_pod --all-containers > $log_dir/$build_pod.log 
-   kubectl logs $deploy_pod --all-containers > $log_dir/$deploy_pod.log 
+   kubectl logs $pod --all-containers
+   echo
+   echo "_______________________________________________________________________________________________"
 else  
    echo
    echo "Pipeline run for collection "$collection" succeeded."    
