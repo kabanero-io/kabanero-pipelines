@@ -26,7 +26,7 @@ find . -type f -name '*.yaml' -exec kubectl apply -f  {} \;
 
 
 git_url="https://github.com/smcclem/"
-docker_url="index.docker.io/smcclem/"
+docker_url="smcclem"
 collection="nodejs"
 
 declare -a active_collections
