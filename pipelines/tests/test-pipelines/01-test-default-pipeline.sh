@@ -59,10 +59,12 @@ succeeded=$( kubectl get pipelinerun $collection"-manual-pipeline-run" --no-head
 if [ "$succeeded" != "True" ]; then
    echo
    echo "Pipeline run for collection "$collection" failed. See inlined logs for failure:"
+   RC=1
    echo
 else
    echo
    echo "Pipeline run for collection "$collection" succeeded."    
+   RC=0
    echo         
 fi 
 pod_id=$( kubectl get pods | grep manual-pipeline-run-build-push-promote-task)
@@ -76,3 +78,4 @@ echo $pod" logs_________________________________________________________________
 # Delete the pipeline run and application
 kubectl delete pipelinerun $collection-manual-pipeline-run 
 #TODO appsody applcation delete
+exit $RC
