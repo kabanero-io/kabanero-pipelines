@@ -1,0 +1,230 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+# This task scans the docker image using the specified command and arguments.
+# It requires an image that contains the scanner to be used to scan the docker-image image input.
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: StackId-image-scan-task
+spec:
+  resources:
+    inputs:
+      - name: git-source
+        type: git
+      - name: docker-image
+        type: image
+  params:
+  - name: command
+    description: The scanner command
+    default: oscap-chroot
+  - name: module
+    description: Specifies the type of SCAP content to use. For example, oval or xccdf.
+    default: oval
+  - name: options-and-arguments
+    description: Specifies the module operation options and arguments
+    default: ""
+  - name: scansDir
+    description: The relative directory to save the scan outputs to
+    default: kabanero/scans
+  - name: pathToInputFile
+    description: The scanner's XCCDF or OVAL file
+    default: /usr/local/share/openscap/cpe/openscap-cpe-oval.xml
+  - name: docker-imagename
+    type: string
+    default: "null"
+  - name: docker-imagetag
+    type: string
+    default: "null"
+  steps:
+    - name: mount-image          
+      securityContext:
+        privileged: true
+      image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+# Temporarily make copy of mounted image since the mounted image will be unmounted when the container for this task ends.
+# TODO: Determine another way to persist the mounted container image across containers
+      command: ['/bin/bash']
+      args:
+        - -c
+        - |
+          # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+          # So lowercase the image name if it has any upper case characters.
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+             exit $retVal
+          fi
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+ 
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun" >&2
+             exit $retVal
+          fi
+        
+          echo "Pulling image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+          buildah from docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE
+          echo $(buildah mount $(buildah containers -q)) > /var/lib/containers/rootfs.txt
+          mountDir=$(cat /var/lib/containers/rootfs.txt)
+          echo ""
+          echo "Mounted image to $mountDir with contents:"
+          ls -la $mountDir
+          cp -a $mountDir /var/lib/containers
+          echo ""
+          imageDir=/var/lib/containers/merged
+          imageIdFileName=/var/lib/containers/imageid.txt
+          echo "Copied mounted image to $imageDir:"
+          ls -la $imageDir
+          echo $(buildah images -q) > $imageIdFileName
+          echo ""
+          echo "Image ID of the image to scan: $(cat $imageIdFileName)"
+      env:
+        - name: gitsource
+          value: git-source
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+    - name: scan-image
+      securityContext:
+        privileged: true
+      image: kabanero/scanner@sha256:82b979de485fc5990d41b8b4acc2aeee2211bd26b0f03374f5657773ae4148f9
+      command: ['/bin/bash']
+      args:
+        - -c
+        - |
+          imageid=$(cat /var/lib/containers/imageid.txt)
+          imageDir=/var/lib/containers/merged
+
+          #TODO : Here we need to call the script 'imageurl_imagename_lowercase.sh' to lowercase the imagename.
+          # For now we needed to remove the code, because we moved out the script from utilities task to 'kabanero-utils' image
+          # and this image uses some other image.
+          ########
+          # Tracing prefixes
+          INFO="[INFO]"
+          WARNING="[WARNING]"
+          ERROR="[ERROR]"
+
+          docker_registry_url=$(inputs.resources.docker-image.url)
+          docker_imagename=$(inputs.params.docker-imagename)
+          docker_imagetag=$(inputs.params.docker-imagetag)
+          app_deploy_filename="app-deploy.yaml"
+
+          
+          if [[ ! -z "$docker_registry_url"  ]]; then
+             docker_registry_url=${docker_registry_url%/}
+             NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
+             if [[ ("$NUM_SLASHES" -ge 2 ) && ( ! -z $docker_imagename ) && ($docker_imagename != "null")]]; then
+                echo "$WARNING The image registry url=$docker_registry_url has imagename in it, and it is also provided as in input parameter=$docker_imagename to the pipeline as parameter,pipeline will use the imagename from $docker_registry_url."
+                DOCKER_IMAGE_URL=$docker_registry_url
+             else
+                #Start of else
+                if [[ ( -z "$docker_imagename") || ("$docker_imagename" == "null") ]]; then
+                   #Trim the trailing forward slash('/') and then count no of forward slash.
+                   if [[ $docker_registry_url == */ ]];then
+                      docker_registry_url=${docker_registry_url%/}
+                   fi
+                   NUM_SLASHES=$(awk -F"/" '{print NF-1}' <<< "${docker_registry_url}")
+                
+                   # This case is to handle jenkins pipeline scenario, where the user would specify the image name in the app-deploy.yaml
+                   if [[ (-f /workspace/$gitsource/$app_deploy_filename) && ("$NUM_SLASHES" = 1) ]];then
+                      cd /workspace/$gitsource
+                      APPNAME=$(awk '/^  name:/ {print $2; exit}' $app_deploy_filename)
+                      docker_imagename_lowercase=$(echo $APPNAME |  tr '[:upper:]' '[:lower:]')
+                   else
+                      #Checking the migration case where imagename can be empty and if registry url has imagename. 
+                      #ex: image-registry.openshift-image-registry.svc:5000/kabanero/kab60-java-spring-boot2:e7a1448806240f0294035097c0203caa3f
+                      if [ "$NUM_SLASHES" = 1 ]; then
+                         echo "$ERROR image registry url=$docker_registry_url does not have imagename and tagname values, you can specify it in your pipeline resource or through trigger template and try again."
+                         exit 1
+                      elif [ "$NUM_SLASHES" = 2 ]; then
+                         url_imagename_tagname_Part=$(echo $docker_registry_url | rev | cut -d"/" -f1 | rev)
+                         if [[ ( ! -z $url_imagename_tagname_Part ) && ( $url_imagename_tagname_Part == *":"* ) ]]; then 
+                            imagename=$(cut -d ':' -f 1 <<< "$url_imagename_tagname_Part" )
+                            docker_imagename_lowercase=$(echo $imagename |  tr '[:upper:]' '[:lower:]')
+                            docker_imagetag=$(cut -d ':' -f 2- <<< "$url_imagename_tagname_Part" )
+                         elif [[ (! -z $url_imagename_tagname_Part) ]]; then
+                            imagename=$url_imagename_tagname_Part
+                            docker_imagename_lowercase=$(echo $imagename |  tr '[:upper:]' '[:lower:]')
+                         else
+                            echo "$ERROR docker_registry_url=$docker_registry_url does not have the imagename and the param docker_imagename is not specified. Please provide docker_registry_url with imagename or provide correct values for incoming params docker_imagename=$docker_imagename and try again. "
+                            exit 1
+                         fi
+                         docker_registry_url=$(echo $docker_registry_url | rev | cut -d"/" -f2- | rev)
+                      fi   
+                   fi
+                   
+                elif [[ ! -z "$docker_imagename" ]]; then
+                        docker_imagename_lowercase=$(echo $docker_imagename |  tr '[:upper:]' '[:lower:]')
+                fi
+                
+                #If it reaches here it means it has set the variable docker_imagename_lowercase correctly.
+                # If docker_registry_url value does not have trailing '/' add it before concatenating it with imagename
+                if [[ $docker_registry_url != */ ]];then
+                   docker_registry_url=$docker_registry_url/
+                fi
+                  
+                #Concatenate docker_registry_url with the docker_imagename_lowercase and docker_imagetag(if exists)
+                if [[ (! -z "$docker_imagetag") && ("$docker_imagetag" != "null") ]]; then
+                   DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase:$docker_imagetag
+                else
+                   DOCKER_IMAGE_URL=$docker_registry_url$docker_imagename_lowercase
+                fi
+           
+                #End of else
+             fi
+          else
+             echo "$ERROR Incoming image registry url is empty , please specify the image registry url in your webhook setup or event mediator or your pipeline resource and try again.
+             [Hint] : The image registry url can be docker.io/<docker-userid> ex: image-registry.openshift-image-registry.svc:5000/kabanero"
+             exit 1
+          fi
+          INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$DOCKER_IMAGE_URL
+          #######
+          
+          echo "INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+
+          outputDir=/workspace/scans/$(inputs.params.scansDir)/$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE/$imageid
+          mkdir -p $outputDir
+          optionsAndArgs="$(inputs.params.options-and-arguments) --results $outputDir/results.xml --report $outputDir/report.html $(inputs.params.pathToInputFile)"
+          scanCommand="$(inputs.params.command) $imageDir $(inputs.params.module) eval $optionsAndArgs"
+
+          echo "Scanning copy of image docker://$INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir with contents:"
+          cd $imageDir
+          ls -la
+          echo ""
+          echo "Scanning image with command:"
+          echo $scanCommand
+          $scanCommand
+          echo ""
+          echo "Scanning of copy of image $INPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE with image ID $imageid in $imageDir complete"
+          echo ""
+
+          #Display contents of the results.xml and report.html files
+          echo "Displaying contents of $outputDir/results.xml"
+          echo "********** START OF results.xml **********"
+          cat $outputDir/results.xml
+          echo "********** END OF results.xml ************"
+          echo ""
+          echo "Displaying contents of $outputDir/report.html"
+          echo "********** START OF report.html **********"
+          cat $outputDir/report.html
+          echo "********** END OF report.html ************"
+      env:
+        - name: gitsource
+          value: git-source
+      volumeMounts:
+        - name: host-save-dir
+          mountPath: /workspace/scans
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+  volumes:
+    # The host directory to mount where the scansDir will be created and the the scan outputs will be saved to.
+    - name: host-save-dir
+      hostPath:
+        path: /var/lib
+    - name: varlibcontainers
+      emptyDir: {}
