@@ -57,22 +57,22 @@ retry 120 10  "[[ \$(kubectl get pipelinerun $collection"-manual-pipeline-run" -
 succeeded=$( kubectl get pipelinerun $collection"-manual-pipeline-run" --no-headers 2>&1 |  awk '{ printf $2 }' )
           
 if [ "$succeeded" != "True" ]; then
-   # Piplerun failed, collect logs
-   pod_id=$( kubectl get pods | grep manual-pipeline-run-build-push-promote-task)
-   declare $( echo $pod_id | awk '{printf "pod="$1}')
    echo
-   echo "Pipeline run for collection "$collection" failed. Inlining pod logs ($pod):"
-   echo "_______________________________________________________________________________________________"
+   echo "Pipeline run for collection "$collection" failed. See inlined logs for failure:"
    echo
-   kubectl logs $pod --all-containers
-   echo
-   echo "_______________________________________________________________________________________________"
-else  
+else
    echo
    echo "Pipeline run for collection "$collection" succeeded."    
    echo         
 fi 
-
+pod_id=$( kubectl get pods | grep manual-pipeline-run-build-push-promote-task)
+declare $( echo $pod_id | awk '{printf "pod="$1}')
+echo $pod" logs_______________________________________________________________________________________________"
+echo
+kubectl logs $pod --all-containers
+echo
+echo $pod" logs_______________________________________________________________________________________________"
+  
 # Delete the pipeline run and application
-# kubectl delete pipelineruns --all
-# kubectl delete appsodyapplications  --all
+kubectl delete pipelinerun $collection-manual-pipeline-run 
+#TODO appsody applcation delete
