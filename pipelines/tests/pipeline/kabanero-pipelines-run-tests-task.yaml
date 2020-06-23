@@ -30,7 +30,15 @@ spec:
     args:
       - -c
       - |
-        echo "Scott"
+        cd $gitsource
+        cd ./pipelines/tests
+        chmod 755 ./main.sh
+        ./main.sh
+  
+       
+
+
+
        
         
     env:
