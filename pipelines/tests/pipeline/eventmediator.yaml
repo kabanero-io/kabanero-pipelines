@@ -1,0 +1,57 @@
+apiVersion: events.kabanero.io/v1alpha1
+kind: EventMediator
+metadata:
+  name: webhook
+  namespace: kabanero
+spec:
+  createListener: true
+  createRoute: true
+  mediations:
+  - body:
+    - =: sendEvent(dest, body, header)
+    name: webhook
+    selector:
+      repositoryType:
+        file: .appsody-config.yaml
+
+        newVariable: body.webhooks-appsody-config
+      urlPattern: webhook
+    sendTo:
+    - dest
+    variables:
+    - name: body.webhooks-tekton-target-namespace
+      value: kabanero
+    - name: body.webhooks-tekton-service-account
+      value: kabanero-pipeline
+    - name: body.webhooks-tekton-docker-registry
+      value: index.docker.io/smcclem/
+    - name: body.webhooks-tekton-ssl-verify
+      value: "false"
+    - name: body.webhooks-tekton-insecure-skip-tls-verify
+      value: "true"
+  - body:
+    - =: sendEvent(dest, body, header)
+    name: kabanero-pipelines-webhook
+    selector:
+      repositoryType:
+        file: .kabanero-pipelines.yaml
+        newVariable: body.webhooks-kabanero-pipelines-config
+      urlPattern: webhook
+    sendTo:
+    - dest
+    variables:
+    - name: body.webhooks-tekton-target-namespace
+      value: kabanero
+    - name: body.webhooks-tekton-service-account
+      value: kabanero-pipeline
+    - name: body.webhooks-tekton-docker-registry
+      value: index.docker.io/smcclem/
+    - name: body.webhooks-tekton-ssl-verify
+      value: "false"
+    - name: body.webhooks-tekton-insecure-skip-tls-verify
+      value: "true"
+
+  repositories:
+  - github:
+      secret: ghe-https-secret
+      webhookSecret: ghe-webhook-secret

@@ -1,0 +1,33 @@
+apiVersion: events.kabanero.io/v1alpha1
+kind: EventConnections
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"events.kabanero.io/v1alpha1","kind":"EventConnections","metadata":{"annotations":{},"creationTimestamp":"2020-05-11T19:17:13Z","generation":1,"name":"connections","namespace":"kabanero","resourceVersion":"5729610","selfLink":"/apis/events.kabanero.io/v1alpha1/namespaces/kabanero/eventconnections/connections","uid":"9a7e106d-c1ab-420f-8a9f-65ee002f8388"},"spec":{"connections":[{"from":{"mediator":{"destination":"dest","mediation":"webhook","name":"webhook"}},"to":[{"https":[{"insecure":true,"urlExpression":"body[\"webhooks-kabanero-tekton-listener\"]"}]}]}]}}
+  creationTimestamp: "2020-06-02T18:19:23Z"
+  generation: 1
+  name: connections
+  namespace: kabanero
+  resourceVersion: "29096690"
+  selfLink: /apis/events.kabanero.io/v1alpha1/namespaces/kabanero/eventconnections/connections
+  uid: 3296f35b-7411-4fb0-9053-633027b894a8
+spec:
+  connections:
+  - from:
+      mediator:
+        destination: dest
+        mediation: webhook
+        name: webhook
+    to:
+    - https:
+      - insecure: true
+        urlExpression: body["webhooks-kabanero-tekton-listener"]
+  - from:
+      mediator:
+        destination: dest
+        mediation: kabanero-pipelines-webhook 
+        name: webhook
+    to:
+    - https: 
+      - insecure: true
+        urlExpression: eventListenerURL("listener-kb")

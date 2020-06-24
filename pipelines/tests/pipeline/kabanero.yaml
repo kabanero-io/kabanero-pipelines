@@ -1,0 +1,82 @@
+apiVersion: kabanero.io/v1alpha2
+kind: Kabanero
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kabanero.io/v1alpha2","kind":"Kabanero","metadata":{"annotations":{},"creationTimestamp":"2020-05-11T16:45:53Z","finalizers":["kabanero.io.kabanero-operator"],"generation":3,"name":"kabanero","namespace":"kabanero","resourceVersion":"5720885","selfLink":"/apis/kabanero.io/v1alpha2/namespaces/kabanero/kabaneros/kabanero","uid":"d2542e2f-9c21-4381-baa8-d51f5b361364"},"spec":{"admissionControllerWebhook":{},"cliServices":{},"codeReadyWorkspaces":{"enable":false,"operator":{"customResourceInstance":{"devFileRegistryImage":{}}}},"collectionController":{},"events":{"enable":true,"image":"kabanero/events-operator:prototype"},"github":{},"gitops":{},"governancePolicy":{},"landing":{},"sso":{},"stackController":{},"stacks":{"pipelines":[{"https":{"url":"https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.9.0-rc.2/kabanero-events-pipelines.tar.gz"},"id":"default","sha256":"77e0ddd2aafc05d5a5ad536e10e9b52cf1b393ad0533024f6c5002e021d93490"}],"repositories":[{"https":{"url":"https://github.com/kabanero-io/kabanero-stack-hub/releases/download/0.9.0-rc.1/kabanero-stack-hub-index.yaml"},"name":"central"}]},"version":"0.9.0"},"status":{"admissionControllerWebhook":{"ready":"True"},"appsody":{"ready":"True","version":"0.5.1"},"cli":{"hostnames":["kabanero-cli-kabanero.apps.pony.os.fyre.ibm.com"],"ready":"True"},"collectionController":{"ready":"True","version":"0.9.0"},"events":{"ready":"True"},"gitops":{"ready":"True"},"kabaneroInstance":{"ready":"True","version":"0.9.0"},"landing":{"ready":"True","version":"0.9.0"},"serverless":{"knativeServing":{"ready":"True","version":"0.13.2"},"ready":"True","version":"1.7.0"},"sso":{"configured":"False","ready":"False"},"stackController":{"ready":"True","version":"0.9.0"},"tekton":{"ready":"True","version":"v0.11.3"}}}
+  creationTimestamp: "2020-06-02T18:19:14Z"
+  finalizers:
+  - kabanero.io.kabanero-operator
+  generation: 1
+  name: kabanero
+  namespace: kabanero
+  resourceVersion: "29099009"
+  selfLink: /apis/kabanero.io/v1alpha2/namespaces/kabanero/kabaneros/kabanero
+  uid: d148cf8d-c853-4e42-bc60-819bc0990704
+spec:
+  admissionControllerWebhook: {}
+  cliServices: {}
+  codeReadyWorkspaces:
+    enable: false
+    operator:
+      customResourceInstance:
+        devFileRegistryImage: {}
+  collectionController: {}
+  events:
+    enable: true
+    image: kabanero/events-operator:prototype
+  github: {}
+  gitops: {}
+  governancePolicy: {}
+  landing: {}
+  sso: {}
+  stackController: {}
+  stacks:
+    pipelines:
+    - https:
+        url: https://github.com/kabanero-io/kabanero-pipelines/releases/download/0.9.0-rc.2/kabanero-events-pipelines.tar.gz
+      id: default
+      sha256: 77e0ddd2aafc05d5a5ad536e10e9b52cf1b393ad0533024f6c5002e021d93490
+    repositories:
+    - https:
+        url: https://github.com/kabanero-io/kabanero-stack-hub/releases/download/0.9.0-rc.1/kabanero-stack-hub-index.yaml
+      name: central
+  version: 0.9.0
+status:
+  admissionControllerWebhook:
+    ready: "True"
+  appsody:
+    ready: "True"
+    version: 0.5.1
+  cli:
+    hostnames:
+    - kabanero-cli-kabanero.apps.pony.os.fyre.ibm.com
+    ready: "True"
+  collectionController:
+    ready: "True"
+    version: 0.9.0
+  events:
+    ready: "True"
+  gitops:
+    ready: "True"
+  kabaneroInstance:
+    ready: "True"
+    version: 0.9.0
+  landing:
+    ready: "True"
+    version: 0.9.0
+  serverless:
+    knativeServing:
+      ready: "True"
+      version: 0.13.3
+    ready: "True"
+    version: 1.7.1
+  sso:
+    configured: "False"
+    ready: "False"
+  stackController:
+    ready: "True"
+    version: 0.9.0
+  tekton:
+    ready: "True"
+    version: v0.11.3

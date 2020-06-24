@@ -1,0 +1,39 @@
+#Kabanero! on activate substitute Digest for text 'kb'
+#
+# This pipeline will build the source in the git-source repo and create a local image specified in the docker-image resource.
+#
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-pl-kb
+spec:
+  params:
+    - name: docker-imagename
+      type: string
+    - name: docker-imagetag
+      type: string
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: build-task
+      taskRef:
+        name: kabanero-pipeline-run-tests-task 
+      params:
+        - name: docker-imagename
+          value: "$(params.docker-imagename)"
+        - name: docker-imagetag
+          value: "$(params.docker-imagetag)"
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image
+        outputs:
+        - name: docker-image
+          resource: docker-image
+        - name: git-source
+          resource: git-source

@@ -1,0 +1,47 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: listener-kb
+spec:
+  serviceAccountName: event-listener
+  triggers:
+  - bindings:
+    - apiversion: v1alpha1
+      name: build-push-promote-pl-kb-push-binding
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "push" && body["webhooks-tekton-git-branch"] == "master"'
+    name: kabanero-push-event
+    template:
+      apiversion: v1alpha1
+      name: build-push-promote-pl-kb-template
+  - bindings:
+    - apiversion: v1alpha1
+      name: build-pl-kb-pullrequest-binding
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "pull_request" && body["webhooks-tekton-git-branch"] != "master" && (body["action"] == "opened" || body["action"] == "synchronize" ) '
+    name: kabanero-pullrequest-event
+    template:
+      apiversion: v1alpha1
+      name: build-pl-kb-template
+  - bindings:
+    - apiversion: v1alpha1
+      name: image-retag-pl-kb-push-binding
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "tag" '
+    name: kabanero-tag-event
+    template:
+      apiversion: v1alpha1
+      name: image-retag-pl-kb-template
+  - bindings:
+    - apiversion: v1alpha1
+      name: monitor-task-kb-github-binding
+    template:
+     apiversion: v1alpha1
+     name: monitor-task-kb-template
+    name: kabanero-monitor-task-event
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "pull_request" && body["webhooks-tekton-git-branch"] != "master" && (body["action"] == "opened" || body["action"] == "synchronize" ) '
