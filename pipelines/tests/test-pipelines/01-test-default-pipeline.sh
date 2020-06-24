@@ -24,6 +24,10 @@ git_url="https://github.com/smcclem/"
 docker_url="smcclem"
 collection=$( date +%s%N  )
 
+echo
+echo "Apply: "$collection
+echo
+
 cd /workspace/$gitsource/pipelines/incubator/events
 find . -type f -name '*.yaml' -exec sed -i "s/@Digest@/$collection/g" {} \;
 find . -type f -name '*.yaml' -exec cat  {} \;
