@@ -26,6 +26,7 @@ collection=$( date +%s%N  )
 
 cd /workspace/$gitsource/pipelines/incubator/events
 find . -type f -name '*.yaml' -exec sed -i "s/@Digest@/$collection/g" {} \;
+find . -type f -name '*.yaml' -exec cat  {} \;
 find . -type f -name '*.yaml' -exec kubectl apply -f  {} \;
 
 #./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh
