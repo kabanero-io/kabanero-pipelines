@@ -20,17 +20,13 @@ function retry() {
     return 0
 }
 
-cd /workspace/$gitsource/pipelines/incubator/events
-find . -type f -name '*.yaml' -exec sed -i 's/@Digest@/nodejs/g' {} \;
-find . -type f -name '*.yaml' -exec kubectl apply -f  {} \;
-
-
 git_url="https://github.com/smcclem/"
 docker_url="smcclem"
-collection="nodejs"
+collection=$( date +%s%N  )
 
-declare -a active_collections
-active_collections=( nodejs )
+cd /workspace/$gitsource/pipelines/incubator/events
+find . -type f -name '*.yaml' -exec sed -i 's/@Digest@/$collection/g' {} \;
+find . -type f -name '*.yaml' -exec kubectl apply -f  {} \;
 
 #./kabanero-pipelines/pipelines/incubator/manual-pipeline-runs/manual-pipeline-run-script.sh
 #./manual.sh -r https://github.com/kvijai82/kabanero-nodejs -i index.docker.io/smcclem/manual -c nodejs
@@ -78,4 +74,7 @@ echo $pod" logs_________________________________________________________________
 # Delete the pipeline run and application
 kubectl delete pipelinerun $collection-manual-pipeline-run 
 #TODO appsody applcation delete
+cd /workspace/$gitsource/pipelines/incubator/events
+find . -type f -name '*.yaml' -exec kubectl delete -f  {} \;
+
 exit $RC
