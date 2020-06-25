@@ -63,7 +63,7 @@ else
    RC=0
    echo         
 fi 
-pod_id=$( kubectl get pods | grep manual-pipeline-run-build-push-promote-task)
+pod_id=$( kubectl get pods | grep $collections-manual-pipeline-run-build)
 declare $( echo $pod_id | awk '{printf "pod="$1}')
 echo $pod" logs_______________________________________________________________________________________________"
 echo
@@ -72,7 +72,7 @@ echo
 echo $pod" logs_______________________________________________________________________________________________"
   
 # Delete the pipeline run and application
-#kubectl delete pipelinerun $collection-manual-pipeline-run 
+kubectl delete pipelinerun $collection-manual-pipeline-run 
 #TODO appsody applcation delete
 cd /workspace/$gitsource/pipelines/incubator/events
 find . -type f -name '*.yaml' -exec kubectl delete -f  {} \;
