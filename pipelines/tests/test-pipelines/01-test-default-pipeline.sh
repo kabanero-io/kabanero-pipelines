@@ -63,7 +63,7 @@ else
    RC=0
    echo         
 fi 
-pod_id=$( kubectl get pods | grep $collections-manual-pipeline-run-build)
+pod_id=$( kubectl get pods | grep "$collections-manual-pipeline-run-build")
 declare $( echo $pod_id | awk '{printf "pod="$1}')
 echo $pod" logs_______________________________________________________________________________________________"
 echo
