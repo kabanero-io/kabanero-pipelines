@@ -43,7 +43,7 @@ spec:
     - name: body.webhooks-tekton-target-namespace
       value: kabanero
     - name: body.webhooks-tekton-service-account
-      value: kabanero-pipeline
+      value: kabanero-pipeline-test
     - name: body.webhooks-tekton-docker-registry
       value: index.docker.io/smcclem/
     - name: body.webhooks-tekton-ssl-verify

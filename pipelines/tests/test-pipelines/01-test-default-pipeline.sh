@@ -35,7 +35,7 @@ echo
 echo "Starting pipeline run for collection: "$collection
 echo
 cd /workspace/$gitsource/pipelines/sample-helper-files/
-command="./manual-pipeline-run-script.sh -r $git_url/$collection  -i $docker_url/ -c $collection"
+command="./manual-pipeline-run-script.sh -r $git_url/nodejs  -i $docker_url -c $collection"
 echo $command
 eval $command 
 cd -
