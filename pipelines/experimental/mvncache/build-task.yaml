@@ -1,0 +1,81 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+#
+# This task will build an appsody project specificed in the git-source using `appsody build`
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: StackId-build-task
+spec:
+  workspaces:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    - name: mavenrepo
+      mountPath: /root/.m2/repository 
+  resources:
+    inputs:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+    outputs:
+    - name: docker-image
+      type: image
+  params:
+  - name: docker-imagename
+    type: string
+    default: "null"
+  - name: docker-imagetag
+    type: string
+    default: "null"
+  steps:
+  - name: build
+    # This steps builds the source project using appsody build.
+    securityContext:
+      privileged: true
+    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+        # by adding it to the trust store based on OpenShift cluster resource configuration.
+        echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+        /scripts/image_registry_access_setup.sh
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh), and the image registry access setup was not complete, aborting the pipelinerun." >&2
+           exit $retVal
+        fi
+
+        # Docker does not support upper case characters in the image name.  Github does not have this restriction.
+        # So lowercase the image name if it has any upper case characters.        
+        OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE=$( /scripts/imageurl_imagename_lowercase.sh -u "$(inputs.resources.docker-image.url)" -n "$(inputs.params.docker-imagename)" -t "$(inputs.params.docker-imagetag)" )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/imageurl_imagename_lowercase.sh) Reason: $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" >&2
+           exit $retVal
+        fi
+        
+        OUTPUTS_STACK_IMAGE_REGISTRY_URL=$( /scripts/stack_registry_url_setup.sh )
+        retVal=$?
+        if [ $retVal -ne 0 ]
+        then
+           echo "[ERROR] The script failed(/scripts/stack_registry_url_setup.sh) Reason: $OUTPUTS_STACK_IMAGE_REGISTRY_URL" >&2
+           exit $retVal
+        fi
+
+        echo "[INFO] Stack registry URL = $OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+        echo "[INFO] Application image URL = $OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE"
+         
+        cd /workspace/$gitsource
+        echo "[INFO] Running appsody build..."
+        appsody build -t "$OUTPUTS_RESOURCE_DOCKER_IMAGE_URL_LOWERCASE" --buildah --buildah-options "-v /root/.m2/repository:/home/java_user/.m2/repository --format=docker" --stack-registry "$OUTPUTS_STACK_IMAGE_REGISTRY_URL"
+        if [ $? != 0 ]; then
+            echo "[ERROR] Appsody build failed.  Please review the appsody build logs above.  Pipeline run aborted."
+            exit 1
+        fi
+    env:
+    - name: gitsource
+      value: git-source

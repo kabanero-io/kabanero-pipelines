@@ -1,0 +1,23 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+apiVersion: tekton.dev/v1alpha1
+kind: Condition
+metadata:
+  name: StackId-deployment-condition
+spec:
+  params:
+  - name: "event-type"
+    type: string
+    description: "The Git event type"
+  - name: "event-ref"
+    type: string
+    description: "The Git event ref"
+  check:
+    name: deployment-condition
+    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    command: ["/bin/sh"]
+    args:
+      - -ce
+      - |
+        echo $(params.event-type)
+        echo $(params.event-ref)
+        [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]

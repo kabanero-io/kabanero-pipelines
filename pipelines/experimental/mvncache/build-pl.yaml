@@ -1,0 +1,50 @@
+#Kabanero! on activate substitute StackId for text 'StackId'
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: StackId-build-pl
+spec:
+  workspaces:
+  - name: varlibcontainers
+  - name: mavenrepo
+  params:
+    - name: docker-imagename
+      type: string
+    - name: docker-imagetag
+      type: string
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: enforce-stack-policy-task
+      taskRef:
+        name: StackId-validate-stack-task
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+    - name: build-task
+      taskRef:
+        name: StackId-build-task
+      runAfter: [enforce-stack-policy-task]
+      workspaces:
+        - name: varlibcontainers
+          workspace: varlibcontainers
+        - name: mavenrepo
+          workspace: mavenrepo
+      params:
+        - name: docker-imagename
+          value: "$(params.docker-imagename)"
+        - name: docker-imagetag
+          value: "$(params.docker-imagetag)"
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image
+        outputs:
+        - name: docker-image
+          resource: docker-image
