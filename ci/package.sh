@@ -15,6 +15,9 @@ gitops_pipelines_dir=$base_dir/pipelines/experimental/gitops
 assets_dir=$base_dir/ci/assets
 mkdir -p $assets_dir
 
+image_original_string=kabanero/kabanero-utils:latest
+DOCKER_KABANERO_ACCOUNT=kabanero
+
 package() {
     local pipelines_dir=$1
     local prefix=$2
