@@ -25,7 +25,8 @@ fi
 # ENVIRONMENT VARIABLES for controlling behavior of build, package, and release
 
 # Publish images to image registry
-# export IMAGE_REGISTRY_PUBLISH=false
+# export INDEX_IMAGE_REGISTRY_PUBLISH=false
+# export UTILS_IMAGE_REGISTRY_PUBLISH=false
 
 # Credentials for publishing images:
 # export IMAGE_REGISTRY
@@ -130,6 +131,16 @@ then
     export IMAGE_REGISTRY_ORG=kabanero
 fi
 
+#setting the Utils image name as Default image name in case it is empty or not provided
+if [ -z "$UTILS_IMAGE_NAME" ]; then
+   UTILS_IMAGE_NAME=kabanero-utils
+fi
+
+if [ -z "$UTILS_IMAGE_TAG" ]
+then
+    export UTILS_IMAGE_TAG=latest
+fi
+
 # image registry for publishing stack
 if [ -z "$IMAGE_REGISTRY" ]
 then
@@ -151,9 +162,14 @@ then
     export USE_BUILDAH=false
 fi
 
-if [ -z "$IMAGE_REGISTRY_PUBLISH" ]
+if [ -z "$INDEX_IMAGE_REGISTRY_PUBLISH" ]
 then
-    export IMAGE_REGISTRY_PUBLISH=false
+    export INDEX_IMAGE_REGISTRY_PUBLISH=false
+fi
+
+if [ -z "$UTILS_IMAGE_REGISTRY_PUBLISH" ]
+then
+    export UTILS_IMAGE_REGISTRY_PUBLISH=false
 fi
 
 image_build() {
@@ -184,7 +200,7 @@ image_tag() {
 }
 
 image_push() {
-    if [ "$IMAGE_REGISTRY_PUBLISH" == "true" ]
+    if [ "$INDEX_IMAGE_REGISTRY_PUBLISH" == "true" ]
     then
         local name=$@
 
@@ -201,12 +217,12 @@ image_push() {
             exit 1
         fi
     else
-        echo "IMAGE_REGISTRY_PUBLISH=${IMAGE_REGISTRY_PUBLISH}; Skipping push of $@"
+        echo "INDEX_IMAGE_REGISTRY_PUBLISH=${INDEX_IMAGE_REGISTRY_PUBLISH}; Skipping push of $@"
     fi
 }
 
 image_registry_login() {
-    if [ "$IMAGE_REGISTRY_PUBLISH" == "true" ] && [ -n "$IMAGE_REGISTRY_PASSWORD" ]
+    if [ "$INDEX_IMAGE_REGISTRY_PUBLISH" == "true" ] && [ -n "$IMAGE_REGISTRY_PASSWORD" ]
     then
         if [ "$USE_BUILDAH" == "true" ]
         then
@@ -218,7 +234,7 @@ image_registry_login() {
         if [ $? -ne 0 ]
         then
             stderr "ERROR: Registry login failed. Will not push images to registry."
-            export IMAGE_REGISTRY_PUBLISH=false
+            export INDEX_IMAGE_REGISTRY_PUBLISH=false
         fi
     fi
 }
