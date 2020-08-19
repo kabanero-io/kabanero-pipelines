@@ -12,7 +12,7 @@ openshift_deployment() {
     sed -i -e "s/NAMESPACE/$IMAGE_REGISTRY_ORG/" $YAML_FILE
     sed -i -e "s/IMAGE/$INDEX_IMAGE/" $YAML_FILE
     sed -i -e "s/TAG/$INDEX_VERSION/" $YAML_FILE
-    sed -i -e "s/DATE/$(date --utc '+%FT%TZ')/" $YAML_FILE
+    sed -i -e "s/DATE/$(date -u '+%FT%TZ')/" $YAML_FILE
 }
 
 echo -e "--- Building nginx container"
