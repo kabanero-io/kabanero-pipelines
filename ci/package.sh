@@ -96,8 +96,8 @@ replace_image_url() {
    pwd
    echo "ls -ltr"
    ls -ltr
-   echo "find all the files with yaml"
-   find ./ -type f -name '*.yaml'
+   ##echo "find all the files with yaml"
+   ##find ./ -type f -name '*.yaml'
    
    echo "find and sed replace"
    if [[ "$OSTYPE" == "darwin"* ]]; then
