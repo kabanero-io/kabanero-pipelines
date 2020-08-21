@@ -110,7 +110,6 @@ replace_image_url() {
       echo "[INFO] The script is running in unix OS"
       find ./ -type f -name '*.yaml' -exec sed -i 's|'"$image_original_string"'|'"$image_digest_value"'|g' {} +
    fi
-   #find ./ -type f -name '*.yaml' -exec sed -i 's|'"$image_original_string"'|'"$image_digest_value"'|g' {} +
    if [ $? == 0 ]; then
       echo "[INFO] Updated utils container image string from original 'image : $image_original_string' with 'image : $image_digest_value' in all the pipeline taks yaml files successfully"
    else
