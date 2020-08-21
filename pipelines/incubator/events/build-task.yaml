@@ -25,7 +25,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    image: kabanero/kabanero-utils:latest
     command: ["/bin/bash"]
     args:
       - -c
@@ -41,7 +41,7 @@ spec:
     # This steps builds the source project using appsody build.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    image: kabanero/kabanero-utils:latest
     imagePullPolicy: Always
     command: ["/bin/bash"]
     args:
@@ -102,7 +102,7 @@ spec:
     # Refer to https://kabanero.io/docs/ref/general/reference/semver-governance.html for policy details.
     securityContext:
       privileged: true
-    image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+    image: kabanero/kabanero-utils:latest
     command: ["/bin/bash"]
     args:
       - -c

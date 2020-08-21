@@ -18,4 +18,4 @@ deploy:
   file_glob: true
   on:
     tags: true
-    repo: $GITHUB_REPO/kabanero-pipelines
+    repo: $GITHUB_ORG/$GITHUB_REPO
