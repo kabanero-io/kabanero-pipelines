@@ -29,5 +29,6 @@ if [ -f "$build_dir/openshift.yaml" ]; then
     oc apply -f "$build_dir/openshift.yaml"
 
     PIPELINES_INDEX_ROUTE=$(get_route)
-    echo "== Your pipelines index is available at: $PIPELINES_INDEX_ROUTE/events-pipelines.tar.gz"
+    echo "== Your pipelines index is available at: $PIPELINES_INDEX_ROUTE/default-kabanero-pipelines.tar.gz"
+    echo "== Your pipelines index is available at: $PIPELINES_INDEX_ROUTE/kabanero-events-pipelines.tar.gz"
 fi
