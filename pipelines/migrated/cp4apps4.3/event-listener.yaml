@@ -1,0 +1,32 @@
+#Kabanero! on activate substitute Digest for text 'StackId'
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: StackId-kabanero-event-listener
+spec:
+  serviceAccountName: event-listener
+  triggers:
+  - name: kabanero-push-event
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "push" && body["webhooks-tekton-git-branch"] == "master"'
+    template:
+      apiVersion: v1alpha1
+      name: StackId-build-deploy-pl-template
+    bindings:
+    - apiversion: v1alpha1
+      kind: TriggerBinding
+      name: StackId-build-deploy-pl-push-binding
+      ref: StackId-build-deploy-pl-push-binding
+  - name: kabanero-pullrequest-event
+    interceptors:
+    - cel:
+        filter: 'body["webhooks-tekton-event-type"] == "pull_request" && body["webhooks-tekton-git-branch"] != "master" && (body["action"] == "opened" || body["action"] == "synchronize")'
+    template:
+      apiVersion: v1alpha1
+      name: StackId-build-pl-template
+    bindings:
+    - apiversion: v1alpha1
+      kind: TriggerBinding
+      name: StackId-build-pl-pullrequest-binding
+      ref: StackId-build-pl-pullrequest-binding
