@@ -10,6 +10,7 @@ exec_hooks $script_dir/ext/pre_package.d
 pipelines_dir=$base_dir/pipelines/incubator
 eventing_pipelines_dir=$base_dir/pipelines/incubator/events
 gitops_pipelines_dir=$base_dir/pipelines/experimental/gitops
+migrated43_pipelines_dir=$base_dir/pipelines/migrated/cp4apps4.3
 
 # directory to store assets for test or release
 assets_dir=$base_dir/ci/assets
@@ -245,6 +246,8 @@ package $pipelines_dir "default-kabanero"
 package $eventing_pipelines_dir "kabanero-events"
 
 package $gitops_pipelines_dir "kabanero-gitops"
+
+package $migrated43_pipelines_dir "migrated-cp4apps43"
 
 echo -e "--- Created pipeline artifacts"
 

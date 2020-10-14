@@ -1,0 +1,93 @@
+#Kabanero! on activate substitute Digest for text 'StackId'
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: StackId-image-retag-task
+spec:
+  resources:
+    inputs:
+      - name: docker-src-image
+        type: image
+      - name: docker-dest-image
+        type: image
+    outputs:
+      - name: docker-dest-image
+        type: image
+  params:
+  - name: pathToDockerFile
+    default: /workspace/extracted/Dockerfile
+  - name: pathToContext
+    default: /workspace/extracted
+  steps:
+    - name: buildah-pull
+      securityContext:
+        privileged: true
+      image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/application_image_registry_access_setup.sh ...."
+          /scripts/application_image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/application_image_registry_access_setup.sh)" >&2
+             exit $retVal
+          fi
+          
+          buildah pull $(inputs.resources.docker-src-image.url)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+    - name: buildah-tag
+      securityContext:
+        privileged: true
+      image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/application_image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+             exit $retVal
+          fi
+          
+          buildah tag $(inputs.resources.docker-src-image.url) $(inputs.resources.docker-dest-image.url)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+    - name: buildah-push
+      securityContext:
+        privileged: true
+      image: kabanero/kabanero-utils@sha256:d2534cb30f618975bd5a9554920050b36d1bde5a882e8bacf100773847ec9ae8
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          # Configure image registry access in the container by adding it to the insecure registry list or enabling TLS verification
+          # by adding it to the trust store based on OpenShift cluster resource configuration.
+          echo "[INFO] Running the script /scripts/image_registry_access_setup.sh ...."
+          /scripts/image_registry_access_setup.sh
+          retVal=$?
+          if [ $retVal -ne 0 ]
+          then
+             echo "[ERROR] The script failed(/scripts/image_registry_access_setup.sh)" >&2
+             exit $retVal
+          fi
+          
+          buildah push $(outputs.resources.docker-dest-image.url) docker://$(outputs.resources.docker-dest-image.url)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}
