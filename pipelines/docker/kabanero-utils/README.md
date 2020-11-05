@@ -10,22 +10,18 @@ This is an image based on base image 'appsody/appsody-buildah:0.6.0-buildah1.9.0
 
 ##Scripts included in the image
 
- - [insecure_registry_setup.sh](abc)     
+ - [image_registry_access_setup.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/image_registry_access_setup.sh)      
+ 
+ - [enforce_stack_policy.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/enforce_stack_policy.sh)
  
  
- - [ca_certs_setup.sh](abc)
+ - [enforce_deploy_stack_policy.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/enforce_deploy_stack_policy.sh)
  
  
- - [enforce_stack_policy.sh](abc)
+ - [imageurl_imagename_lowercase.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/imageurl_imagename_lowercase.sh)
  
  
- - [enforce_deploy_stack_policy.sh](abc)
+ - [stack_registry_url_setup.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/stack_registry_url_setup.sh)
  
  
- - [imageurl_imagename_lowercase.sh](abc)
- 
- 
- - [stack_registry_url_setup.sh](abc)
- 
- 
- - [install_utilities.sh](abc)
+ - [install_utilities.sh](https://github.com/kabanero-io/kabanero-pipelines/blob/master/pipelines/docker/kabanero-utils/scripts/install_utilities.sh)
